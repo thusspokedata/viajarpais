@@ -1,0 +1,23 @@
+{
+  "Home": {
+    "title": "ViajarPaís",
+    "tagline": "Argentina's national tourism directory",
+    "intro": "Explore the 24 provinces grouped into 6 regions."
+  },
+  "AdminLogin": {
+    "title": "Sign in to the admin panel",
+    "email": "Email address",
+    "password": "Password",
+    "submit": "Sign in",
+    "loading": "Signing in…",
+    "errorGeneric": "We couldn't validate your credentials."
+  },
+  "AdminHealth": {
+    "title": "Health check",
+    "intro": "Database and configuration status.",
+    "postgresVersion": "Postgres version",
+    "regionsCount": "Regions",
+    "usersCount": "Users",
+    "currentLocale": "Current locale"
+  }
+}
