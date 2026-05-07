@@ -12,7 +12,7 @@ Directorio nacional de turismo argentino. Este repositorio contiene el bootstrap
 - **Husky + commitlint + lint-staged** (Conventional Commits)
 - **GitHub Actions** para CI
 
-Requiere Node ≥ 20.9.
+Requiere **Node ≥ 22** (declarado en `engines` y verificado en CI). Node 20 quedó EOL el 30 abril 2026, así que el proyecto se mantiene en la línea 22 LTS.
 
 ## Setup local
 
