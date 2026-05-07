@@ -2,6 +2,17 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./db";
 
+const trustedOrigins = [
+  process.env.BETTER_AUTH_URL,
+  process.env.NEXT_PUBLIC_SITE_URL,
+].filter((value): value is string => Boolean(value));
+
+if (process.env.NODE_ENV === "production" && trustedOrigins.length === 0) {
+  throw new Error(
+    "trustedOrigins is empty in production: set BETTER_AUTH_URL and/or NEXT_PUBLIC_SITE_URL",
+  );
+}
+
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
@@ -22,10 +33,7 @@ export const auth = betterAuth({
       },
     },
   },
-  trustedOrigins: [
-    process.env.BETTER_AUTH_URL,
-    process.env.NEXT_PUBLIC_SITE_URL,
-  ].filter((value): value is string => Boolean(value)),
+  trustedOrigins,
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
     defaultCookieAttributes: {
