@@ -1,0 +1,23 @@
+{
+  "Home": {
+    "title": "ViajarPaís",
+    "tagline": "Directorio nacional de turismo argentino",
+    "intro": "Recorré las 24 provincias agrupadas en 6 regiones."
+  },
+  "AdminLogin": {
+    "title": "Ingresar al panel",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Ingresar",
+    "loading": "Ingresando…",
+    "errorGeneric": "No pudimos validar tus credenciales."
+  },
+  "AdminHealth": {
+    "title": "Health check",
+    "intro": "Estado de la base de datos y configuración.",
+    "postgresVersion": "Versión Postgres",
+    "regionsCount": "Regiones",
+    "usersCount": "Usuarios",
+    "currentLocale": "Idioma actual"
+  }
+}
