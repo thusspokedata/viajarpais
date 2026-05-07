@@ -1,0 +1,33 @@
+language: en-US
+early_access: false
+
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+
+  auto_review:
+    enabled: true
+    drafts: false
+    ignore_usernames:
+      - "dependabot[bot]"
+      - "renovate[bot]"
+    ignore_title_keywords:
+      - "wip"
+      - "draft"
+      - "skip review"
+
+  path_filters:
+    - "!**/package-lock.json"
+    - "!**/pnpm-lock.yaml"
+    - "!**/yarn.lock"
+    - "!**/*.lock"
+    - "!**/.next/**"
+    - "!**/node_modules/**"
+    - "!src/generated/**"
+
+chat:
+  auto_reply: true
