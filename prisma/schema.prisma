@@ -1,0 +1,149 @@
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+  runtime      = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  MERCHANT
+}
+
+model Region {
+  id        String     @id @default(cuid())
+  code      String     @unique
+  name      String
+  order     Int        @default(0)
+  provinces Province[]
+
+  @@index([order])
+}
+
+model Province {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  slug        String       @unique
+  name        String
+  regionId    String
+  region      Region       @relation(fields: [regionId], references: [id])
+  departments Department[]
+  localities  Locality[]
+
+  @@index([regionId])
+}
+
+model Department {
+  id         String     @id @default(cuid())
+  code       String     @unique
+  slug       String
+  name       String
+  provinceId String
+  province   Province   @relation(fields: [provinceId], references: [id])
+  localities Locality[]
+
+  @@unique([provinceId, slug])
+  @@index([provinceId])
+}
+
+model Locality {
+  id           String     @id @default(cuid())
+  code         String     @unique
+  slug         String
+  name         String
+  lat          Decimal?   @db.Decimal(10, 7)
+  lng          Decimal?   @db.Decimal(10, 7)
+  departmentId String
+  provinceId   String
+  department   Department @relation(fields: [departmentId], references: [id])
+  province     Province   @relation(fields: [provinceId], references: [id])
+
+  @@unique([provinceId, slug])
+  @@index([departmentId])
+  @@index([provinceId])
+}
+
+model Category {
+  id               String  @id @default(cuid())
+  slug             String  @unique
+  nameEs           String
+  nameEn           String
+  namePtBr         String
+  nameSingularEs   String
+  nameSingularEn   String
+  nameSingularPtBr String
+  icon             String?
+  order            Int     @default(0)
+
+  @@index([order])
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  role          UserRole  @default(MERCHANT)
+  sessions      Session[]
+  accounts      Account[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
