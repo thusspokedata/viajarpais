@@ -42,11 +42,11 @@ npm run dev
 
 Después de eso:
 
-- `http://localhost:3000/` → landing en español (sin prefijo).
-- `http://localhost:3000/en` → landing en inglés.
-- `http://localhost:3000/pt-BR` → landing en portugués brasileño.
-- `http://localhost:3000/admin/login` → login admin.
-- `http://localhost:3000/admin/health` → health check (requiere sesión con rol `ADMIN`).
+- `http://localhost:3006/` → landing en español (sin prefijo).
+- `http://localhost:3006/en` → landing en inglés.
+- `http://localhost:3006/pt-BR` → landing en portugués brasileño.
+- `http://localhost:3006/admin/login` → login admin.
+- `http://localhost:3006/admin/health` → health check (requiere sesión con rol `ADMIN`).
 
 ## Variables de entorno
 
@@ -57,7 +57,7 @@ Ver `.env.example` para la lista completa. Resumen:
 | `DATABASE_URL` | Conexión Neon **pooled** (con `-pooler` en el host). Usada por el runtime. |
 | `DIRECT_URL` | Conexión Neon **directa** (sin pooler). Usada por el CLI de Prisma. |
 | `BETTER_AUTH_SECRET` | Secreto de 32+ bytes. Generar con `openssl rand -base64 48`. |
-| `BETTER_AUTH_URL` | URL del backend de auth. En dev: `http://localhost:3000`. |
+| `BETTER_AUTH_URL` | URL del backend de auth. En dev: `http://localhost:3006`. |
 | `NEXT_PUBLIC_SITE_URL` | URL pública del sitio. |
 | `NEXT_PUBLIC_BETTER_AUTH_URL` | URL pública de auth (la lee el cliente). |
 | `BOOTSTRAP_ADMIN_EMAIL` | Email del admin que crea el seed. |
@@ -69,7 +69,7 @@ Ver `.env.example` para la lista completa. Resumen:
 
 | Comando | Qué hace |
 | --- | --- |
-| `npm run dev` | Dev server con Turbopack en `http://localhost:3000`. |
+| `npm run dev` | Dev server con Turbopack en `http://localhost:3006`. |
 | `npm run build` | Build de producción. |
 | `npm run start` | Server de producción (después de `build`). |
 | `npm run lint` | ESLint sobre todo el repo. |
