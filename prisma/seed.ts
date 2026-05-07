@@ -3,6 +3,14 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { auth } from "../src/lib/auth";
 
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error("DATABASE_URL is required to run the seed");
+}
+
+const adapter = new PrismaNeon({ connectionString });
+const prisma = new PrismaClient({ adapter });
+
 async function main() {
   const email = process.env.BOOTSTRAP_ADMIN_EMAIL;
   const password = process.env.BOOTSTRAP_ADMIN_PASSWORD;
@@ -13,45 +21,38 @@ async function main() {
     );
   }
 
-  const connectionString = process.env.DATABASE_URL;
-  if (!connectionString) {
-    throw new Error("DATABASE_URL is required to run the seed");
-  }
-
-  const adapter = new PrismaNeon({ connectionString });
-  const prisma = new PrismaClient({ adapter });
-
-  try {
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) {
-      if (existing.role !== "ADMIN") {
-        await prisma.user.update({
-          where: { email },
-          data: { role: "ADMIN" },
-        });
-        console.log(`Promoted ${email} to ADMIN`);
-      } else {
-        console.log(`Admin ${email} already exists, skipping`);
-      }
-      return;
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    if (existing.role !== "ADMIN") {
+      await prisma.user.update({
+        where: { email },
+        data: { role: "ADMIN" },
+      });
+      console.log(`Promoted ${email} to ADMIN`);
+    } else {
+      console.log(`Admin ${email} already exists, skipping`);
     }
-
-    const result = await auth.api.signUpEmail({
-      body: { email, password, name: "Admin" },
-    });
-
-    await prisma.user.update({
-      where: { id: result.user.id },
-      data: { role: "ADMIN" },
-    });
-
-    console.log(`Created admin ${email}`);
-  } finally {
-    await prisma.$disconnect();
+    return;
   }
+
+  const result = await auth.api.signUpEmail({
+    body: { email, password, name: "Admin" },
+  });
+
+  await prisma.user.update({
+    where: { id: result.user.id },
+    data: { role: "ADMIN" },
+  });
+
+  console.log(`Created admin ${email}`);
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (error) => {
+    console.error(error);
+    await prisma.$disconnect();
+    process.exit(1);
+  });
