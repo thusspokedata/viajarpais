@@ -24,6 +24,27 @@
     "closeMenu": "Fechar menu",
     "regionsHeading": "Regiões"
   },
+  "Footer": {
+    "brandDescription": "Diretório nacional de turismo argentino. Verificado manualmente pela nossa equipe editorial — sem avaliações falsas.",
+    "regions": "Regiões",
+    "explore": "Explorar",
+    "about": "Sobre",
+    "copyright": "© {year} ViajarPaís — Todos os direitos reservados.",
+    "exploreItems": {
+      "alojamientos": "Hospedagem",
+      "gastronomia": "Gastronomia",
+      "excursiones": "Excursões",
+      "sitiosDeInteres": "Pontos de interesse",
+      "eventos": "Eventos"
+    },
+    "aboutItems": {
+      "proyecto": "O projeto",
+      "verificacion": "Verificação",
+      "paraComerciantes": "Para comerciantes",
+      "terminos": "Termos",
+      "privacidad": "Privacidade"
+    }
+  },
   "AdminLogin": {
     "title": "Entrar no painel",
     "email": "E-mail",
