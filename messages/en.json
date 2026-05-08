@@ -4,6 +4,15 @@
     "tagline": "Argentina's national tourism directory",
     "intro": "Explore the 24 provinces grouped into 6 regions."
   },
+  "Header": {
+    "signIn": "Sign in",
+    "forBusinesses": "For businesses",
+    "categories": "Categories",
+    "about": "About",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "regionsHeading": "Regions"
+  },
   "AdminLogin": {
     "title": "Sign in to the admin panel",
     "email": "Email address",

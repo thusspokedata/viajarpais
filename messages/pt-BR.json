@@ -4,6 +4,15 @@
     "tagline": "Diretório nacional de turismo argentino",
     "intro": "Conheça as 24 províncias agrupadas em 6 regiões."
   },
+  "Header": {
+    "signIn": "Entrar",
+    "forBusinesses": "Para empresas",
+    "categories": "Categorias",
+    "about": "Sobre o projeto",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "regionsHeading": "Regiões"
+  },
   "AdminLogin": {
     "title": "Entrar no painel",
     "email": "E-mail",
