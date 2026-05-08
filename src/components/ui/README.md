@@ -4,7 +4,7 @@ Sistema de componentes y tokens del directorio nacional de turismo argentino.
 Esta carpeta contiene los **primitivos**. Los **patterns compuestos** viven en
 `src/components/public/` y `src/components/admin/`.
 
-Para ver todo en vivo abrí **`/_design`** en tu navegador local con `npm run dev`.
+Para ver todo en vivo abrí **`/design`** en tu navegador local con `npm run dev`.
 
 ---
 
@@ -167,12 +167,12 @@ vigencia restante. Hover dispara escala del shield (spring easing).
 3. Si tiene variantes, usar `cva` (ver `Button.tsx`).
 4. Agregar `forwardRef` y `displayName`.
 5. Re-exportar desde `src/components/ui/index.ts`.
-6. Agregar una sección en `/_design` con todas las variantes y estados.
+6. Agregar una sección en `/design` con todas las variantes y estados.
 
 ### Agregar una variante a un primitivo existente
 
 1. Sumar la variante al schema `cva` del componente.
-2. Agregarla en `/_design`.
+2. Agregarla en `/design`.
 3. Documentar acá en este README cuándo usarla.
 
 ### Activar dark mode (futuro)
@@ -191,7 +191,7 @@ No hay que tocar componentes.
 
 ## Referencias
 
-- **Showcase visual** → `src/app/[locale]/(public)/_design/page.tsx` →
-  abrir en `http://localhost:3006/_design`.
+- **Showcase visual** → `src/app/[locale]/(public)/design/page.tsx` →
+  abrir en `http://localhost:3006/design`.
 - **Mockup standalone** → `design-system.html` en la raíz (preview rápida sin
   levantar Next).

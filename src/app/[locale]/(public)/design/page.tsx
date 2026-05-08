@@ -89,7 +89,7 @@ export default function DesignSystemPage() {
         <header className="border-b border-[var(--border-subtle)] bg-[var(--surface-base)]">
           <div className="mx-auto max-w-6xl px-6 py-8">
             <div className="text-[10px] font-display uppercase tracking-[var(--tracking-caps)] text-[var(--text-muted)]">
-              Internal · /_design
+              Internal · /design
             </div>
             <h1 className="mt-1 font-display text-[var(--text-4xl)] font-semibold tracking-[var(--tracking-tight)]">
               ViajarPaís Design System
