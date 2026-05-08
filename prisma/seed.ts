@@ -284,6 +284,139 @@ async function seedGeo(): Promise<void> {
 }
 
 // ─────────────────────────────────────────────────────────────────────
+// Phase: categories
+// ─────────────────────────────────────────────────────────────────────
+
+/**
+ * 10 categorías nacionales con nombres en es / en / pt-BR (plural y
+ * singular). Slugs en español (sin localizar) — son URLs estables.
+ * Iconos quedan null por ahora (los decidimos en una fase futura).
+ */
+const CATEGORIES: Array<{
+  slug: string;
+  nameEs: string;
+  nameEn: string;
+  namePtBr: string;
+  nameSingularEs: string;
+  nameSingularEn: string;
+  nameSingularPtBr: string;
+  order: number;
+}> = [
+  {
+    slug: "alojamientos",
+    nameEs: "Alojamientos",
+    nameEn: "Accommodations",
+    namePtBr: "Hospedagens",
+    nameSingularEs: "Alojamiento",
+    nameSingularEn: "Accommodation",
+    nameSingularPtBr: "Hospedagem",
+    order: 1,
+  },
+  {
+    slug: "restaurantes",
+    nameEs: "Restaurantes",
+    nameEn: "Restaurants",
+    namePtBr: "Restaurantes",
+    nameSingularEs: "Restaurante",
+    nameSingularEn: "Restaurant",
+    nameSingularPtBr: "Restaurante",
+    order: 2,
+  },
+  {
+    slug: "excursiones",
+    nameEs: "Excursiones",
+    nameEn: "Excursions",
+    namePtBr: "Excursões",
+    nameSingularEs: "Excursión",
+    nameSingularEn: "Excursion",
+    nameSingularPtBr: "Excursão",
+    order: 3,
+  },
+  {
+    slug: "guias-habilitados",
+    nameEs: "Guías habilitados",
+    nameEn: "Licensed guides",
+    namePtBr: "Guias credenciados",
+    nameSingularEs: "Guía habilitado",
+    nameSingularEn: "Licensed guide",
+    nameSingularPtBr: "Guia credenciado",
+    order: 4,
+  },
+  {
+    slug: "agencias",
+    nameEs: "Agencias de viajes",
+    nameEn: "Travel agencies",
+    namePtBr: "Agências de viagem",
+    nameSingularEs: "Agencia de viajes",
+    nameSingularEn: "Travel agency",
+    nameSingularPtBr: "Agência de viagem",
+    order: 5,
+  },
+  {
+    slug: "eventos",
+    nameEs: "Eventos",
+    nameEn: "Events",
+    namePtBr: "Eventos",
+    nameSingularEs: "Evento",
+    nameSingularEn: "Event",
+    nameSingularPtBr: "Evento",
+    order: 6,
+  },
+  {
+    slug: "sitios-de-interes",
+    nameEs: "Sitios de interés",
+    nameEn: "Points of interest",
+    namePtBr: "Pontos de interesse",
+    nameSingularEs: "Sitio de interés",
+    nameSingularEn: "Point of interest",
+    nameSingularPtBr: "Ponto de interesse",
+    order: 7,
+  },
+  {
+    slug: "terminales",
+    nameEs: "Terminales",
+    nameEn: "Bus & travel terminals",
+    namePtBr: "Terminais",
+    nameSingularEs: "Terminal",
+    nameSingularEn: "Terminal",
+    nameSingularPtBr: "Terminal",
+    order: 8,
+  },
+  {
+    slug: "tiendas-artesanales",
+    nameEs: "Tiendas artesanales",
+    nameEn: "Artisan shops",
+    namePtBr: "Lojas artesanais",
+    nameSingularEs: "Tienda artesanal",
+    nameSingularEn: "Artisan shop",
+    nameSingularPtBr: "Loja artesanal",
+    order: 9,
+  },
+  {
+    slug: "spas-termas",
+    nameEs: "Spas y termas",
+    nameEn: "Spas & hot springs",
+    namePtBr: "Spas e termas",
+    nameSingularEs: "Spa o termas",
+    nameSingularEn: "Spa or hot springs",
+    nameSingularPtBr: "Spa ou termas",
+    order: 10,
+  },
+];
+
+async function seedCategories(): Promise<void> {
+  console.log(`Seeding ${CATEGORIES.length} categories…`);
+  for (const c of CATEGORIES) {
+    await prisma.category.upsert({
+      where: { slug: c.slug },
+      create: c,
+      update: c,
+    });
+  }
+  console.log(`  ✓ ${CATEGORIES.length} categories`);
+}
+
+// ─────────────────────────────────────────────────────────────────────
 // Main
 // ─────────────────────────────────────────────────────────────────────
 
@@ -291,6 +424,7 @@ async function main(): Promise<void> {
   const flags = parseFlags();
   if (flags.admin) await seedAdmin();
   if (flags.geo) await seedGeo();
+  if (flags.categories) await seedCategories();
 }
 
 main()
