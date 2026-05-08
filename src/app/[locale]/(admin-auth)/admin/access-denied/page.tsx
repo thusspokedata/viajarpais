@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { setRequestLocale } from "next-intl/server";
 import { Lock } from "lucide-react";
-import { Button } from "@/components/ui";
+import { buttonVariants } from "@/components/ui";
 
 type Props = {
   params: Promise<{ locale: string }>;
@@ -40,9 +40,12 @@ export default async function AccessDeniedPage({ params }: Props) {
           el directorio.
         </p>
       </div>
-      <Button asChild variant="secondary">
-        <Link href={homeHref}>Ir al inicio</Link>
-      </Button>
+      <Link
+        href={homeHref}
+        className={buttonVariants({ variant: "secondary" })}
+      >
+        Ir al inicio
+      </Link>
     </div>
   );
 }
