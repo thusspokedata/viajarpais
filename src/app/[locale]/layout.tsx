@@ -19,7 +19,9 @@ const fraunces = Fraunces({
   subsets: ["latin", "latin-ext"],
   variable: "--font-fraunces",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
+  // Variable font: omit `weight` so we can use the SOFT + opsz axes
+  // for the editorial letterpress feel. weight + axes is mutually
+  // exclusive in next/font/google.
   axes: ["SOFT", "opsz"],
 });
 
