@@ -1,0 +1,60 @@
+/**
+ * Iconografía — ViajarPaís
+ *
+ * Set genérico para v0.1 basado en lucide-react. Re-exportamos solo los
+ * iconos que el producto va a usar para que tree-shaking funcione bien
+ * y para tener un único punto de cambio si el día de mañana migramos a
+ * un set ilustrado custom por categoría turística.
+ *
+ * Convención de tamaño: usar `size={16}` en UI densa (admin),
+ * `size={20}` en UI cómoda (público), `size={24}` en hero/empty states.
+ */
+export {
+  Search,
+  Menu,
+  X as Close,
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  ChevronUp,
+  MapPin,
+  Calendar,
+  Clock,
+  Phone,
+  Mail,
+  ExternalLink,
+  Check,
+  AlertTriangle,
+  Info,
+  XCircle,
+  Plus,
+  Pencil as Edit,
+  Trash2 as Trash,
+  Image as ImageIcon,
+  Eye,
+  EyeOff,
+  Filter,
+  Settings,
+  User,
+  LogOut,
+  Globe,
+  Star,
+  ShieldCheck,
+  CircleCheck,
+  CircleAlert,
+  CircleX,
+  CircleHelp,
+  ArrowUpRight,
+  ArrowRight,
+  GripVertical,
+  MoreHorizontal,
+  Loader2,
+  Upload,
+  Bell,
+  Layers,
+  LayoutGrid,
+  List,
+  Map,
+  Heart,
+  Share2,
+} from "lucide-react";
