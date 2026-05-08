@@ -1,4 +1,11 @@
-import "server-only";
+/*
+  Este modulo NO usa "server-only" porque `slugify` y `SLUG_REGEX` viven
+  tambien en el cliente (preview del slug en el form admin). Las
+  funciones que tocan la DB reciben `prisma` como parametro y solo se
+  invocan desde server actions / data loaders. No hay riesgo de filtrar
+  credenciales al bundle del cliente porque el archivo no importa
+  ninguna conexion a DB — la conexion la inyecta el caller.
+*/
 import type { PrismaClient } from "@/generated/prisma/client";
 
 // Combining diacritical marks block (U+0300 .. U+036F) — escapes

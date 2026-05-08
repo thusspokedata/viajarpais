@@ -8,7 +8,8 @@
 export { cn } from "./cn";
 export * from "./icons";
 
-export { Button, buttonVariants, type ButtonProps } from "./Button";
+export { Button, type ButtonProps } from "./Button";
+export { buttonVariants, type ButtonVariantProps } from "./button-variants";
 export { Input, type InputProps } from "./Input";
 export { Label, type LabelProps } from "./Label";
 export { Textarea, type TextareaProps } from "./Textarea";
