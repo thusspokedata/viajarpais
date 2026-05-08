@@ -1,6 +1,4 @@
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { requireRole } from "@/lib/authz";
 
 type Props = {
   children: React.ReactNode;
@@ -9,19 +7,7 @@ type Props = {
 
 export default async function AdminLayout({ children, params }: Props) {
   const { locale } = await params;
-  const prefix = locale === "es" ? "" : `/${locale}`;
+  await requireRole(["ADMIN", "EDITOR"], locale);
 
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session) {
-    redirect(`${prefix}/admin/login`);
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect(`${prefix}/`);
-  }
-
-  return (
-    <main className="flex flex-1 flex-col p-8">{children}</main>
-  );
+  return <main className="flex flex-1 flex-col p-8">{children}</main>;
 }
