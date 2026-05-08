@@ -33,12 +33,12 @@ export function PublicFooter({ className }: { className?: string }) {
         <FooterColumn
           title="Regiones"
           items={[
-            ["Cuyo", "/regiones/cuyo"],
-            ["NOA", "/regiones/noa"],
-            ["NEA", "/regiones/nea"],
-            ["Patagonia", "/regiones/patagonia"],
-            ["Pampeana", "/regiones/pampeana"],
-            ["Centro", "/regiones/centro"],
+            ["Cuyo", "/cuyo"],
+            ["NOA", "/noa"],
+            ["NEA", "/nea"],
+            ["Patagonia", "/patagonia"],
+            ["Pampeana", "/pampeana"],
+            ["Centro", "/centro"],
           ]}
         />
         <FooterColumn

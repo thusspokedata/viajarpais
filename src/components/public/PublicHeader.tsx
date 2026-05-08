@@ -109,7 +109,7 @@ export function PublicHeader({
           {REGIONS.filter((r) => r.id !== "all").map((r) => (
             <Link
               key={r.id}
-              href={`/regiones/${r.id}`}
+              href={`/${r.id}`}
               className={cn(
                 "px-3 h-9 inline-flex items-center rounded-[var(--radius-md)]",
                 "text-[var(--text-sm)] font-medium text-[var(--text-secondary)]",
@@ -158,7 +158,7 @@ export function PublicHeader({
               {REGIONS.filter((r) => r.id !== "all").map((r) => (
                 <Link
                   key={r.id}
-                  href={`/regiones/${r.id}`}
+                  href={`/${r.id}`}
                   className="px-3 py-2 rounded-[var(--radius-md)] text-[var(--text-sm)] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 >
                   {r.label}
