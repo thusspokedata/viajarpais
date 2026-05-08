@@ -44,11 +44,11 @@ export function PublicFooter({ className }: { className?: string }) {
         <FooterColumn
           title="Explorar"
           items={[
-            ["Alojamientos", "/categorias/alojamientos"],
-            ["Gastronomía", "/categorias/gastronomia"],
-            ["Excursiones", "/categorias/excursiones"],
-            ["Sitios de interés", "/categorias/sitios"],
-            ["Eventos", "/eventos"],
+            ["Alojamientos", "/categoria/alojamientos"],
+            ["Gastronomía", "/categoria/restaurantes"],
+            ["Excursiones", "/categoria/excursiones"],
+            ["Sitios de interés", "/categoria/sitios-de-interes"],
+            ["Eventos", "/categoria/eventos"],
           ]}
         />
         <FooterColumn
