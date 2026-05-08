@@ -101,6 +101,8 @@ export function PublicHeader({ className }: PublicHeaderProps) {
             <button
               type="button"
               aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
+              aria-expanded={mobileOpen}
+              aria-controls="public-header-mobile-drawer"
               onClick={() => setMobileOpen((o) => !o)}
               className="lg:hidden h-10 w-10 grid place-items-center rounded-[var(--radius-md)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
@@ -153,7 +155,10 @@ export function PublicHeader({ className }: PublicHeaderProps) {
 
       {/* Mobile drawer */}
       {mobileOpen ? (
-        <div className="lg:hidden border-t border-[var(--border-subtle)] bg-[var(--surface-base)] animate-[vp-fade-in_var(--duration-base)_var(--ease-decelerate)]">
+        <div
+          id="public-header-mobile-drawer"
+          className="lg:hidden border-t border-[var(--border-subtle)] bg-[var(--surface-base)] animate-[vp-fade-in_var(--duration-base)_var(--ease-decelerate)]"
+        >
           <div className="px-4 py-4 flex flex-col gap-3">
             <SearchBar placeholder={t("searchPlaceholder")} />
             <div className="text-[10px] font-display uppercase tracking-[var(--tracking-caps)] text-[var(--text-muted)] mt-2">
