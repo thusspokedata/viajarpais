@@ -22,7 +22,8 @@
     "about": "Sobre o projeto",
     "openMenu": "Abrir menu",
     "closeMenu": "Fechar menu",
-    "regionsHeading": "Regiões"
+    "regionsHeading": "Regiões",
+    "searchPlaceholder": "Buscar destinos, lugares, categorias…"
   },
   "VerifiedBadge": {
     "label": "Verificado",

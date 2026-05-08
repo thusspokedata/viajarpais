@@ -22,7 +22,8 @@
     "about": "About",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "regionsHeading": "Regions"
+    "regionsHeading": "Regions",
+    "searchPlaceholder": "Search destinations, places, categories…"
   },
   "VerifiedBadge": {
     "label": "Verified",

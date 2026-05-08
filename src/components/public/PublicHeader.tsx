@@ -72,7 +72,7 @@ export function PublicHeader({ className }: PublicHeaderProps) {
 
           {/* Desktop: search center */}
           <div className="hidden lg:flex flex-1 max-w-xl mx-6">
-            <SearchBar />
+            <SearchBar placeholder={t("searchPlaceholder")} />
           </div>
 
           <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ export function PublicHeader({ className }: PublicHeaderProps) {
       {mobileOpen ? (
         <div className="lg:hidden border-t border-[var(--border-subtle)] bg-[var(--surface-base)] animate-[vp-fade-in_var(--duration-base)_var(--ease-decelerate)]">
           <div className="px-4 py-4 flex flex-col gap-3">
-            <SearchBar />
+            <SearchBar placeholder={t("searchPlaceholder")} />
             <div className="text-[10px] font-display uppercase tracking-[var(--tracking-caps)] text-[var(--text-muted)] mt-2">
               {t("regionsHeading")}
             </div>
