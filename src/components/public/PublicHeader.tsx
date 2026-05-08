@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { Menu, Globe, Close, ChevronDown } from "@/components/ui/icons";
 import {
   Button,
@@ -26,19 +27,23 @@ const LOCALES = [
   { id: "pt-BR", label: "Português (BR)" },
 ] as const;
 
+type LocaleId = (typeof LOCALES)[number]["id"];
+
 export interface PublicHeaderProps {
-  locale?: string;
-  onLocaleChange?: (l: string) => void;
   className?: string;
 }
 
-export function PublicHeader({
-  locale = "es",
-  onLocaleChange,
-  className,
-}: PublicHeaderProps) {
+export function PublicHeader({ className }: PublicHeaderProps) {
+  const t = useTranslations("Header");
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const currentLocale = LOCALES.find((l) => l.id === locale) ?? LOCALES[0];
+
+  function switchLocale(next: LocaleId) {
+    router.replace(pathname, { locale: next });
+  }
 
   return (
     <header
@@ -66,7 +71,7 @@ export function PublicHeader({
 
           {/* Desktop: search center */}
           <div className="hidden lg:flex flex-1 max-w-xl mx-6">
-            <SearchBar />
+            <SearchBar placeholder={t("searchPlaceholder")} />
           </div>
 
           <div className="flex items-center gap-2">
@@ -79,7 +84,7 @@ export function PublicHeader({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {LOCALES.map((l) => (
-                  <DropdownMenuItem key={l.id} onClick={() => onLocaleChange?.(l.id)}>
+                  <DropdownMenuItem key={l.id} onClick={() => switchLocale(l.id)}>
                     {l.label}
                   </DropdownMenuItem>
                 ))}
@@ -87,15 +92,17 @@ export function PublicHeader({
             </DropdownMenu>
 
             <Button variant="ghost" size="sm" className="hidden md:inline-flex">
-              Para comerciantes
+              {t("forBusinesses")}
             </Button>
             <Button size="sm" className="hidden md:inline-flex">
-              Acceder
+              {t("signIn")}
             </Button>
 
             <button
               type="button"
-              aria-label={mobileOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-label={mobileOpen ? t("closeMenu") : t("openMenu")}
+              aria-expanded={mobileOpen}
+              aria-controls="public-header-mobile-drawer"
               onClick={() => setMobileOpen((o) => !o)}
               className="lg:hidden h-10 w-10 grid place-items-center rounded-[var(--radius-md)] hover:bg-[var(--surface-sunken)] transition-colors"
             >
@@ -109,7 +116,7 @@ export function PublicHeader({
           {REGIONS.filter((r) => r.id !== "all").map((r) => (
             <Link
               key={r.id}
-              href={`/regiones/${r.id}`}
+              href={`/${r.id}`}
               className={cn(
                 "px-3 h-9 inline-flex items-center rounded-[var(--radius-md)]",
                 "text-[var(--text-sm)] font-medium text-[var(--text-secondary)]",
@@ -130,7 +137,7 @@ export function PublicHeader({
               "transition-colors duration-[var(--duration-fast)]"
             )}
           >
-            Categorías
+            {t("categories")}
           </Link>
           <Link
             href="/sobre"
@@ -141,24 +148,27 @@ export function PublicHeader({
               "transition-colors duration-[var(--duration-fast)]"
             )}
           >
-            Sobre el proyecto
+            {t("about")}
           </Link>
         </nav>
       </div>
 
       {/* Mobile drawer */}
       {mobileOpen ? (
-        <div className="lg:hidden border-t border-[var(--border-subtle)] bg-[var(--surface-base)] animate-[vp-fade-in_var(--duration-base)_var(--ease-decelerate)]">
+        <div
+          id="public-header-mobile-drawer"
+          className="lg:hidden border-t border-[var(--border-subtle)] bg-[var(--surface-base)] animate-[vp-fade-in_var(--duration-base)_var(--ease-decelerate)]"
+        >
           <div className="px-4 py-4 flex flex-col gap-3">
-            <SearchBar />
+            <SearchBar placeholder={t("searchPlaceholder")} />
             <div className="text-[10px] font-display uppercase tracking-[var(--tracking-caps)] text-[var(--text-muted)] mt-2">
-              Regiones
+              {t("regionsHeading")}
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {REGIONS.filter((r) => r.id !== "all").map((r) => (
                 <Link
                   key={r.id}
-                  href={`/regiones/${r.id}`}
+                  href={`/${r.id}`}
                   className="px-3 py-2 rounded-[var(--radius-md)] text-[var(--text-sm)] font-medium text-[var(--text-secondary)] hover:bg-[var(--surface-sunken)]"
                 >
                   {r.label}
@@ -167,9 +177,9 @@ export function PublicHeader({
             </div>
             <div className="flex gap-2 mt-2">
               <Button variant="secondary" className="flex-1">
-                Para comerciantes
+                {t("forBusinesses")}
               </Button>
-              <Button className="flex-1">Acceder</Button>
+              <Button className="flex-1">{t("signIn")}</Button>
             </div>
           </div>
         </div>

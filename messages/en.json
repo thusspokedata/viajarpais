@@ -1,8 +1,60 @@
 {
   "Home": {
-    "title": "ViajarPaís",
-    "tagline": "Argentina's national tourism directory",
-    "intro": "Explore the 24 provinces grouped into 6 regions."
+    "heroTitle": "Travel Argentina with confidence",
+    "heroSubtitle": "Every place, vetted by our editorial team.",
+    "searchPlaceholder": "Search destinations, places, categories…",
+    "regionsHeading": "Explore by region",
+    "regionsSubheading": "Argentina across its six major tourism regions.",
+    "regionCount": "{provinces} provinces · {localities} localities",
+    "categoriesHeading": "Explore by category",
+    "categoriesSubheading": "Ten kinds of place, all vetted by our team.",
+    "trustHeading": "Verified by ViajarPaís",
+    "trustSubheading": "The green seal isn't for sale. Every listing is audited by a real person, with a short expiry and mandatory re-verification.",
+    "trustPoint1": "Our editorial team reviews each listing in person — with photos, calls and contact data.",
+    "trustPoint2": "Verification expires after 12 months; every listing is re-audited or loses the seal.",
+    "trustPoint3": "Actionable info: real prices, hours and contact details — not scraped from social media.",
+    "trustPoint4": "No fake reviews: we don't publish them, and we don't trade them for visibility."
+  },
+  "Header": {
+    "signIn": "Sign in",
+    "forBusinesses": "For businesses",
+    "categories": "Categories",
+    "about": "About",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "regionsHeading": "Regions",
+    "searchPlaceholder": "Search destinations, places, categories…"
+  },
+  "VerifiedBadge": {
+    "label": "Verified",
+    "ariaActive": "Verified by ViajarPaís — expires {date}",
+    "ariaExpired": "Verification expired on {date}",
+    "tooltipActive": "Hand-verified by our editorial team.",
+    "tooltipExpired": "Verification expired — renewal in progress.",
+    "verifiedLabel": "Verified",
+    "expiresLabel": "Expires",
+    "daysRemaining": "{count, plural, one {# day remaining} other {# days remaining}}"
+  },
+  "Footer": {
+    "brandDescription": "Argentina's national tourism directory. Hand-verified by our editorial team — no fake reviews.",
+    "regions": "Regions",
+    "explore": "Explore",
+    "about": "About",
+    "copyright": "© {year} ViajarPaís — All rights reserved.",
+    "exploreItems": {
+      "alojamientos": "Lodging",
+      "gastronomia": "Food & dining",
+      "excursiones": "Tours",
+      "sitiosDeInteres": "Points of interest",
+      "eventos": "Events"
+    },
+    "aboutItems": {
+      "proyecto": "The project",
+      "verificacion": "Verification",
+      "paraComerciantes": "For businesses",
+      "terminos": "Terms",
+      "privacidad": "Privacy"
+    }
   },
   "AdminLogin": {
     "title": "Sign in to the admin panel",

@@ -1,8 +1,60 @@
 {
   "Home": {
-    "title": "ViajarPaís",
-    "tagline": "Diretório nacional de turismo argentino",
-    "intro": "Conheça as 24 províncias agrupadas em 6 regiões."
+    "heroTitle": "Viaje pela Argentina com confiança",
+    "heroSubtitle": "Cada lugar, verificado pela nossa equipe editorial.",
+    "searchPlaceholder": "Buscar destinos, lugares, categorias…",
+    "regionsHeading": "Explore por região",
+    "regionsSubheading": "A Argentina dividida em suas 6 grandes regiões turísticas.",
+    "regionCount": "{provinces} províncias · {localities} localidades",
+    "categoriesHeading": "Explore por categoria",
+    "categoriesSubheading": "10 tipos de lugar, todos verificados pela nossa equipe.",
+    "trustHeading": "Verificado pelo ViajarPaís",
+    "trustSubheading": "O selo verde não se compra. Cada ficha é auditada por uma pessoa real, com vencimento curto e re-verificação obrigatória.",
+    "trustPoint1": "Nossa equipe editorial revisa cada ficha pessoalmente — com fotos, chamadas e dados de contato.",
+    "trustPoint2": "A verificação vence em 12 meses; cada ficha é re-auditada ou perde o selo.",
+    "trustPoint3": "Informação útil: preços, horários e contatos reais, não extraídos das redes sociais.",
+    "trustPoint4": "Sem avaliações falsas: não publicamos nem trocamos por visibilidade."
+  },
+  "Header": {
+    "signIn": "Entrar",
+    "forBusinesses": "Para comerciantes",
+    "categories": "Categorias",
+    "about": "Sobre o projeto",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "regionsHeading": "Regiões",
+    "searchPlaceholder": "Buscar destinos, lugares, categorias…"
+  },
+  "VerifiedBadge": {
+    "label": "Verificado",
+    "ariaActive": "Verificado pelo ViajarPaís — vence em {date}",
+    "ariaExpired": "Verificação vencida em {date}",
+    "tooltipActive": "Verificado manualmente pela nossa equipe editorial.",
+    "tooltipExpired": "Verificação vencida — renovação em andamento.",
+    "verifiedLabel": "Verificado",
+    "expiresLabel": "Vence",
+    "daysRemaining": "{count, plural, one {# dia restante} other {# dias restantes}}"
+  },
+  "Footer": {
+    "brandDescription": "Diretório nacional de turismo argentino. Verificado manualmente pela nossa equipe editorial — sem avaliações falsas.",
+    "regions": "Regiões",
+    "explore": "Explorar",
+    "about": "Sobre",
+    "copyright": "© {year} ViajarPaís — Todos os direitos reservados.",
+    "exploreItems": {
+      "alojamientos": "Hospedagem",
+      "gastronomia": "Gastronomia",
+      "excursiones": "Excursões",
+      "sitiosDeInteres": "Pontos de interesse",
+      "eventos": "Eventos"
+    },
+    "aboutItems": {
+      "proyecto": "O projeto",
+      "verificacion": "Verificação",
+      "paraComerciantes": "Para comerciantes",
+      "terminos": "Termos",
+      "privacidad": "Privacidade"
+    }
   },
   "AdminLogin": {
     "title": "Entrar no painel",

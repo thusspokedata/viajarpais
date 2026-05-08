@@ -3,6 +3,7 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { ShieldCheck, Star } from "lucide-react";
+import { useFormatter, useTranslations } from "next-intl";
 import { cn } from "./cn";
 
 /**
@@ -131,17 +132,18 @@ function computeStatus(expiresAt: string): {
   return { status: "active", daysRemaining: days };
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("es-AR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 export const VerifiedBadge = React.forwardRef<HTMLSpanElement, VerifiedBadgeProps>(
   ({ expiresAt, verifiedAt, size = "md", className, bareTooltip = false }, ref) => {
+    const t = useTranslations("VerifiedBadge");
+    const format = useFormatter();
     const { status, daysRemaining } = computeStatus(expiresAt);
+
+    const formatDate = (iso: string) =>
+      format.dateTime(new Date(iso), {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
 
     const colorByStatus: Record<VerifiedStatus, string> = {
       active:
@@ -176,8 +178,8 @@ export const VerifiedBadge = React.forwardRef<HTMLSpanElement, VerifiedBadgeProp
         <span
           aria-label={
             status === "expired"
-              ? `Verificación vencida el ${formatDate(expiresAt)}`
-              : `Verificado por ViajarPaís — vence ${formatDate(expiresAt)}`
+              ? t("ariaExpired", { date: formatDate(expiresAt) })
+              : t("ariaActive", { date: formatDate(expiresAt) })
           }
           className={cn(
             "inline-flex items-center rounded-[var(--radius-pill)]",
@@ -196,7 +198,7 @@ export const VerifiedBadge = React.forwardRef<HTMLSpanElement, VerifiedBadgeProp
             aria-hidden
             className="transition-transform duration-[var(--duration-base)] ease-[var(--ease-spring)] group-hover/verified:scale-110"
           />
-          Verificado
+          {t("label")}
         </span>
 
         {!bareTooltip ? (
@@ -219,16 +221,16 @@ export const VerifiedBadge = React.forwardRef<HTMLSpanElement, VerifiedBadgeProp
             </div>
             <div className="mt-1.5 text-[var(--text-sm)] leading-snug">
               {status === "expired"
-                ? "Verificación vencida — en proceso de renovación."
-                : "Información verificada manualmente por nuestro equipo editorial."}
+                ? t("tooltipExpired")
+                : t("tooltipActive")}
             </div>
             <div className="mt-2.5 grid grid-cols-2 gap-1.5 text-[10px] font-mono opacity-80">
               <div>
-                <div className="opacity-60">Verificado</div>
+                <div className="opacity-60">{t("verifiedLabel")}</div>
                 <div>{formatDate(verifiedAt)}</div>
               </div>
               <div>
-                <div className="opacity-60">Vence</div>
+                <div className="opacity-60">{t("expiresLabel")}</div>
                 <div>{formatDate(expiresAt)}</div>
               </div>
             </div>
@@ -246,7 +248,7 @@ export const VerifiedBadge = React.forwardRef<HTMLSpanElement, VerifiedBadgeProp
                   />
                 </div>
                 <div className="mt-1 text-[10px] opacity-70">
-                  {daysRemaining} días restantes
+                  {t("daysRemaining", { count: daysRemaining })}
                 </div>
               </div>
             ) : null}

@@ -1,13 +1,18 @@
-"use client";
-
 import * as React from "react";
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/components/ui";
+import { FooterLocaleSwitcher } from "./FooterLocaleSwitcher";
 
 /**
- * PublicFooter — sobrio, editorial. 4 columnas en desktop.
+ * PublicFooter — sobrio, editorial. 4 columnas en desktop. Server
+ * Component: solo Links + texto, ningún estado. El selector de
+ * idioma vive en `FooterLocaleSwitcher` (client) que se monta acá.
  */
-export function PublicFooter({ className }: { className?: string }) {
+export async function PublicFooter({ className }: { className?: string }) {
+  const t = await getTranslations("Footer");
+  const year = new Date().getFullYear();
+
   return (
     <footer
       className={cn(
@@ -25,40 +30,39 @@ export function PublicFooter({ className }: { className?: string }) {
             ViajarPaís
           </div>
           <p className="mt-3 text-[var(--text-sm)] text-[var(--text-secondary)] leading-[var(--leading-normal)]">
-            Directorio nacional de turismo argentino. Información verificada
-            manualmente, sin reseñas falsas.
+            {t("brandDescription")}
           </p>
         </div>
 
         <FooterColumn
-          title="Regiones"
+          title={t("regions")}
           items={[
-            ["Cuyo", "/regiones/cuyo"],
-            ["NOA", "/regiones/noa"],
-            ["NEA", "/regiones/nea"],
-            ["Patagonia", "/regiones/patagonia"],
-            ["Pampeana", "/regiones/pampeana"],
-            ["Centro", "/regiones/centro"],
+            ["Cuyo", "/cuyo"],
+            ["NOA", "/noa"],
+            ["NEA", "/nea"],
+            ["Patagonia", "/patagonia"],
+            ["Pampeana", "/pampeana"],
+            ["Centro", "/centro"],
           ]}
         />
         <FooterColumn
-          title="Explorar"
+          title={t("explore")}
           items={[
-            ["Alojamientos", "/categorias/alojamientos"],
-            ["Gastronomía", "/categorias/gastronomia"],
-            ["Excursiones", "/categorias/excursiones"],
-            ["Sitios de interés", "/categorias/sitios"],
-            ["Eventos", "/eventos"],
+            [t("exploreItems.alojamientos"), "/categoria/alojamientos"],
+            [t("exploreItems.gastronomia"), "/categoria/restaurantes"],
+            [t("exploreItems.excursiones"), "/categoria/excursiones"],
+            [t("exploreItems.sitiosDeInteres"), "/categoria/sitios-de-interes"],
+            [t("exploreItems.eventos"), "/categoria/eventos"],
           ]}
         />
         <FooterColumn
-          title="Sobre"
+          title={t("about")}
           items={[
-            ["El proyecto", "/sobre"],
-            ["Verificación", "/verificacion"],
-            ["Para comerciantes", "/comerciantes"],
-            ["Términos", "/legal/terminos"],
-            ["Privacidad", "/legal/privacidad"],
+            [t("aboutItems.proyecto"), "/sobre"],
+            [t("aboutItems.verificacion"), "/verificacion"],
+            [t("aboutItems.paraComerciantes"), "/comerciantes"],
+            [t("aboutItems.terminos"), "/legal/terminos"],
+            [t("aboutItems.privacidad"), "/legal/privacidad"],
           ]}
         />
       </div>
@@ -66,15 +70,9 @@ export function PublicFooter({ className }: { className?: string }) {
       <div className="border-t border-[var(--border-subtle)]">
         <div className="mx-auto max-w-7xl px-6 py-5 flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="text-[var(--text-xs)] text-[var(--text-muted)]">
-            © {new Date().getFullYear()} ViajarPaís — Todos los derechos reservados.
+            {t("copyright", { year })}
           </div>
-          <div className="flex items-center gap-3 text-[var(--text-xs)] text-[var(--text-muted)]">
-            <Link href="/es" className="hover:text-[var(--text-primary)]">Español</Link>
-            <span aria-hidden>·</span>
-            <Link href="/en" className="hover:text-[var(--text-primary)]">English</Link>
-            <span aria-hidden>·</span>
-            <Link href="/pt-BR" className="hover:text-[var(--text-primary)]">Português</Link>
-          </div>
+          <FooterLocaleSwitcher />
         </div>
       </div>
     </footer>
