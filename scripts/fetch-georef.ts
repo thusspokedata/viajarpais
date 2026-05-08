@@ -227,10 +227,15 @@ async function fetchPaginated<K extends string, T>(
     u.searchParams.set("inicio", String(offset));
     const data = await fetchJson<GeorefResponse<K, T>>(u.toString());
     const batch = data[collectionKey] as T[];
+    if (batch.length === 0) break; // no more results
     out.push(...batch);
-    if (out.length >= data.total) break;
-    if (batch.length === 0) break; // safety net
-    offset += pageSize;
+    // Advance by ACTUAL items received, not by the requested page size.
+    // If Georef returns fewer than pageSize for any reason (rate limit,
+    // server-side cap, dataset edge), advancing by pageSize would skip
+    // records silently.
+    offset += batch.length;
+    if (out.length >= data.total) break; // collected everything
+    if (batch.length < pageSize) break; // last page was partial
   }
   return out;
 }
