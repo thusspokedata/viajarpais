@@ -1,26 +1,422 @@
 @import "tailwindcss";
 
+/* ============================================================
+   ViajarPaís — Design Tokens
+   ------------------------------------------------------------
+   Filosofía: editorial institucional con alma utilitaria.
+   Tokens SEMÁNTICOS (surface/text/border/brand…), no literales.
+   El día que se prenda dark mode, redefinimos solo los valores
+   en `:root[data-theme="dark"]` sin tocar componentes.
+
+   Densidad por contexto:
+   - data-density="comfortable" (default público): 16px base
+   - data-density="compact"     (admin):           14px base
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ── Brand (literales, son la marca) ───────────────────── */
+  --brand-50:  oklch(0.97 0.015 220);
+  --brand-100: oklch(0.93 0.030 220);
+  --brand-200: oklch(0.87 0.055 220);
+  --brand-400: oklch(0.68 0.090 220);
+  --brand-500: oklch(0.55 0.105 220);   /* primary */
+  --brand-600: oklch(0.47 0.105 220);   /* hover */
+  --brand-700: oklch(0.39 0.090 220);
+  --brand-900: oklch(0.24 0.045 220);
+
+  /* Verde institucional para el sello "Verificado".
+     Distinto del success genérico — más profundo, más sello. */
+  --verified-fg:    oklch(0.40 0.075 155);
+  --verified-bg:    oklch(0.96 0.025 155);
+  --verified-ring:  oklch(0.55 0.090 155);
+
+  /* Acento "featured" — warm gold-amber sin estridencia.
+     Pensá vino reserva, no oferta de supermercado. */
+  --featured-fg:    oklch(0.45 0.075 75);
+  --featured-bg:    oklch(0.96 0.030 80);
+  --featured-ring:  oklch(0.72 0.110 75);
+
+  /* ── Neutrales (warm-cool balanceado, hue 250) ─────────── */
+  --neutral-0:    oklch(1.00 0 0);
+  --neutral-50:   oklch(0.985 0.003 250);
+  --neutral-100:  oklch(0.965 0.005 250);
+  --neutral-150:  oklch(0.945 0.006 250);
+  --neutral-200:  oklch(0.920 0.008 250);
+  --neutral-300:  oklch(0.870 0.010 250);
+  --neutral-400:  oklch(0.700 0.012 250);
+  --neutral-500:  oklch(0.560 0.014 250);
+  --neutral-600:  oklch(0.450 0.014 250);
+  --neutral-700:  oklch(0.355 0.014 250);
+  --neutral-800:  oklch(0.260 0.012 250);
+  --neutral-900:  oklch(0.180 0.010 250);
+  --neutral-950:  oklch(0.120 0.010 250);
+
+  /* ── Semánticos: SURFACE ───────────────────────────────── */
+  --surface-canvas:    var(--neutral-50);  /* fondo de página */
+  --surface-base:      var(--neutral-0);   /* cards, paneles */
+  --surface-raised:    var(--neutral-0);   /* popovers, dialogs */
+  --surface-sunken:    var(--neutral-100); /* tablas, inputs zebra */
+  --surface-overlay:   color-mix(in oklch, var(--neutral-950) 45%, transparent);
+
+  /* ── Semánticos: TEXT ──────────────────────────────────── */
+  --text-primary:    var(--neutral-900);
+  --text-secondary:  var(--neutral-700);
+  --text-muted:      var(--neutral-500);
+  --text-inverse:    var(--neutral-0);
+  --text-link:       var(--brand-600);
+  --text-link-hover: var(--brand-700);
+
+  /* ── Semánticos: BORDER ────────────────────────────────── */
+  --border-subtle:   var(--neutral-200);
+  --border-default:  var(--neutral-300);
+  --border-strong:   var(--neutral-400);
+
+  /* ── Semánticos: BRAND ─────────────────────────────────── */
+  --brand-primary:        var(--brand-500);
+  --brand-primary-hover:  var(--brand-600);
+  --brand-primary-active: var(--brand-700);
+  --brand-primary-fg:     var(--neutral-0);
+  --brand-muted:          var(--brand-50);
+  --brand-muted-fg:       var(--brand-700);
+
+  /* ── Semánticos: FEEDBACK ──────────────────────────────── */
+  --success-fg:  oklch(0.42 0.080 155);
+  --success-bg:  oklch(0.95 0.025 155);
+  --warning-fg:  oklch(0.45 0.085 75);
+  --warning-bg:  oklch(0.96 0.035 85);
+  --danger-fg:   oklch(0.46 0.110 25);
+  --danger-bg:   oklch(0.95 0.025 25);
+  --info-fg:     oklch(0.47 0.085 240);
+  --info-bg:     oklch(0.95 0.025 240);
+
+  /* ── Semánticos: TIERS de listing ──────────────────────── */
+  /* La jerarquía la dan composición + tipo + espacio.
+     El color es solo un susurro, NO grita "promo". */
+  --tier-free-bg:        var(--surface-base);
+  --tier-free-border:    var(--border-subtle);
+  --tier-free-accent:    var(--neutral-400);
+
+  --tier-paid-bg:        var(--surface-base);
+  --tier-paid-border:    var(--border-default);
+  --tier-paid-accent:    oklch(0.93 0.020 60);  /* warm sand strip */
+
+  --tier-featured-bg:        var(--surface-base);
+  --tier-featured-border:    var(--featured-ring);
+  --tier-featured-accent:    var(--featured-bg);
+
+  /* ── Focus ring ────────────────────────────────────────── */
+  --focus-ring:        var(--brand-500);
+  --focus-ring-offset: var(--surface-canvas);
+
+  /* ────────────────────────────────────────────────────────
+     TIPOGRAFÍA
+     ──────────────────────────────────────────────────────── */
+  /* Variables expuestas por next/font en layout.tsx.
+     Fallbacks para que nada se rompa si no carga. */
+  --font-display: var(--font-fraunces, "Fraunces"), Georgia, "Times New Roman", serif;
+  --font-sans:    var(--font-inter, "Inter"), -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono:    ui-monospace, "SFMono-Regular", "Menlo", Consolas, monospace;
+
+  /* Escala tipográfica — modular ratio 1.200 (minor third) */
+  --text-xs:    0.75rem;   /* 12 */
+  --text-sm:    0.875rem;  /* 14 */
+  --text-base:  1rem;      /* 16 */
+  --text-md:    1.125rem;  /* 18 */
+  --text-lg:    1.25rem;   /* 20 */
+  --text-xl:    1.5rem;    /* 24 */
+  --text-2xl:   1.875rem;  /* 30 */
+  --text-3xl:   2.25rem;   /* 36 */
+  --text-4xl:   3rem;      /* 48 */
+  --text-5xl:   3.75rem;   /* 60 */
+
+  --leading-tight:  1.15;
+  --leading-snug:   1.30;
+  --leading-normal: 1.55;
+  --leading-loose:  1.75;
+
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.02em;
+  --tracking-caps:   0.08em;
+
+  --weight-regular: 400;
+  --weight-medium:  500;
+  --weight-semibold: 600;
+  --weight-bold:    700;
+
+  /* ────────────────────────────────────────────────────────
+     ESPACIADO — escala de 4px (con half-step en 2px)
+     ──────────────────────────────────────────────────────── */
+  --space-0:   0;
+  --space-px:  1px;
+  --space-0_5: 2px;
+  --space-1:   4px;
+  --space-1_5: 6px;
+  --space-2:   8px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+  --space-20:  80px;
+  --space-24:  96px;
+  --space-32:  128px;
+
+  /* ────────────────────────────────────────────────────────
+     RADIOS
+     ──────────────────────────────────────────────────────── */
+  --radius-none:  0;
+  --radius-xs:    2px;
+  --radius-sm:    4px;
+  --radius-md:    6px;
+  --radius-lg:    10px;
+  --radius-xl:    14px;
+  --radius-2xl:   20px;
+  --radius-pill:  9999px;
+
+  /* ────────────────────────────────────────────────────────
+     SOMBRAS — 3 niveles + foco
+     ──────────────────────────────────────────────────────── */
+  --shadow-subtle:
+    0 1px 1px 0 oklch(0.20 0.020 250 / 0.04),
+    0 1px 2px 0 oklch(0.20 0.020 250 / 0.06);
+  --shadow-default:
+    0 1px 2px 0 oklch(0.20 0.020 250 / 0.05),
+    0 4px 12px -2px oklch(0.20 0.020 250 / 0.08);
+  --shadow-elevated:
+    0 4px 6px -2px oklch(0.20 0.020 250 / 0.05),
+    0 16px 32px -8px oklch(0.20 0.020 250 / 0.14);
+  --shadow-focus:
+    0 0 0 2px var(--focus-ring-offset),
+    0 0 0 4px color-mix(in oklch, var(--focus-ring) 60%, transparent);
+
+  /* ────────────────────────────────────────────────────────
+     MOTION
+     ──────────────────────────────────────────────────────── */
+  --duration-instant: 80ms;
+  --duration-fast:    140ms;
+  --duration-base:    220ms;
+  --duration-slow:    360ms;
+  --duration-slower:  560ms;
+
+  /* Easings nombrados — coherentes con Material/Linear */
+  --ease-standard:    cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-emphasized:  cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate:  cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate:  cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ────────────────────────────────────────────────────────
+     DENSIDAD — calibración pública vs admin
+     ──────────────────────────────────────────────────────── */
+  --density-text-base:  1rem;   /* override por scope */
+  --density-row-h:      44px;
+  --density-pad-x:      16px;
+  --density-pad-y:      10px;
 }
 
+/* Densidad: público (default) */
+[data-density="comfortable"], :root {
+  --density-text-base: 1rem;
+  --density-row-h:     44px;
+  --density-pad-x:     16px;
+  --density-pad-y:     10px;
+}
+
+/* Densidad: admin */
+[data-density="compact"] {
+  --density-text-base: 0.875rem;
+  --density-row-h:     32px;
+  --density-pad-x:     12px;
+  --density-pad-y:     6px;
+}
+
+/* ============================================================
+   @theme inline — exponer tokens a Tailwind v4
+   ============================================================ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Colores (Tailwind los usa como bg-surface-base, text-primary, etc.) */
+  --color-canvas:           var(--surface-canvas);
+  --color-surface:          var(--surface-base);
+  --color-surface-raised:   var(--surface-raised);
+  --color-surface-sunken:   var(--surface-sunken);
+  --color-overlay:          var(--surface-overlay);
+
+  --color-fg:               var(--text-primary);
+  --color-fg-secondary:     var(--text-secondary);
+  --color-fg-muted:         var(--text-muted);
+  --color-fg-inverse:       var(--text-inverse);
+  --color-link:             var(--text-link);
+  --color-link-hover:       var(--text-link-hover);
+
+  --color-border-subtle:    var(--border-subtle);
+  --color-border:           var(--border-default);
+  --color-border-strong:    var(--border-strong);
+
+  --color-brand:            var(--brand-primary);
+  --color-brand-hover:      var(--brand-primary-hover);
+  --color-brand-active:     var(--brand-primary-active);
+  --color-brand-fg:         var(--brand-primary-fg);
+  --color-brand-muted:      var(--brand-muted);
+  --color-brand-muted-fg:   var(--brand-muted-fg);
+
+  --color-success:          var(--success-fg);
+  --color-success-bg:       var(--success-bg);
+  --color-warning:          var(--warning-fg);
+  --color-warning-bg:       var(--warning-bg);
+  --color-danger:           var(--danger-fg);
+  --color-danger-bg:        var(--danger-bg);
+  --color-info:             var(--info-fg);
+  --color-info-bg:          var(--info-bg);
+
+  --color-tier-free-bg:        var(--tier-free-bg);
+  --color-tier-free-border:    var(--tier-free-border);
+  --color-tier-free-accent:    var(--tier-free-accent);
+  --color-tier-paid-bg:        var(--tier-paid-bg);
+  --color-tier-paid-border:    var(--tier-paid-border);
+  --color-tier-paid-accent:    var(--tier-paid-accent);
+  --color-tier-featured-bg:        var(--tier-featured-bg);
+  --color-tier-featured-border:    var(--tier-featured-border);
+  --color-tier-featured-accent:    var(--tier-featured-accent);
+
+  --color-verified:         var(--verified-fg);
+  --color-verified-bg:      var(--verified-bg);
+  --color-verified-ring:    var(--verified-ring);
+  --color-featured:         var(--featured-fg);
+  --color-featured-bg:      var(--featured-bg);
+  --color-featured-ring:    var(--featured-ring);
+
+  /* Fuentes */
+  --font-display: var(--font-display);
+  --font-sans:    var(--font-sans);
+  --font-mono:    var(--font-mono);
+
+  /* Tamaños texto */
+  --text-xs:   var(--text-xs);
+  --text-sm:   var(--text-sm);
+  --text-base: var(--text-base);
+  --text-md:   var(--text-md);
+  --text-lg:   var(--text-lg);
+  --text-xl:   var(--text-xl);
+  --text-2xl:  var(--text-2xl);
+  --text-3xl:  var(--text-3xl);
+  --text-4xl:  var(--text-4xl);
+  --text-5xl:  var(--text-5xl);
+
+  /* Radios */
+  --radius-xs:   var(--radius-xs);
+  --radius-sm:   var(--radius-sm);
+  --radius-md:   var(--radius-md);
+  --radius-lg:   var(--radius-lg);
+  --radius-xl:   var(--radius-xl);
+  --radius-2xl:  var(--radius-2xl);
+  --radius-pill: var(--radius-pill);
+
+  /* Sombras */
+  --shadow-subtle:   var(--shadow-subtle);
+  --shadow-default:  var(--shadow-default);
+  --shadow-elevated: var(--shadow-elevated);
+  --shadow-focus:    var(--shadow-focus);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ============================================================
+   Base
+   ============================================================ */
+html, body {
+  background: var(--surface-canvas);
+  color: var(--text-primary);
+}
+body {
+  font-family: var(--font-sans);
+  font-size: var(--density-text-base);
+  line-height: var(--leading-normal);
+  font-feature-settings: "ss01", "cv11";
+}
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-display);
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  font-weight: var(--weight-semibold);
+}
+
+/* Selection */
+::selection {
+  background: color-mix(in oklch, var(--brand-primary) 30%, transparent);
+  color: var(--text-primary);
+}
+
+/* Focus visible — sistema unificado */
+*:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* ============================================================
+   MOTION GLOBAL
+   ============================================================ */
+@keyframes vp-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+@keyframes vp-fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes vp-scale-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes vp-reveal-down {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes vp-pulse-ring {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklch, var(--verified-ring) 40%, transparent); }
+  70%  { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+.vp-fade-in    { animation: vp-fade-in    var(--duration-base) var(--ease-decelerate) both; }
+.vp-scale-in   { animation: vp-scale-in   var(--duration-base) var(--ease-emphasized) both; }
+.vp-reveal     { animation: vp-reveal-down var(--duration-fast) var(--ease-decelerate) both; }
+
+.vp-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--neutral-150) 0%,
+    var(--neutral-100) 40%,
+    var(--neutral-200) 50%,
+    var(--neutral-100) 60%,
+    var(--neutral-150) 100%
+  );
+  background-size: 200% 100%;
+  animation: vp-shimmer 1.4s linear infinite;
+}
+
+/* Respetar prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ============================================================
+   Dark mode — arquitectura preparada (NO activado)
+   Cuando se prenda, definir aquí los overrides de tokens.
+   ============================================================ */
+:root[data-theme="dark"] {
+  /* placeholder — se completa en una sesión futura */
 }
