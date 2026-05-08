@@ -9,6 +9,14 @@ import { VerifiedBadge } from "@/components/ui";
 import { Check } from "@/components/ui/icons";
 import { prisma } from "@/lib/db";
 
+/*
+  Render dinámico para destrabar el build en CI: el job de CI no expone
+  un Postgres real (DATABASE_URL es placeholder), así que el prerender
+  estático falla al ejecutar las queries Prisma de regiones y categorías.
+  Cuando v0.3 introduzca PPR + Cache Components, revisitamos.
+*/
+export const dynamic = "force-dynamic";
+
 type Props = {
   params: Promise<{ locale: string }>;
 };
