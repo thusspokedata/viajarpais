@@ -1,0 +1,3176 @@
+[
+  {
+    "code": "02042",
+    "slug": "comuna-6",
+    "name": "Comuna 6",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02007",
+    "slug": "comuna-1",
+    "name": "Comuna 1",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02028",
+    "slug": "comuna-4",
+    "name": "Comuna 4",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02035",
+    "slug": "comuna-5",
+    "name": "Comuna 5",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02084",
+    "slug": "comuna-12",
+    "name": "Comuna 12",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02049",
+    "slug": "comuna-7",
+    "name": "Comuna 7",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02070",
+    "slug": "comuna-10",
+    "name": "Comuna 10",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02077",
+    "slug": "comuna-11",
+    "name": "Comuna 11",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02021",
+    "slug": "comuna-3",
+    "name": "Comuna 3",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02014",
+    "slug": "comuna-2",
+    "name": "Comuna 2",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02056",
+    "slug": "comuna-8",
+    "name": "Comuna 8",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02091",
+    "slug": "comuna-13",
+    "name": "Comuna 13",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02098",
+    "slug": "comuna-14",
+    "name": "Comuna 14",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02063",
+    "slug": "comuna-9",
+    "name": "Comuna 9",
+    "provinceCode": "02"
+  },
+  {
+    "code": "02105",
+    "slug": "comuna-15",
+    "name": "Comuna 15",
+    "provinceCode": "02"
+  },
+  {
+    "code": "58098",
+    "slug": "picun-leufu",
+    "name": "Picún Leufú",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58112",
+    "slug": "zapala",
+    "name": "Zapala",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58007",
+    "slug": "alumine",
+    "name": "Aluminé",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58056",
+    "slug": "lacar",
+    "name": "Lácar",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58021",
+    "slug": "catan-lil",
+    "name": "Catán Lil",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58035",
+    "slug": "confluencia",
+    "name": "Confluencia",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58105",
+    "slug": "picunches",
+    "name": "Picunches",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58014",
+    "slug": "anelo",
+    "name": "Añelo",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58063",
+    "slug": "loncopue",
+    "name": "Loncopué",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58084",
+    "slug": "norquin",
+    "name": "Ñorquín",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58091",
+    "slug": "pehuenches",
+    "name": "Pehuenches",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58077",
+    "slug": "minas",
+    "name": "Minas",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58042",
+    "slug": "chos-malal",
+    "name": "Chos Malal",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58049",
+    "slug": "huiliches",
+    "name": "Huiliches",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58028",
+    "slug": "collon-cura",
+    "name": "Collón Curá",
+    "provinceCode": "58"
+  },
+  {
+    "code": "58070",
+    "slug": "los-lagos",
+    "name": "Los Lagos",
+    "provinceCode": "58"
+  },
+  {
+    "code": "74042",
+    "slug": "gobernador-dupuy",
+    "name": "Gobernador Dupuy",
+    "provinceCode": "74"
+  },
+  {
+    "code": "74007",
+    "slug": "ayacucho",
+    "name": "Ayacucho",
+    "provinceCode": "74"
+  },
+  {
+    "code": "74014",
+    "slug": "belgrano",
+    "name": "Belgrano",
+    "provinceCode": "74"
+  },
+  {
+    "code": "74063",
+    "slug": "libertador-general-san-martin",
+    "name": "Libertador General San Martín",
+    "provinceCode": "74"
+  },
+  {
+    "code": "74021",
+    "slug": "coronel-pringles",
+    "name": "Coronel Pringles",
+    "provinceCode": "74"
+  },
+  {
+    "code": "74028",
+    "slug": "chacabuco",
+    "name": "Chacabuco",
+    "provinceCode": "74"
+  },
+  {
+    "code": "74056",
+    "slug": "juan-martin-de-pueyrredon",
+    "name": "Juan Martín de Pueyrredón",
+    "provinceCode": "74"
+  },
+  {
+    "code": "74035",
+    "slug": "general-pedernera",
+    "name": "General Pedernera",
+    "provinceCode": "74"
+  },
+  {
+    "code": "74049",
+    "slug": "junin",
+    "name": "Junín",
+    "provinceCode": "74"
+  },
+  {
+    "code": "82007",
+    "slug": "belgrano",
+    "name": "Belgrano",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82049",
+    "slug": "general-obligado",
+    "name": "General Obligado",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82133",
+    "slug": "vera",
+    "name": "Vera",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82077",
+    "slug": "9-de-julio",
+    "name": "9 de Julio",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82105",
+    "slug": "san-jeronimo",
+    "name": "San Jerónimo",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82070",
+    "slug": "las-colonias",
+    "name": "Las Colonias",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82112",
+    "slug": "san-justo",
+    "name": "San Justo",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82091",
+    "slug": "san-cristobal",
+    "name": "San Cristóbal",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82098",
+    "slug": "san-javier",
+    "name": "San Javier",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82042",
+    "slug": "general-lopez",
+    "name": "General López",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82028",
+    "slug": "constitucion",
+    "name": "Constitución",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82014",
+    "slug": "caseros",
+    "name": "Caseros",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82084",
+    "slug": "rosario",
+    "name": "Rosario",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82119",
+    "slug": "san-lorenzo",
+    "name": "San Lorenzo",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82056",
+    "slug": "iriondo",
+    "name": "Iriondo",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82126",
+    "slug": "san-martin",
+    "name": "San Martín",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82063",
+    "slug": "la-capital",
+    "name": "La Capital",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82021",
+    "slug": "castellanos",
+    "name": "Castellanos",
+    "provinceCode": "82"
+  },
+  {
+    "code": "82035",
+    "slug": "garay",
+    "name": "Garay",
+    "provinceCode": "82"
+  },
+  {
+    "code": "46035",
+    "slug": "chamical",
+    "name": "Chamical",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46077",
+    "slug": "general-lamadrid",
+    "name": "General Lamadrid",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46084",
+    "slug": "general-ortiz-de-ocampo",
+    "name": "General Ortiz de Ocampo",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46105",
+    "slug": "independencia",
+    "name": "Independencia",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46007",
+    "slug": "arauco",
+    "name": "Arauco",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46063",
+    "slug": "general-belgrano",
+    "name": "General Belgrano",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46098",
+    "slug": "vinchina",
+    "name": "Vinchina",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46014",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46028",
+    "slug": "general-felipe-varela",
+    "name": "General Felipe Varela",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46021",
+    "slug": "castro-barros",
+    "name": "Castro Barros",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46126",
+    "slug": "sanagasta",
+    "name": "Sanagasta",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46112",
+    "slug": "rosario-vera-penaloza",
+    "name": "Rosario Vera Peñaloza",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46070",
+    "slug": "general-juan-facundo-quiroga",
+    "name": "General Juan Facundo Quiroga",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46056",
+    "slug": "angel-vicente-penaloza",
+    "name": "Ángel Vicente Peñaloza",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46042",
+    "slug": "chilecito",
+    "name": "Chilecito",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46049",
+    "slug": "famatina",
+    "name": "Famatina",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46091",
+    "slug": "general-san-martin",
+    "name": "General San Martín",
+    "provinceCode": "46"
+  },
+  {
+    "code": "46119",
+    "slug": "san-blas-de-los-sauces",
+    "name": "San Blas de Los Sauces",
+    "provinceCode": "46"
+  },
+  {
+    "code": "10063",
+    "slug": "fray-mamerto-esquiu",
+    "name": "Fray Mamerto Esquiú",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10112",
+    "slug": "valle-viejo",
+    "name": "Valle Viejo",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10028",
+    "slug": "antofagasta-de-la-sierra",
+    "name": "Antofagasta de la Sierra",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10042",
+    "slug": "capayan",
+    "name": "Capayán",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10105",
+    "slug": "tinogasta",
+    "name": "Tinogasta",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10091",
+    "slug": "santa-maria",
+    "name": "Santa María",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10098",
+    "slug": "santa-rosa",
+    "name": "Santa Rosa",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10070",
+    "slug": "la-paz",
+    "name": "La Paz",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10049",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10014",
+    "slug": "ancasti",
+    "name": "Ancasti",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10084",
+    "slug": "poman",
+    "name": "Pomán",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10021",
+    "slug": "andalgala",
+    "name": "Andalgalá",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10007",
+    "slug": "ambato",
+    "name": "Ambato",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10077",
+    "slug": "paclin",
+    "name": "Paclín",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10056",
+    "slug": "el-alto",
+    "name": "El Alto",
+    "provinceCode": "10"
+  },
+  {
+    "code": "10035",
+    "slug": "belen",
+    "name": "Belén",
+    "provinceCode": "10"
+  },
+  {
+    "code": "90084",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90007",
+    "slug": "burruyacu",
+    "name": "Burruyacú",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90028",
+    "slug": "famailla",
+    "name": "Famaillá",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90014",
+    "slug": "cruz-alta",
+    "name": "Cruz Alta",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90063",
+    "slug": "lules",
+    "name": "Lules",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90119",
+    "slug": "yerba-buena",
+    "name": "Yerba Buena",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90105",
+    "slug": "tafi-viejo",
+    "name": "Tafí Viejo",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90112",
+    "slug": "trancas",
+    "name": "Trancas",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90098",
+    "slug": "tafi-del-valle",
+    "name": "Tafí del Valle",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90049",
+    "slug": "la-cocha",
+    "name": "La Cocha",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90035",
+    "slug": "graneros",
+    "name": "Graneros",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90042",
+    "slug": "juan-bautista-alberdi",
+    "name": "Juan Bautista Alberdi",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90077",
+    "slug": "rio-chico",
+    "name": "Río Chico",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90091",
+    "slug": "simoca",
+    "name": "Simoca",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90021",
+    "slug": "chicligasta",
+    "name": "Chicligasta",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90070",
+    "slug": "monteros",
+    "name": "Monteros",
+    "provinceCode": "90"
+  },
+  {
+    "code": "90056",
+    "slug": "leales",
+    "name": "Leales",
+    "provinceCode": "90"
+  },
+  {
+    "code": "22112",
+    "slug": "o-higgins",
+    "name": "O'Higgins",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22036",
+    "slug": "12-de-octubre",
+    "name": "12 de Octubre",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22063",
+    "slug": "general-guemes",
+    "name": "General Güemes",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22154",
+    "slug": "sargento-cabral",
+    "name": "Sargento Cabral",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22161",
+    "slug": "tapenaga",
+    "name": "Tapenagá",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22119",
+    "slug": "presidencia-de-la-plaza",
+    "name": "Presidencia de la Plaza",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22133",
+    "slug": "quitilipi",
+    "name": "Quitilipi",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22070",
+    "slug": "independencia",
+    "name": "Independencia",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22098",
+    "slug": "mayor-luis-j-fontana",
+    "name": "Mayor Luis J. Fontana",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22043",
+    "slug": "fray-justo-santa-maria-de-oro",
+    "name": "Fray Justo Santa María de Oro",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22007",
+    "slug": "almirante-brown",
+    "name": "Almirante Brown",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22105",
+    "slug": "9-de-julio",
+    "name": "9 de Julio",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22091",
+    "slug": "maipu",
+    "name": "Maipú",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22028",
+    "slug": "chacabuco",
+    "name": "Chacabuco",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22039",
+    "slug": "2-de-abril",
+    "name": "2 de Abril",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22056",
+    "slug": "general-donovan",
+    "name": "General Donovan",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22084",
+    "slug": "libertador-general-san-martin",
+    "name": "Libertador General San Martín",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22014",
+    "slug": "bermejo",
+    "name": "Bermejo",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22126",
+    "slug": "1-de-mayo",
+    "name": "1° de Mayo",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22140",
+    "slug": "san-fernando",
+    "name": "San Fernando",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22147",
+    "slug": "san-lorenzo",
+    "name": "San Lorenzo",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22168",
+    "slug": "25-de-mayo",
+    "name": "25 de Mayo",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22049",
+    "slug": "general-belgrano",
+    "name": "General Belgrano",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22077",
+    "slug": "libertad",
+    "name": "Libertad",
+    "provinceCode": "22"
+  },
+  {
+    "code": "22021",
+    "slug": "comandante-fernandez",
+    "name": "Comandante Fernández",
+    "provinceCode": "22"
+  },
+  {
+    "code": "34042",
+    "slug": "pilagas",
+    "name": "Pilagás",
+    "provinceCode": "34"
+  },
+  {
+    "code": "34021",
+    "slug": "laishi",
+    "name": "Laishi",
+    "provinceCode": "34"
+  },
+  {
+    "code": "34056",
+    "slug": "pirane",
+    "name": "Pirané",
+    "provinceCode": "34"
+  },
+  {
+    "code": "34035",
+    "slug": "patino",
+    "name": "Patiño",
+    "provinceCode": "34"
+  },
+  {
+    "code": "34007",
+    "slug": "bermejo",
+    "name": "Bermejo",
+    "provinceCode": "34"
+  },
+  {
+    "code": "34028",
+    "slug": "matacos",
+    "name": "Matacos",
+    "provinceCode": "34"
+  },
+  {
+    "code": "34063",
+    "slug": "ramon-lista",
+    "name": "Ramón Lista",
+    "provinceCode": "34"
+  },
+  {
+    "code": "34014",
+    "slug": "formosa",
+    "name": "Formosa",
+    "provinceCode": "34"
+  },
+  {
+    "code": "34049",
+    "slug": "pilcomayo",
+    "name": "Pilcomayo",
+    "provinceCode": "34"
+  },
+  {
+    "code": "78049",
+    "slug": "rio-chico",
+    "name": "Río Chico",
+    "provinceCode": "78"
+  },
+  {
+    "code": "78028",
+    "slug": "lago-argentino",
+    "name": "Lago Argentino",
+    "provinceCode": "78"
+  },
+  {
+    "code": "78042",
+    "slug": "magallanes",
+    "name": "Magallanes",
+    "provinceCode": "78"
+  },
+  {
+    "code": "78007",
+    "slug": "corpen-aike",
+    "name": "Corpen Aike",
+    "provinceCode": "78"
+  },
+  {
+    "code": "78021",
+    "slug": "guer-aike",
+    "name": "Güer Aike",
+    "provinceCode": "78"
+  },
+  {
+    "code": "78035",
+    "slug": "lago-buenos-aires",
+    "name": "Lago Buenos Aires",
+    "provinceCode": "78"
+  },
+  {
+    "code": "78014",
+    "slug": "deseado",
+    "name": "Deseado",
+    "provinceCode": "78"
+  },
+  {
+    "code": "26035",
+    "slug": "futaleufu",
+    "name": "Futaleufú",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26042",
+    "slug": "gaiman",
+    "name": "Gaiman",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26077",
+    "slug": "rawson",
+    "name": "Rawson",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26105",
+    "slug": "telsen",
+    "name": "Telsen",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26091",
+    "slug": "sarmiento",
+    "name": "Sarmiento",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26014",
+    "slug": "cushamen",
+    "name": "Cushamen",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26084",
+    "slug": "rio-senguer",
+    "name": "Río Senguer",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26070",
+    "slug": "paso-de-indios",
+    "name": "Paso de Indios",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26063",
+    "slug": "martires",
+    "name": "Mártires",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26056",
+    "slug": "languineo",
+    "name": "Languiñeo",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26007",
+    "slug": "biedma",
+    "name": "Biedma",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26098",
+    "slug": "tehuelches",
+    "name": "Tehuelches",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26021",
+    "slug": "escalante",
+    "name": "Escalante",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26049",
+    "slug": "gastre",
+    "name": "Gastre",
+    "provinceCode": "26"
+  },
+  {
+    "code": "26028",
+    "slug": "florentino-ameghino",
+    "name": "Florentino Ameghino",
+    "provinceCode": "26"
+  },
+  {
+    "code": "50112",
+    "slug": "santa-rosa",
+    "name": "Santa Rosa",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50084",
+    "slug": "rivadavia",
+    "name": "Rivadavia",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50042",
+    "slug": "la-paz",
+    "name": "La Paz",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50126",
+    "slug": "tupungato",
+    "name": "Tupungato",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50105",
+    "slug": "san-rafael",
+    "name": "San Rafael",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50014",
+    "slug": "general-alvear",
+    "name": "General Alvear",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50049",
+    "slug": "las-heras",
+    "name": "Las Heras",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50056",
+    "slug": "lavalle",
+    "name": "Lavalle",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50077",
+    "slug": "malargue",
+    "name": "Malargüe",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50063",
+    "slug": "lujan-de-cuyo",
+    "name": "Luján de Cuyo",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50091",
+    "slug": "san-carlos",
+    "name": "San Carlos",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50119",
+    "slug": "tunuyan",
+    "name": "Tunuyán",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50035",
+    "slug": "junin",
+    "name": "Junín",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50007",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50021",
+    "slug": "godoy-cruz",
+    "name": "Godoy Cruz",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50028",
+    "slug": "guaymallen",
+    "name": "Guaymallén",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50070",
+    "slug": "maipu",
+    "name": "Maipú",
+    "provinceCode": "50"
+  },
+  {
+    "code": "50098",
+    "slug": "san-martin",
+    "name": "San Martín",
+    "provinceCode": "50"
+  },
+  {
+    "code": "30015",
+    "slug": "concordia",
+    "name": "Concordia",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30035",
+    "slug": "federal",
+    "name": "Federal",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30056",
+    "slug": "gualeguaychu",
+    "name": "Gualeguaychú",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30063",
+    "slug": "islas-del-ibicuy",
+    "name": "Islas del Ibicuy",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30105",
+    "slug": "victoria",
+    "name": "Victoria",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30021",
+    "slug": "diamante",
+    "name": "Diamante",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30098",
+    "slug": "uruguay",
+    "name": "Uruguay",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30084",
+    "slug": "parana",
+    "name": "Paraná",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30008",
+    "slug": "colon",
+    "name": "Colón",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30113",
+    "slug": "villaguay",
+    "name": "Villaguay",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30088",
+    "slug": "san-salvador",
+    "name": "San Salvador",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30077",
+    "slug": "nogoya",
+    "name": "Nogoyá",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30091",
+    "slug": "tala",
+    "name": "Tala",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30049",
+    "slug": "gualeguay",
+    "name": "Gualeguay",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30028",
+    "slug": "federacion",
+    "name": "Federación",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30070",
+    "slug": "la-paz",
+    "name": "La Paz",
+    "provinceCode": "30"
+  },
+  {
+    "code": "30042",
+    "slug": "feliciano",
+    "name": "Feliciano",
+    "provinceCode": "30"
+  },
+  {
+    "code": "70042",
+    "slug": "chimbas",
+    "name": "Chimbas",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70028",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70084",
+    "slug": "rivadavia",
+    "name": "Rivadavia",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70063",
+    "slug": "9-de-julio",
+    "name": "9 de Julio",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70007",
+    "slug": "albardon",
+    "name": "Albardón",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70014",
+    "slug": "angaco",
+    "name": "Angaco",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70098",
+    "slug": "santa-lucia",
+    "name": "Santa Lucía",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70077",
+    "slug": "rawson",
+    "name": "Rawson",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70126",
+    "slug": "25-de-mayo",
+    "name": "25 de Mayo",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70091",
+    "slug": "san-martin",
+    "name": "San Martín",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70070",
+    "slug": "pocito",
+    "name": "Pocito",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70133",
+    "slug": "zonda",
+    "name": "Zonda",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70112",
+    "slug": "ullum",
+    "name": "Ullum",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70105",
+    "slug": "sarmiento",
+    "name": "Sarmiento",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70021",
+    "slug": "calingasta",
+    "name": "Calingasta",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70049",
+    "slug": "iglesia",
+    "name": "Iglesia",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70056",
+    "slug": "jachal",
+    "name": "Jáchal",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70119",
+    "slug": "valle-fertil",
+    "name": "Valle Fértil",
+    "provinceCode": "70"
+  },
+  {
+    "code": "70035",
+    "slug": "caucete",
+    "name": "Caucete",
+    "provinceCode": "70"
+  },
+  {
+    "code": "38014",
+    "slug": "el-carmen",
+    "name": "El Carmen",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38112",
+    "slug": "yavi",
+    "name": "Yavi",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38077",
+    "slug": "santa-catalina",
+    "name": "Santa Catalina",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38063",
+    "slug": "san-pedro",
+    "name": "San Pedro",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38105",
+    "slug": "valle-grande",
+    "name": "Valle Grande",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38084",
+    "slug": "susques",
+    "name": "Susques",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38094",
+    "slug": "tilcara",
+    "name": "Tilcara",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38042",
+    "slug": "palpala",
+    "name": "Palpalá",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38070",
+    "slug": "santa-barbara",
+    "name": "Santa Bárbara",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38021",
+    "slug": "dr-manuel-belgrano",
+    "name": "Dr. Manuel Belgrano",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38056",
+    "slug": "san-antonio",
+    "name": "San Antonio",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38049",
+    "slug": "rinconada",
+    "name": "Rinconada",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38035",
+    "slug": "ledesma",
+    "name": "Ledesma",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38028",
+    "slug": "humahuaca",
+    "name": "Humahuaca",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38007",
+    "slug": "cochinoca",
+    "name": "Cochinoca",
+    "provinceCode": "38"
+  },
+  {
+    "code": "38098",
+    "slug": "tumbaya",
+    "name": "Tumbaya",
+    "provinceCode": "38"
+  },
+  {
+    "code": "86014",
+    "slug": "alberdi",
+    "name": "Alberdi",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86098",
+    "slug": "juan-felipe-ibarra",
+    "name": "Juan Felipe Ibarra",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86077",
+    "slug": "general-taboada",
+    "name": "General Taboada",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86154",
+    "slug": "rivadavia",
+    "name": "Rivadavia",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86126",
+    "slug": "ojo-de-agua",
+    "name": "Ojo de Agua",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86063",
+    "slug": "choya",
+    "name": "Choya",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86175",
+    "slug": "san-martin",
+    "name": "San Martín",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86140",
+    "slug": "quebrachos",
+    "name": "Quebrachos",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86056",
+    "slug": "copo",
+    "name": "Copo",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86147",
+    "slug": "rio-hondo",
+    "name": "Río Hondo",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86084",
+    "slug": "guasayan",
+    "name": "Guasayán",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86035",
+    "slug": "banda",
+    "name": "Banda",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86182",
+    "slug": "sarmiento",
+    "name": "Sarmiento",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86042",
+    "slug": "belgrano",
+    "name": "Belgrano",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86007",
+    "slug": "aguirre",
+    "name": "Aguirre",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86161",
+    "slug": "robles",
+    "name": "Robles",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86105",
+    "slug": "loreto",
+    "name": "Loreto",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86049",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86119",
+    "slug": "moreno",
+    "name": "Moreno",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86070",
+    "slug": "figueroa",
+    "name": "Figueroa",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86168",
+    "slug": "salavina",
+    "name": "Salavina",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86133",
+    "slug": "pellegrini",
+    "name": "Pellegrini",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86028",
+    "slug": "avellaneda",
+    "name": "Avellaneda",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86189",
+    "slug": "silipica",
+    "name": "Silípica",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86112",
+    "slug": "mitre",
+    "name": "Mitre",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86021",
+    "slug": "atamisqui",
+    "name": "Atamisqui",
+    "provinceCode": "86"
+  },
+  {
+    "code": "86091",
+    "slug": "jimenez",
+    "name": "Jiménez",
+    "provinceCode": "86"
+  },
+  {
+    "code": "62077",
+    "slug": "san-antonio",
+    "name": "San Antonio",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62028",
+    "slug": "conesa",
+    "name": "Conesa",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62084",
+    "slug": "valcheta",
+    "name": "Valcheta",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62049",
+    "slug": "9-de-julio",
+    "name": "9 de Julio",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62056",
+    "slug": "norquinco",
+    "name": "Ñorquinco",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62091",
+    "slug": "25-de-mayo",
+    "name": "25 de Mayo",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62070",
+    "slug": "pilcaniyeu",
+    "name": "Pilcaniyeu",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62035",
+    "slug": "el-cuy",
+    "name": "El Cuy",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62007",
+    "slug": "adolfo-alsina",
+    "name": "Adolfo Alsina",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62063",
+    "slug": "pichi-mahuida",
+    "name": "Pichi Mahuida",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62021",
+    "slug": "bariloche",
+    "name": "Bariloche",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62014",
+    "slug": "avellaneda",
+    "name": "Avellaneda",
+    "provinceCode": "62"
+  },
+  {
+    "code": "62042",
+    "slug": "general-roca",
+    "name": "General Roca",
+    "provinceCode": "62"
+  },
+  {
+    "code": "18175",
+    "slug": "sauce",
+    "name": "Sauce",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18133",
+    "slug": "san-cosme",
+    "name": "San Cosme",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18049",
+    "slug": "esquina",
+    "name": "Esquina",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18035",
+    "slug": "curuzu-cuatia",
+    "name": "Curuzú Cuatiá",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18077",
+    "slug": "itati",
+    "name": "Itatí",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18112",
+    "slug": "monte-caseros",
+    "name": "Monte Caseros",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18154",
+    "slug": "san-miguel",
+    "name": "San Miguel",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18042",
+    "slug": "empedrado",
+    "name": "Empedrado",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18084",
+    "slug": "ituzaingo",
+    "name": "Ituzaingó",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18021",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18140",
+    "slug": "san-luis-del-palmar",
+    "name": "San Luis del Palmar",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18014",
+    "slug": "beron-de-astrada",
+    "name": "Berón de Astrada",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18147",
+    "slug": "san-martin",
+    "name": "San Martín",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18119",
+    "slug": "paso-de-los-libres",
+    "name": "Paso de los Libres",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18070",
+    "slug": "goya",
+    "name": "Goya",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18091",
+    "slug": "lavalle",
+    "name": "Lavalle",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18161",
+    "slug": "san-roque",
+    "name": "San Roque",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18056",
+    "slug": "general-alvear",
+    "name": "General Alvear",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18028",
+    "slug": "concepcion",
+    "name": "Concepción",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18007",
+    "slug": "bella-vista",
+    "name": "Bella Vista",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18168",
+    "slug": "santo-tome",
+    "name": "Santo Tomé",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18126",
+    "slug": "saladas",
+    "name": "Saladas",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18063",
+    "slug": "general-paz",
+    "name": "General Paz",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18098",
+    "slug": "mburucuya",
+    "name": "Mburucuyá",
+    "provinceCode": "18"
+  },
+  {
+    "code": "18105",
+    "slug": "mercedes",
+    "name": "Mercedes",
+    "provinceCode": "18"
+  },
+  {
+    "code": "54084",
+    "slug": "montecarlo",
+    "name": "Montecarlo",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54042",
+    "slug": "eldorado",
+    "name": "Eldorado",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54112",
+    "slug": "san-pedro",
+    "name": "San Pedro",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54014",
+    "slug": "cainguas",
+    "name": "Cainguás",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54077",
+    "slug": "libertador-general-san-martin",
+    "name": "Libertador General San Martín",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54028",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54021",
+    "slug": "candelaria",
+    "name": "Candelaria",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54049",
+    "slug": "general-manuel-belgrano",
+    "name": "General Manuel Belgrano",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54056",
+    "slug": "guarani",
+    "name": "Guaraní",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54063",
+    "slug": "iguazu",
+    "name": "Iguazú",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54119",
+    "slug": "25-de-mayo",
+    "name": "25 de Mayo",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54091",
+    "slug": "obera",
+    "name": "Oberá",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54098",
+    "slug": "san-ignacio",
+    "name": "San Ignacio",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54070",
+    "slug": "leandro-n-alem",
+    "name": "Leandro N. Alem",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54105",
+    "slug": "san-javier",
+    "name": "San Javier",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54035",
+    "slug": "concepcion",
+    "name": "Concepción",
+    "provinceCode": "54"
+  },
+  {
+    "code": "54007",
+    "slug": "apostoles",
+    "name": "Apóstoles",
+    "provinceCode": "54"
+  },
+  {
+    "code": "66098",
+    "slug": "la-vina",
+    "name": "La Viña",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66112",
+    "slug": "metan",
+    "name": "Metán",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66119",
+    "slug": "molinos",
+    "name": "Molinos",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66049",
+    "slug": "general-guemes",
+    "name": "General Güemes",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66154",
+    "slug": "san-carlos",
+    "name": "San Carlos",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66014",
+    "slug": "cachi",
+    "name": "Cachi",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66042",
+    "slug": "chicoana",
+    "name": "Chicoana",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66035",
+    "slug": "cerrillos",
+    "name": "Cerrillos",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66007",
+    "slug": "anta",
+    "name": "Anta",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66077",
+    "slug": "la-caldera",
+    "name": "La Caldera",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66070",
+    "slug": "iruya",
+    "name": "Iruya",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66105",
+    "slug": "los-andes",
+    "name": "Los Andes",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66126",
+    "slug": "oran",
+    "name": "Orán",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66140",
+    "slug": "rosario-de-la-frontera",
+    "name": "Rosario de la Frontera",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66021",
+    "slug": "cafayate",
+    "name": "Cafayate",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66028",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66084",
+    "slug": "la-candelaria",
+    "name": "La Candelaria",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66063",
+    "slug": "guachipas",
+    "name": "Guachipas",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66091",
+    "slug": "la-poma",
+    "name": "La Poma",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66161",
+    "slug": "santa-victoria",
+    "name": "Santa Victoria",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66056",
+    "slug": "general-jose-de-san-martin",
+    "name": "General José de San Martín",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66133",
+    "slug": "rivadavia",
+    "name": "Rivadavia",
+    "provinceCode": "66"
+  },
+  {
+    "code": "66147",
+    "slug": "rosario-de-lerma",
+    "name": "Rosario de Lerma",
+    "provinceCode": "66"
+  },
+  {
+    "code": "14175",
+    "slug": "tulumba",
+    "name": "Tulumba",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14028",
+    "slug": "cruz-del-eje",
+    "name": "Cruz del Eje",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14091",
+    "slug": "punilla",
+    "name": "Punilla",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14035",
+    "slug": "general-roca",
+    "name": "General Roca",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14147",
+    "slug": "santa-maria",
+    "name": "Santa María",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14070",
+    "slug": "minas",
+    "name": "Minas",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14126",
+    "slug": "san-alberto",
+    "name": "San Alberto",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14119",
+    "slug": "rio-segundo",
+    "name": "Río Segundo",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14140",
+    "slug": "san-justo",
+    "name": "San Justo",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14182",
+    "slug": "union",
+    "name": "Unión",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14161",
+    "slug": "tercero-arriba",
+    "name": "Tercero Arriba",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14098",
+    "slug": "rio-cuarto",
+    "name": "Río Cuarto",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14084",
+    "slug": "presidente-roque-saenz-pena",
+    "name": "Presidente Roque Sáenz Peña",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14112",
+    "slug": "rio-seco",
+    "name": "Río Seco",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14077",
+    "slug": "pocho",
+    "name": "Pocho",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14154",
+    "slug": "sobremonte",
+    "name": "Sobremonte",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14014",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14056",
+    "slug": "juarez-celman",
+    "name": "Juárez Celman",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14021",
+    "slug": "colon",
+    "name": "Colón",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14049",
+    "slug": "ischilin",
+    "name": "Ischilín",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14168",
+    "slug": "totoral",
+    "name": "Totoral",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14042",
+    "slug": "general-san-martin",
+    "name": "General San Martín",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14133",
+    "slug": "san-javier",
+    "name": "San Javier",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14105",
+    "slug": "rio-primero",
+    "name": "Río Primero",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14063",
+    "slug": "marcos-juarez",
+    "name": "Marcos Juárez",
+    "provinceCode": "14"
+  },
+  {
+    "code": "14007",
+    "slug": "calamuchita",
+    "name": "Calamuchita",
+    "provinceCode": "14"
+  },
+  {
+    "code": "06014",
+    "slug": "adolfo-gonzales-chaves",
+    "name": "Adolfo Gonzales Chaves",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06707",
+    "slug": "saladillo",
+    "name": "Saladillo",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06455",
+    "slug": "las-flores",
+    "name": "Las Flores",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06686",
+    "slug": "rojas",
+    "name": "Rojas",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06252",
+    "slug": "escobar",
+    "name": "Escobar",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06412",
+    "slug": "jose-c-paz",
+    "name": "José C. Paz",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06056",
+    "slug": "bahia-blanca",
+    "name": "Bahía Blanca",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06735",
+    "slug": "san-antonio-de-areco",
+    "name": "San Antonio de Areco",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06511",
+    "slug": "maipu",
+    "name": "Maipú",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06280",
+    "slug": "general-alvarado",
+    "name": "General Alvarado",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06357",
+    "slug": "general-pueyrredon",
+    "name": "General Pueyrredón",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06518",
+    "slug": "mar-chiquita",
+    "name": "Mar Chiquita",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06868",
+    "slug": "villa-gesell",
+    "name": "Villa Gesell",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06644",
+    "slug": "pinamar",
+    "name": "Pinamar",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06336",
+    "slug": "general-lavalle",
+    "name": "General Lavalle",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06420",
+    "slug": "la-costa",
+    "name": "La Costa",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06505",
+    "slug": "magdalena",
+    "name": "Magdalena",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06861",
+    "slug": "vicente-lopez",
+    "name": "Vicente López",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06672",
+    "slug": "rauch",
+    "name": "Rauch",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06560",
+    "slug": "moreno",
+    "name": "Moreno",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06427",
+    "slug": "la-matanza",
+    "name": "La Matanza",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06791",
+    "slug": "tandil",
+    "name": "Tandil",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06203",
+    "slug": "coronel-suarez",
+    "name": "Coronel Suárez",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06721",
+    "slug": "salliquelo",
+    "name": "Salliqueló",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06091",
+    "slug": "berazategui",
+    "name": "Berazategui",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06343",
+    "slug": "general-paz",
+    "name": "General Paz",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06308",
+    "slug": "general-guido",
+    "name": "General Guido",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06315",
+    "slug": "general-juan-madariaga",
+    "name": "General Juan Madariaga",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06819",
+    "slug": "tornquist",
+    "name": "Tornquist",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06196",
+    "slug": "coronel-pringles",
+    "name": "Coronel Pringles",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06875",
+    "slug": "villarino",
+    "name": "Villarino",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06351",
+    "slug": "general-pinto",
+    "name": "General Pinto",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06742",
+    "slug": "san-cayetano",
+    "name": "San Cayetano",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06833",
+    "slug": "tres-arroyos",
+    "name": "Tres Arroyos",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06189",
+    "slug": "coronel-dorrego",
+    "name": "Coronel Dorrego",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06581",
+    "slug": "necochea",
+    "name": "Necochea",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06218",
+    "slug": "chascomus",
+    "name": "Chascomús",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06655",
+    "slug": "punta-indio",
+    "name": "Punta Indio",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06466",
+    "slug": "lezama",
+    "name": "Lezama",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06126",
+    "slug": "campana",
+    "name": "Campana",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06007",
+    "slug": "adolfo-alsina",
+    "name": "Adolfo Alsina",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06616",
+    "slug": "pellegrini",
+    "name": "Pellegrini",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06245",
+    "slug": "ensenada",
+    "name": "Ensenada",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06623",
+    "slug": "pergamino",
+    "name": "Pergamino",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06651",
+    "slug": "puan",
+    "name": "Puán",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06392",
+    "slug": "general-villegas",
+    "name": "General Villegas",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06749",
+    "slug": "san-fernando",
+    "name": "San Fernando",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06805",
+    "slug": "tigre",
+    "name": "Tigre",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06270",
+    "slug": "ezeiza",
+    "name": "Ezeiza",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06168",
+    "slug": "castelli",
+    "name": "Castelli",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06028",
+    "slug": "almirante-brown",
+    "name": "Almirante Brown",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06648",
+    "slug": "presidente-peron",
+    "name": "Presidente Perón",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06413",
+    "slug": "junin",
+    "name": "Junín",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06119",
+    "slug": "brandsen",
+    "name": "Brandsen",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06224",
+    "slug": "chivilcoy",
+    "name": "Chivilcoy",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06021",
+    "slug": "alberti",
+    "name": "Alberti",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06112",
+    "slug": "bragado",
+    "name": "Bragado",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06329",
+    "slug": "general-las-heras",
+    "name": "General Las Heras",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06147",
+    "slug": "carlos-casares",
+    "name": "Carlos Casares",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06525",
+    "slug": "marcos-paz",
+    "name": "Marcos Paz",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06385",
+    "slug": "general-viamonte",
+    "name": "General Viamonte",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06154",
+    "slug": "carlos-tejedor",
+    "name": "Carlos Tejedor",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06854",
+    "slug": "25-de-mayo",
+    "name": "25 de Mayo",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06588",
+    "slug": "9-de-julio",
+    "name": "9 de Julio",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06609",
+    "slug": "pehuajo",
+    "name": "Pehuajó",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06798",
+    "slug": "tapalque",
+    "name": "Tapalqué",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06826",
+    "slug": "trenque-lauquen",
+    "name": "Trenque Lauquen",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06301",
+    "slug": "general-belgrano",
+    "name": "General Belgrano",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06547",
+    "slug": "monte",
+    "name": "Monte",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06693",
+    "slug": "roque-perez",
+    "name": "Roque Pérez",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06595",
+    "slug": "olavarria",
+    "name": "Olavarría",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06539",
+    "slug": "merlo",
+    "name": "Merlo",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06260",
+    "slug": "esteban-echeverria",
+    "name": "Esteban Echeverría",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06077",
+    "slug": "arrecifes",
+    "name": "Arrecifes",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06140",
+    "slug": "capitan-sarmiento",
+    "name": "Capitán Sarmiento",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06161",
+    "slug": "carmen-de-areco",
+    "name": "Carmen de Areco",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06714",
+    "slug": "salto",
+    "name": "Salto",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06266",
+    "slug": "exaltacion-de-la-cruz",
+    "name": "Exaltación de la Cruz",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06760",
+    "slug": "san-miguel",
+    "name": "San Miguel",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06728",
+    "slug": "san-andres-de-giles",
+    "name": "San Andrés de Giles",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06532",
+    "slug": "mercedes",
+    "name": "Mercedes",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06638",
+    "slug": "pilar",
+    "name": "Pilar",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06497",
+    "slug": "lujan",
+    "name": "Luján",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06408",
+    "slug": "hurlingham",
+    "name": "Hurlingham",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06568",
+    "slug": "moron",
+    "name": "Morón",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06210",
+    "slug": "chacabuco",
+    "name": "Chacabuco",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06515",
+    "slug": "malvinas-argentinas",
+    "name": "Malvinas Argentinas",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06847",
+    "slug": "tres-lomas",
+    "name": "Tres Lomas",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06042",
+    "slug": "ayacucho",
+    "name": "Ayacucho",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06399",
+    "slug": "guamini",
+    "name": "Guaminí",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06371",
+    "slug": "general-san-martin",
+    "name": "General San Martín",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06469",
+    "slug": "lincoln",
+    "name": "Lincoln",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06448",
+    "slug": "laprida",
+    "name": "Laprida",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06756",
+    "slug": "san-isidro",
+    "name": "San Isidro",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06084",
+    "slug": "benito-juarez",
+    "name": "Benito Juárez",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06175",
+    "slug": "colon",
+    "name": "Colón",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06410",
+    "slug": "ituzaingo",
+    "name": "Ituzaingó",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06364",
+    "slug": "general-rodriguez",
+    "name": "General Rodríguez",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06784",
+    "slug": "suipacha",
+    "name": "Suipacha",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06840",
+    "slug": "tres-de-febrero",
+    "name": "Tres de Febrero",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06274",
+    "slug": "florencio-varela",
+    "name": "Florencio Varela",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06574",
+    "slug": "navarro",
+    "name": "Navarro",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06134",
+    "slug": "canuelas",
+    "name": "Cañuelas",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06778",
+    "slug": "san-vicente",
+    "name": "San Vicente",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06483",
+    "slug": "lobos",
+    "name": "Lobos",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06287",
+    "slug": "general-alvear",
+    "name": "General Alvear",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06658",
+    "slug": "quilmes",
+    "name": "Quilmes",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06630",
+    "slug": "pila",
+    "name": "Pila",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06322",
+    "slug": "general-la-madrid",
+    "name": "General La Madrid",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06105",
+    "slug": "bolivar",
+    "name": "Bolívar",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06063",
+    "slug": "balcarce",
+    "name": "Balcarce",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06406",
+    "slug": "hipolito-yrigoyen",
+    "name": "Hipólito Yrigoyen",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06238",
+    "slug": "dolores",
+    "name": "Dolores",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06049",
+    "slug": "azul",
+    "name": "Azul",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06231",
+    "slug": "daireaux",
+    "name": "Daireaux",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06700",
+    "slug": "saavedra",
+    "name": "Saavedra",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06553",
+    "slug": "monte-hermoso",
+    "name": "Monte Hermoso",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06476",
+    "slug": "loberia",
+    "name": "Lobería",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06098",
+    "slug": "berisso",
+    "name": "Berisso",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06812",
+    "slug": "tordillo",
+    "name": "Tordillo",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06882",
+    "slug": "zarate",
+    "name": "Zárate",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06665",
+    "slug": "ramallo",
+    "name": "Ramallo",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06763",
+    "slug": "san-nicolas",
+    "name": "San Nicolás",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06434",
+    "slug": "lanus",
+    "name": "Lanús",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06462",
+    "slug": "leandro-n-alem",
+    "name": "Leandro N. Alem",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06294",
+    "slug": "general-arenales",
+    "name": "General Arenales",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06679",
+    "slug": "rivadavia",
+    "name": "Rivadavia",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06602",
+    "slug": "patagones",
+    "name": "Patagones",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06182",
+    "slug": "coronel-de-marina-leonardo-rosales",
+    "name": "Coronel de Marina Leonardo Rosales",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06070",
+    "slug": "baradero",
+    "name": "Baradero",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06770",
+    "slug": "san-pedro",
+    "name": "San Pedro",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06277",
+    "slug": "florentino-ameghino",
+    "name": "Florentino Ameghino",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06490",
+    "slug": "lomas-de-zamora",
+    "name": "Lomas de Zamora",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06035",
+    "slug": "avellaneda",
+    "name": "Avellaneda",
+    "provinceCode": "06"
+  },
+  {
+    "code": "06441",
+    "slug": "la-plata",
+    "name": "La Plata",
+    "provinceCode": "06"
+  },
+  {
+    "code": "42077",
+    "slug": "hucal",
+    "name": "Hucal",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42014",
+    "slug": "caleu-caleu",
+    "name": "Caleu Caleu",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42084",
+    "slug": "lihuel-calel",
+    "name": "Lihuel Calel",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42042",
+    "slug": "curaco",
+    "name": "Curacó",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42098",
+    "slug": "loventue",
+    "name": "Loventué",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42091",
+    "slug": "limay-mahuida",
+    "name": "Limay Mahuida",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42112",
+    "slug": "puelen",
+    "name": "Puelén",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42049",
+    "slug": "chalileo",
+    "name": "Chalileo",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42063",
+    "slug": "chical-co",
+    "name": "Chical Co",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42056",
+    "slug": "chapaleufu",
+    "name": "Chapaleufú",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42133",
+    "slug": "realico",
+    "name": "Realicó",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42105",
+    "slug": "maraco",
+    "name": "Maracó",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42147",
+    "slug": "trenel",
+    "name": "Trenel",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42021",
+    "slug": "capital",
+    "name": "Capital",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42028",
+    "slug": "catrilo",
+    "name": "Catriló",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42126",
+    "slug": "rancul",
+    "name": "Rancul",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42007",
+    "slug": "atreuco",
+    "name": "Atreucó",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42070",
+    "slug": "guatrache",
+    "name": "Guatraché",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42035",
+    "slug": "conhelo",
+    "name": "Conhelo",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42140",
+    "slug": "toay",
+    "name": "Toay",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42119",
+    "slug": "quemu-quemu",
+    "name": "Quemú Quemú",
+    "provinceCode": "42"
+  },
+  {
+    "code": "42154",
+    "slug": "utracan",
+    "name": "Utracán",
+    "provinceCode": "42"
+  },
+  {
+    "code": "94015",
+    "slug": "ushuaia",
+    "name": "Ushuaia",
+    "provinceCode": "94"
+  },
+  {
+    "code": "94028",
+    "slug": "antartida-argentina",
+    "name": "Antártida Argentina",
+    "provinceCode": "94"
+  },
+  {
+    "code": "94008",
+    "slug": "rio-grande",
+    "name": "Río Grande",
+    "provinceCode": "94"
+  },
+  {
+    "code": "94021",
+    "slug": "islas-del-atlantico-sur",
+    "name": "Islas del Atlántico Sur",
+    "provinceCode": "94"
+  },
+  {
+    "code": "94011",
+    "slug": "tolhuin",
+    "name": "Tolhuin",
+    "provinceCode": "94"
+  }
+]

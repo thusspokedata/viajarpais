@@ -87,6 +87,35 @@ const KEEP_CATEGORIES = new Set([
   "Componente de localidad compuesta",
 ]);
 
+/**
+ * Overrides for slug collisions in localities.
+ *
+ * When two or more localities in the same province collide on slug,
+ * by default we suffix ALL of them with their department slug. That's
+ * deterministic but produces ugly slugs for cities that have a real
+ * SEO presence (e.g. Firmat (General López) is a 22k-population city
+ * worth keeping at /firmat, while a homonymous tiny pueblo elsewhere
+ * doesn't mind being at /firmat-constitucion).
+ *
+ * This list explicitly nominates ONE entry per collision group as the
+ * winner of the "clean" slug. Match key: (provinceCode, exact dept
+ * name from Georef, exact locality name from Georef). The other
+ * entries in the same collision still get the suffix treatment.
+ */
+const LOCALITY_SLUG_OVERRIDES: Array<{
+  provinceCode: string;
+  departmentName: string;
+  localityName: string;
+  preferredSlug: string;
+}> = [
+  {
+    provinceCode: "82", // Santa Fe
+    departmentName: "General López",
+    localityName: "Firmat",
+    preferredSlug: "firmat",
+  },
+];
+
 // ─────────────────────────────────────────────────────────────────────
 // Types — Georef response shapes (only the fields we ask for)
 // ─────────────────────────────────────────────────────────────────────
@@ -208,31 +237,112 @@ async function fetchPaginated<K extends string, T>(
 
 /**
  * Fail fast on slug collisions — within (provinceCode, level) scope.
- * `level` is just for the error message ("departments" / "localities").
+ * Collects ALL collisions before throwing, so the user gets the full
+ * picture in one report. `level` is just for the error message
+ * ("departments" / "localities").
  */
-function assertNoSlugCollisions<T extends { slug: string; name: string; code: string; provinceCode: string }>(
-  rows: T[],
-  level: string,
+/**
+ * Resolves slug collisions in localities by mutating slugs in place.
+ *
+ * Rule:
+ * - Find each (provinceCode, slug) collision group.
+ * - If any entry matches an override in LOCALITY_SLUG_OVERRIDES, that
+ *   entry keeps its slug = preferredSlug (the "clean" slug).
+ * - All other entries in the same group get slug = `${baseSlug}-${deptSlug}`.
+ * - If no override matches, ALL entries in the group get the suffix.
+ *
+ * After this runs, assertNoSlugCollisions must still be called as a
+ * final sanity check — in the unlikely event the suffixed forms still
+ * collide (e.g. two localities in the same department with the same
+ * name), we fail fast.
+ */
+function resolveLocalitySlugCollisions(
+  rows: LocalitySnapshot[],
+  departmentsByCode: Map<string, DepartmentSnapshot>,
 ): void {
-  const byKey = new Map<string, T>();
+  const groups = new Map<string, LocalitySnapshot[]>();
   for (const row of rows) {
     const key = `${row.provinceCode}::${row.slug}`;
-    const existing = byKey.get(key);
-    if (existing) {
-      console.error(
-        `\n✖ Slug collision in ${level} within province ${row.provinceCode}:`,
-      );
-      console.error(`  slug = "${row.slug}"`);
-      console.error(`  - ${existing.code}: "${existing.name}"`);
-      console.error(`  - ${row.code}:      "${row.name}"`);
-      console.error(
-        `\nResolución manual: editar el JSON o agregar contexto al slug ` +
-          `(p.ej. departamento) antes de re-correr el seed.\n`,
-      );
-      throw new Error(`Slug collision in ${level} (province ${row.provinceCode})`);
-    }
-    byKey.set(key, row);
+    const bucket = groups.get(key);
+    if (bucket) bucket.push(row);
+    else groups.set(key, [row]);
   }
+
+  let resolved = 0;
+  for (const [, list] of groups) {
+    if (list.length < 2) continue;
+    const baseSlug = list[0].slug; // captured BEFORE any mutation
+
+    let overrideIdx = -1;
+    for (let i = 0; i < list.length; i++) {
+      const entry = list[i];
+      const dept = departmentsByCode.get(entry.departmentCode);
+      if (!dept) continue;
+      const match = LOCALITY_SLUG_OVERRIDES.find(
+        (o) =>
+          o.provinceCode === entry.provinceCode &&
+          o.departmentName === dept.name &&
+          o.localityName === entry.name,
+      );
+      if (match) {
+        entry.slug = match.preferredSlug;
+        overrideIdx = i;
+        break;
+      }
+    }
+
+    for (let i = 0; i < list.length; i++) {
+      if (i === overrideIdx) continue;
+      const entry = list[i];
+      const deptSlug = departmentsByCode.get(entry.departmentCode)?.slug ?? entry.departmentCode;
+      entry.slug = `${baseSlug}-${deptSlug}`;
+    }
+    resolved += 1;
+  }
+
+  if (resolved > 0) {
+    console.log(`  ⊕ Resolved ${resolved} slug collision group(s) deterministically`);
+  }
+}
+
+function assertNoSlugCollisions<T extends { slug: string; name: string; code: string; provinceCode: string; departmentCode?: string }>(
+  rows: T[],
+  level: string,
+  context?: {
+    provincesByCode?: Map<string, ProvinceSnapshot>;
+    departmentsByCode?: Map<string, DepartmentSnapshot>;
+  },
+): void {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const key = `${row.provinceCode}::${row.slug}`;
+    const bucket = groups.get(key);
+    if (bucket) bucket.push(row);
+    else groups.set(key, [row]);
+  }
+
+  const collisions = [...groups.entries()]
+    .filter(([, list]) => list.length > 1)
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  if (collisions.length === 0) return;
+
+  console.error(`\n✖ ${collisions.length} slug collision(s) in ${level}:\n`);
+  for (const [key, list] of collisions) {
+    const [provinceCode, slug] = key.split("::");
+    const provinceName = context?.provincesByCode?.get(provinceCode)?.name ?? provinceCode;
+    console.error(`  ${provinceName} (${provinceCode}) — slug "${slug}":`);
+    for (const row of list) {
+      const dept = row.departmentCode ? context?.departmentsByCode?.get(row.departmentCode) : undefined;
+      const deptStr = dept ? `  [${dept.name} / ${dept.slug}]` : "";
+      console.error(`    - ${row.code}: "${row.name}"${deptStr}`);
+    }
+  }
+  console.error(
+    `\nResolución manual: editar el JSON o agregar contexto al slug ` +
+      `(p.ej. departamento) antes de re-correr el seed.\n`,
+  );
+  throw new Error(`${collisions.length} slug collision(s) in ${level}`);
 }
 
 // ─────────────────────────────────────────────────────────────────────
@@ -304,7 +414,8 @@ async function main(): Promise<void> {
     }
     console.log(`    ${province.name}: ${depts.length} depts`);
   }
-  assertNoSlugCollisions(departmentSnapshots, "departments");
+  const provincesByCode = new Map(provinceSnapshots.map((p) => [p.code, p]));
+  assertNoSlugCollisions(departmentSnapshots, "departments", { provincesByCode });
 
   console.log(`  ✓ Departments: ${departmentSnapshots.length}`);
 
@@ -346,7 +457,12 @@ async function main(): Promise<void> {
     }
     console.log(`    ${province.name}: ${kept}/${locs.length} kept`);
   }
-  assertNoSlugCollisions(localitySnapshots, "localities");
+  const departmentsByCode = new Map(departmentSnapshots.map((d) => [d.code, d]));
+  resolveLocalitySlugCollisions(localitySnapshots, departmentsByCode);
+  assertNoSlugCollisions(localitySnapshots, "localities", {
+    provincesByCode,
+    departmentsByCode,
+  });
 
   console.log(
     `  ✓ Localities: ${localitySnapshots.length} (filtered out ${filtered} ` +
