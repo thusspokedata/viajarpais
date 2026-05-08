@@ -15,6 +15,10 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:geo": "tsx prisma/seed.ts --geo",
+    "db:seed:categories": "tsx prisma/seed.ts --categories",
+    "georef:fetch": "tsx scripts/fetch-georef.ts",
+    "georef:fetch:refresh": "tsx scripts/fetch-georef.ts --refresh",
     "auth:generate": "better-auth generate --output prisma/schema.prisma --y",
     "postinstall": "prisma generate",
     "prepare": "husky"

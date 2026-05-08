@@ -1,0 +1,146 @@
+[
+  {
+    "code": "02",
+    "slug": "caba",
+    "name": "Ciudad Autónoma de Buenos Aires",
+    "regionCode": "pampeana"
+  },
+  {
+    "code": "58",
+    "slug": "neuquen",
+    "name": "Neuquén",
+    "regionCode": "patagonia"
+  },
+  {
+    "code": "74",
+    "slug": "san-luis",
+    "name": "San Luis",
+    "regionCode": "cuyo"
+  },
+  {
+    "code": "82",
+    "slug": "santa-fe",
+    "name": "Santa Fe",
+    "regionCode": "centro"
+  },
+  {
+    "code": "46",
+    "slug": "la-rioja",
+    "name": "La Rioja",
+    "regionCode": "noa"
+  },
+  {
+    "code": "10",
+    "slug": "catamarca",
+    "name": "Catamarca",
+    "regionCode": "noa"
+  },
+  {
+    "code": "90",
+    "slug": "tucuman",
+    "name": "Tucumán",
+    "regionCode": "noa"
+  },
+  {
+    "code": "22",
+    "slug": "chaco",
+    "name": "Chaco",
+    "regionCode": "nea"
+  },
+  {
+    "code": "34",
+    "slug": "formosa",
+    "name": "Formosa",
+    "regionCode": "nea"
+  },
+  {
+    "code": "78",
+    "slug": "santa-cruz",
+    "name": "Santa Cruz",
+    "regionCode": "patagonia"
+  },
+  {
+    "code": "26",
+    "slug": "chubut",
+    "name": "Chubut",
+    "regionCode": "patagonia"
+  },
+  {
+    "code": "50",
+    "slug": "mendoza",
+    "name": "Mendoza",
+    "regionCode": "cuyo"
+  },
+  {
+    "code": "30",
+    "slug": "entre-rios",
+    "name": "Entre Ríos",
+    "regionCode": "pampeana"
+  },
+  {
+    "code": "70",
+    "slug": "san-juan",
+    "name": "San Juan",
+    "regionCode": "cuyo"
+  },
+  {
+    "code": "38",
+    "slug": "jujuy",
+    "name": "Jujuy",
+    "regionCode": "noa"
+  },
+  {
+    "code": "86",
+    "slug": "santiago-del-estero",
+    "name": "Santiago del Estero",
+    "regionCode": "noa"
+  },
+  {
+    "code": "62",
+    "slug": "rio-negro",
+    "name": "Río Negro",
+    "regionCode": "patagonia"
+  },
+  {
+    "code": "18",
+    "slug": "corrientes",
+    "name": "Corrientes",
+    "regionCode": "nea"
+  },
+  {
+    "code": "54",
+    "slug": "misiones",
+    "name": "Misiones",
+    "regionCode": "nea"
+  },
+  {
+    "code": "66",
+    "slug": "salta",
+    "name": "Salta",
+    "regionCode": "noa"
+  },
+  {
+    "code": "14",
+    "slug": "cordoba",
+    "name": "Córdoba",
+    "regionCode": "centro"
+  },
+  {
+    "code": "06",
+    "slug": "buenos-aires",
+    "name": "Buenos Aires",
+    "regionCode": "pampeana"
+  },
+  {
+    "code": "42",
+    "slug": "la-pampa",
+    "name": "La Pampa",
+    "regionCode": "patagonia"
+  },
+  {
+    "code": "94",
+    "slug": "tierra-del-fuego-antartida-e-islas-del-atlantico-sur",
+    "name": "Tierra del Fuego, Antártida e Islas del Atlántico Sur",
+    "regionCode": "patagonia"
+  }
+]

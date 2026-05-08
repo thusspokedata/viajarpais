@@ -1,0 +1,500 @@
+/**
+ * scripts/fetch-georef.ts
+ *
+ * Snapshot of Argentina's geography from Georef API
+ * (https://apis.datos.gob.ar/georef/api).
+ *
+ * Strategy: this script runs once per "refresh window" — its output
+ * (`prisma/data/{provinces,departments,localities}.json`) is committed
+ * to the repo so the actual seed (`prisma/seed.ts`) reads from disk
+ * and never touches Georef at runtime.
+ *
+ * Why not let the seed fetch live: Georef can be down, slow, or change
+ * shape. The snapshot decouples seeding from the public API and gives
+ * us auditable diffs the day Georef releases new data.
+ *
+ * Idempotency:
+ * - Default (no flag): if all 3 JSONs already exist, skip the fetch
+ *   and warn. Use `--refresh` to force re-download.
+ *
+ * Slug collisions:
+ * - Within a province scope, two departments / two localities cannot
+ *   share a slug (schema enforces `@@unique([provinceId, slug])`). If
+ *   we detect a collision in the snapshot we FAIL FAST with conflict
+ *   detail — manual intervention needed (URLs are stable, sufijos por
+ *   orden de aparición serían frágiles ante refreshes de Georef).
+ *
+ * Region mapping:
+ * - We assign each province to one of the 6 regions of the directorio.
+ *   Mapping keyed by Georef's INDEC 2-digit province ID (immutable).
+ *
+ * CABA slug override:
+ * - "Ciudad Autónoma de Buenos Aires" (Georef id "02") gets slug `caba`
+ *   instead of `ciudad-autonoma-de-buenos-aires`. SOLO la provincia —
+ *   sus comunas (departments) usan slug normal `comuna-1`...`comuna-15`.
+ */
+
+import { mkdir, writeFile, access } from "node:fs/promises";
+import { join } from "node:path";
+import { argv, exit } from "node:process";
+
+const GEOREF_BASE = "https://apis.datos.gob.ar/georef/api";
+const DATA_DIR = join(process.cwd(), "prisma", "data");
+const PROVINCES_PATH = join(DATA_DIR, "provinces.json");
+const DEPARTMENTS_PATH = join(DATA_DIR, "departments.json");
+const LOCALITIES_PATH = join(DATA_DIR, "localities.json");
+
+/**
+ * Province ID (Georef / INDEC, 2-digit zero-padded) → region slug.
+ * The 6 region slugs are the project's permanent URL slugs (do not
+ * change, would break public URLs).
+ */
+const REGION_BY_PROVINCE_ID: Record<string, string> = {
+  "02": "pampeana", // Ciudad Autónoma de Buenos Aires
+  "06": "pampeana", // Buenos Aires
+  "10": "noa", // Catamarca
+  "14": "centro", // Córdoba
+  "18": "nea", // Corrientes
+  "22": "nea", // Chaco
+  "26": "patagonia", // Chubut
+  "30": "pampeana", // Entre Ríos
+  "34": "nea", // Formosa
+  "38": "noa", // Jujuy
+  "42": "patagonia", // La Pampa
+  "46": "noa", // La Rioja
+  "50": "cuyo", // Mendoza
+  "54": "nea", // Misiones
+  "58": "patagonia", // Neuquén
+  "62": "patagonia", // Río Negro
+  "66": "noa", // Salta
+  "70": "cuyo", // San Juan
+  "74": "cuyo", // San Luis
+  "78": "patagonia", // Santa Cruz
+  "82": "centro", // Santa Fe
+  "86": "noa", // Santiago del Estero
+  "90": "noa", // Tucumán
+  "94": "patagonia", // Tierra del Fuego, Antártida e Islas del Atlántico Sur
+};
+
+/**
+ * Locality categorías to keep. Decisión cerrada del producto: filtro
+ * inclusivo, todos menos `Entidad` (entidades administrativas no
+ * turísticas).
+ */
+const KEEP_CATEGORIES = new Set([
+  "Localidad simple",
+  "Localidad compuesta",
+  "Componente de localidad compuesta",
+]);
+
+/**
+ * Overrides for slug collisions in localities.
+ *
+ * When two or more localities in the same province collide on slug,
+ * by default we suffix ALL of them with their department slug. That's
+ * deterministic but produces ugly slugs for cities that have a real
+ * SEO presence (e.g. Firmat (General López) is a 22k-population city
+ * worth keeping at /firmat, while a homonymous tiny pueblo elsewhere
+ * doesn't mind being at /firmat-constitucion).
+ *
+ * This list explicitly nominates ONE entry per collision group as the
+ * winner of the "clean" slug. Match key: (provinceCode, exact dept
+ * name from Georef, exact locality name from Georef). The other
+ * entries in the same collision still get the suffix treatment.
+ */
+const LOCALITY_SLUG_OVERRIDES: Array<{
+  provinceCode: string;
+  departmentName: string;
+  localityName: string;
+  preferredSlug: string;
+}> = [
+  {
+    provinceCode: "82", // Santa Fe
+    departmentName: "General López",
+    localityName: "Firmat",
+    preferredSlug: "firmat",
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────
+// Types — Georef response shapes (only the fields we ask for)
+// ─────────────────────────────────────────────────────────────────────
+
+type GeorefProvincia = { id: string; nombre: string };
+type GeorefDepartamento = {
+  id: string;
+  nombre: string;
+  provincia: { id: string; nombre: string };
+};
+type GeorefLocalidad = {
+  id: string;
+  nombre: string;
+  categoria: string;
+  centroide?: { lat: number; lon: number } | null;
+  departamento?: { id: string; nombre: string } | null;
+  provincia: { id: string; nombre: string };
+};
+
+type GeorefResponse<K extends string, T> = {
+  cantidad: number;
+  inicio: number;
+  total: number;
+} & Record<K, T[]>;
+
+// ─────────────────────────────────────────────────────────────────────
+// Output schemas — what we write to prisma/data/*.json
+// ─────────────────────────────────────────────────────────────────────
+
+type ProvinceSnapshot = {
+  code: string;
+  slug: string;
+  name: string;
+  regionCode: string;
+};
+
+type DepartmentSnapshot = {
+  code: string;
+  slug: string;
+  name: string;
+  provinceCode: string;
+};
+
+type LocalitySnapshot = {
+  code: string;
+  slug: string;
+  name: string;
+  lat: number | null;
+  lng: number | null;
+  departmentCode: string;
+  provinceCode: string;
+};
+
+// ─────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Lowercase + remove diacritics + non-alphanum → `-` + collapse + trim.
+ * Examples:
+ *   "Mendoza"           → "mendoza"
+ *   "Tierra del Fuego"  → "tierra-del-fuego"
+ *   "San José de Jáchal" → "san-jose-de-jachal"
+ */
+function slugify(input: string): string {
+  return input
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // strip combining diacritics
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+async function fileExists(path: string): Promise<boolean> {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new Error(`Georef HTTP ${response.status} on ${url}`);
+  }
+  return (await response.json()) as T;
+}
+
+/**
+ * Paginated fetch — Georef's `inicio` parameter for offset. Loops
+ * until we've collected `total` items.
+ */
+async function fetchPaginated<K extends string, T>(
+  url: string,
+  collectionKey: K,
+  pageSize: number,
+): Promise<T[]> {
+  const out: T[] = [];
+  let offset = 0;
+   
+  while (true) {
+    const u = new URL(url);
+    u.searchParams.set("max", String(pageSize));
+    u.searchParams.set("inicio", String(offset));
+    const data = await fetchJson<GeorefResponse<K, T>>(u.toString());
+    const batch = data[collectionKey] as T[];
+    if (batch.length === 0) break; // no more results
+    out.push(...batch);
+    // Advance by ACTUAL items received, not by the requested page size.
+    // If Georef returns fewer than pageSize for any reason (rate limit,
+    // server-side cap, dataset edge), advancing by pageSize would skip
+    // records silently.
+    offset += batch.length;
+    if (out.length >= data.total) break; // collected everything
+    if (batch.length < pageSize) break; // last page was partial
+  }
+  return out;
+}
+
+/**
+ * Fail fast on slug collisions — within (provinceCode, level) scope.
+ * Collects ALL collisions before throwing, so the user gets the full
+ * picture in one report. `level` is just for the error message
+ * ("departments" / "localities").
+ */
+/**
+ * Resolves slug collisions in localities by mutating slugs in place.
+ *
+ * Rule:
+ * - Find each (provinceCode, slug) collision group.
+ * - If any entry matches an override in LOCALITY_SLUG_OVERRIDES, that
+ *   entry keeps its slug = preferredSlug (the "clean" slug).
+ * - All other entries in the same group get slug = `${baseSlug}-${deptSlug}`.
+ * - If no override matches, ALL entries in the group get the suffix.
+ *
+ * After this runs, assertNoSlugCollisions must still be called as a
+ * final sanity check — in the unlikely event the suffixed forms still
+ * collide (e.g. two localities in the same department with the same
+ * name), we fail fast.
+ */
+function resolveLocalitySlugCollisions(
+  rows: LocalitySnapshot[],
+  departmentsByCode: Map<string, DepartmentSnapshot>,
+): void {
+  const groups = new Map<string, LocalitySnapshot[]>();
+  for (const row of rows) {
+    const key = `${row.provinceCode}::${row.slug}`;
+    const bucket = groups.get(key);
+    if (bucket) bucket.push(row);
+    else groups.set(key, [row]);
+  }
+
+  let resolved = 0;
+  for (const [, list] of groups) {
+    if (list.length < 2) continue;
+    const baseSlug = list[0].slug; // captured BEFORE any mutation
+
+    let overrideIdx = -1;
+    for (let i = 0; i < list.length; i++) {
+      const entry = list[i];
+      const dept = departmentsByCode.get(entry.departmentCode);
+      if (!dept) continue;
+      const match = LOCALITY_SLUG_OVERRIDES.find(
+        (o) =>
+          o.provinceCode === entry.provinceCode &&
+          o.departmentName === dept.name &&
+          o.localityName === entry.name,
+      );
+      if (match) {
+        entry.slug = match.preferredSlug;
+        overrideIdx = i;
+        break;
+      }
+    }
+
+    for (let i = 0; i < list.length; i++) {
+      if (i === overrideIdx) continue;
+      const entry = list[i];
+      const deptSlug = departmentsByCode.get(entry.departmentCode)?.slug ?? entry.departmentCode;
+      entry.slug = `${baseSlug}-${deptSlug}`;
+    }
+    resolved += 1;
+  }
+
+  if (resolved > 0) {
+    console.log(`  ⊕ Resolved ${resolved} slug collision group(s) deterministically`);
+  }
+}
+
+function assertNoSlugCollisions<T extends { slug: string; name: string; code: string; provinceCode: string; departmentCode?: string }>(
+  rows: T[],
+  level: string,
+  context?: {
+    provincesByCode?: Map<string, ProvinceSnapshot>;
+    departmentsByCode?: Map<string, DepartmentSnapshot>;
+  },
+): void {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const key = `${row.provinceCode}::${row.slug}`;
+    const bucket = groups.get(key);
+    if (bucket) bucket.push(row);
+    else groups.set(key, [row]);
+  }
+
+  const collisions = [...groups.entries()]
+    .filter(([, list]) => list.length > 1)
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  if (collisions.length === 0) return;
+
+  console.error(`\n✖ ${collisions.length} slug collision(s) in ${level}:\n`);
+  for (const [key, list] of collisions) {
+    const [provinceCode, slug] = key.split("::");
+    const provinceName = context?.provincesByCode?.get(provinceCode)?.name ?? provinceCode;
+    console.error(`  ${provinceName} (${provinceCode}) — slug "${slug}":`);
+    for (const row of list) {
+      const dept = row.departmentCode ? context?.departmentsByCode?.get(row.departmentCode) : undefined;
+      const deptStr = dept ? `  [${dept.name} / ${dept.slug}]` : "";
+      console.error(`    - ${row.code}: "${row.name}"${deptStr}`);
+    }
+  }
+  console.error(
+    `\nResolución manual: editar el JSON o agregar contexto al slug ` +
+      `(p.ej. departamento) antes de re-correr el seed.\n`,
+  );
+  throw new Error(`${collisions.length} slug collision(s) in ${level}`);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Main
+// ─────────────────────────────────────────────────────────────────────
+
+async function main(): Promise<void> {
+  const refresh = argv.includes("--refresh");
+
+  await mkdir(DATA_DIR, { recursive: true });
+
+  if (!refresh) {
+    const all = await Promise.all([
+      fileExists(PROVINCES_PATH),
+      fileExists(DEPARTMENTS_PATH),
+      fileExists(LOCALITIES_PATH),
+    ]);
+    if (all.every(Boolean)) {
+      console.log(
+        "✓ Snapshot exists at prisma/data/. Use `--refresh` to re-fetch.",
+      );
+      return;
+    }
+  }
+
+  console.log("Fetching from Georef…");
+
+  // ── Provinces ──
+  const provinciasResp = await fetchJson<GeorefResponse<"provincias", GeorefProvincia>>(
+    `${GEOREF_BASE}/provincias?max=24&campos=id,nombre`,
+  );
+  const provincias = provinciasResp.provincias;
+  if (provincias.length !== 24) {
+    throw new Error(
+      `Expected 24 provincias, got ${provincias.length}. Georef shape changed?`,
+    );
+  }
+
+  const provinceSnapshots: ProvinceSnapshot[] = provincias.map((p) => {
+    const regionCode = REGION_BY_PROVINCE_ID[p.id];
+    if (!regionCode) {
+      throw new Error(
+        `No region mapping for province id ${p.id} ("${p.nombre}"). ` +
+          `Update REGION_BY_PROVINCE_ID in scripts/fetch-georef.ts.`,
+      );
+    }
+    // CABA override: id "02" → slug "caba" (only at province level)
+    const slug = p.id === "02" ? "caba" : slugify(p.nombre);
+    return { code: p.id, slug, name: p.nombre, regionCode };
+  });
+
+  console.log(`  ✓ Provinces: ${provinceSnapshots.length}`);
+
+  // ── Departments ──
+  const departmentSnapshots: DepartmentSnapshot[] = [];
+  for (const province of provinceSnapshots) {
+    const depts = await fetchPaginated<"departamentos", GeorefDepartamento>(
+      `${GEOREF_BASE}/departamentos?provincia=${province.code}&campos=id,nombre,provincia.id,provincia.nombre`,
+      "departamentos",
+      200,
+    );
+    for (const d of depts) {
+      departmentSnapshots.push({
+        code: d.id,
+        slug: slugify(d.nombre),
+        name: d.nombre,
+        provinceCode: province.code,
+      });
+    }
+    console.log(`    ${province.name}: ${depts.length} depts`);
+  }
+  const provincesByCode = new Map(provinceSnapshots.map((p) => [p.code, p]));
+  assertNoSlugCollisions(departmentSnapshots, "departments", { provincesByCode });
+
+  console.log(`  ✓ Departments: ${departmentSnapshots.length}`);
+
+  // ── Localities ──
+  const localitySnapshots: LocalitySnapshot[] = [];
+  let skippedNoDept = 0;
+  let filtered = 0;
+  for (const province of provinceSnapshots) {
+    const locs = await fetchPaginated<"localidades", GeorefLocalidad>(
+      `${GEOREF_BASE}/localidades?provincia=${province.code}&campos=id,nombre,categoria,centroide.lat,centroide.lon,departamento.id,departamento.nombre,provincia.id,provincia.nombre`,
+      "localidades",
+      5000,
+    );
+    let kept = 0;
+    for (const l of locs) {
+      if (!KEEP_CATEGORIES.has(l.categoria)) {
+        filtered += 1;
+        continue;
+      }
+      if (!l.departamento?.id) {
+        console.warn(
+          `    ⚠ Skipping locality ${l.id} ("${l.nombre}", ${province.name}) — no department in Georef`,
+        );
+        skippedNoDept += 1;
+        continue;
+      }
+      const lat = l.centroide?.lat ?? null;
+      const lng = l.centroide?.lon ?? null;
+      localitySnapshots.push({
+        code: l.id,
+        slug: slugify(l.nombre),
+        name: l.nombre,
+        lat,
+        lng,
+        departmentCode: l.departamento.id,
+        provinceCode: province.code,
+      });
+      kept += 1;
+    }
+    console.log(`    ${province.name}: ${kept}/${locs.length} kept`);
+  }
+  const departmentsByCode = new Map(departmentSnapshots.map((d) => [d.code, d]));
+  resolveLocalitySlugCollisions(localitySnapshots, departmentsByCode);
+  assertNoSlugCollisions(localitySnapshots, "localities", {
+    provincesByCode,
+    departmentsByCode,
+  });
+
+  console.log(
+    `  ✓ Localities: ${localitySnapshots.length} (filtered out ${filtered} ` +
+      `non-turísticas, skipped ${skippedNoDept} without department)`,
+  );
+
+  // ── Write snapshots ──
+  await writeFile(
+    PROVINCES_PATH,
+    JSON.stringify(provinceSnapshots, null, 2) + "\n",
+    "utf8",
+  );
+  await writeFile(
+    DEPARTMENTS_PATH,
+    JSON.stringify(departmentSnapshots, null, 2) + "\n",
+    "utf8",
+  );
+  await writeFile(
+    LOCALITIES_PATH,
+    JSON.stringify(localitySnapshots, null, 2) + "\n",
+    "utf8",
+  );
+
+  console.log(`\n✓ Snapshot written to prisma/data/`);
+}
+
+main().catch((error) => {
+  console.error(error);
+  exit(1);
+});
