@@ -5,7 +5,9 @@
     "searchPlaceholder": "Buscar destinos, lugares, categorías…",
     "regionsHeading": "Explorá por región",
     "regionsSubheading": "Argentina dividida en sus 6 grandes regiones turísticas.",
-    "regionCount": "{provinces} provincias · {localities} localidades"
+    "regionCount": "{provinces} provincias · {localities} localidades",
+    "categoriesHeading": "Explorá por categoría",
+    "categoriesSubheading": "10 tipos de lugar, todos verificados por nuestro equipo."
   },
   "Header": {
     "signIn": "Acceder",

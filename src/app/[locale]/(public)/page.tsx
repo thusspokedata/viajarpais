@@ -1,6 +1,10 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { SearchBar } from "@/components/public/SearchBar";
 import { RegionsGrid, type RegionCardData } from "@/components/public/RegionsGrid";
+import {
+  CategoriesGrid,
+  type CategoryCardData,
+} from "@/components/public/CategoriesGrid";
 import { prisma } from "@/lib/db";
 
 type Props = {
@@ -30,13 +34,24 @@ async function loadRegions(): Promise<RegionCardData[]> {
   }));
 }
 
+async function loadCategories(locale: string): Promise<CategoryCardData[]> {
+  const categories = await prisma.category.findMany({
+    orderBy: { order: "asc" },
+  });
+  return categories.map((c) => ({
+    slug: c.slug,
+    name: locale === "en" ? c.nameEn : locale === "pt-BR" ? c.namePtBr : c.nameEs,
+  }));
+}
+
 export default async function HomePage({ params }: Props) {
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, regions] = await Promise.all([
+  const [t, regions, categories] = await Promise.all([
     getTranslations("Home"),
     loadRegions(),
+    loadCategories(locale),
   ]);
 
   return (
@@ -70,6 +85,20 @@ export default async function HomePage({ params }: Props) {
             </p>
           </header>
           <RegionsGrid regions={regions} />
+        </div>
+      </section>
+
+      <section className="bg-[var(--surface-canvas)] border-t border-[var(--border-subtle)]">
+        <div className="mx-auto max-w-7xl px-6 py-20 sm:py-24">
+          <header className="max-w-2xl mb-10 sm:mb-12">
+            <h2 className="font-display text-[var(--text-3xl)] sm:text-[var(--text-4xl)] font-semibold leading-[var(--leading-tight)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
+              {t("categoriesHeading")}
+            </h2>
+            <p className="mt-3 text-[var(--text-md)] text-[var(--text-secondary)]">
+              {t("categoriesSubheading")}
+            </p>
+          </header>
+          <CategoriesGrid categories={categories} />
         </div>
       </section>
     </>
