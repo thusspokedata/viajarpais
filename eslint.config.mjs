@@ -12,6 +12,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Defensive: nested build/cache dirs (e.g. when a Claude worktree
+    // lives inside .claude/ with its own .next and node_modules).
+    "**/.next/**",
+    "**/node_modules/**",
+    ".claude/**",
+    // Auto-generated Prisma client should never be linted.
+    "src/generated/**",
   ]),
 ]);
 

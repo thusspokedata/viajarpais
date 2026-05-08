@@ -12,6 +12,7 @@ module.exports = {
         "auth",
         "geo",
         "i18n",
+        "ui",
         "ci",
         "infra",
         "deps",
