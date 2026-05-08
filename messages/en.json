@@ -1,8 +1,19 @@
 {
   "Home": {
-    "title": "ViajarPaís",
-    "tagline": "Argentina's national tourism directory",
-    "intro": "Explore the 24 provinces grouped into 6 regions."
+    "heroTitle": "Travel Argentina with confidence",
+    "heroSubtitle": "Every place, vetted by our editorial team.",
+    "searchPlaceholder": "Search destinations, places, categories…",
+    "regionsHeading": "Explore by region",
+    "regionsSubheading": "Argentina across its six major tourism regions.",
+    "regionCount": "{provinces} provinces · {localities} localities",
+    "categoriesHeading": "Explore by category",
+    "categoriesSubheading": "Ten kinds of place, all vetted by our team.",
+    "trustHeading": "Verified by ViajarPaís",
+    "trustSubheading": "The green seal isn't for sale. Every listing is audited by a real person, with a short expiry and mandatory re-verification.",
+    "trustPoint1": "Our editorial team reviews each listing in person — with photos, calls and contact data.",
+    "trustPoint2": "Verification expires after 12 months; every listing is re-audited or loses the seal.",
+    "trustPoint3": "Actionable info: real prices, hours and contact details — not scraped from social media.",
+    "trustPoint4": "No fake reviews: we don't publish them, and we don't trade them for visibility."
   },
   "Header": {
     "signIn": "Sign in",
