@@ -1,6 +1,6 @@
 import * as React from "react";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { cn } from "@/components/ui";
 import { FooterLocaleSwitcher } from "./FooterLocaleSwitcher";
 

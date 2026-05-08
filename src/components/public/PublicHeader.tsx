@@ -1,9 +1,8 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { Menu, Globe, Close, ChevronDown } from "@/components/ui/icons";
 import {
   Button,
