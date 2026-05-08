@@ -7,7 +7,13 @@
     "regionsSubheading": "Argentina dividida en sus 6 grandes regiones turísticas.",
     "regionCount": "{provinces} provincias · {localities} localidades",
     "categoriesHeading": "Explorá por categoría",
-    "categoriesSubheading": "10 tipos de lugar, todos verificados por nuestro equipo."
+    "categoriesSubheading": "10 tipos de lugar, todos verificados por nuestro equipo.",
+    "trustHeading": "Verificado por ViajarPaís",
+    "trustSubheading": "El sello verde no se compra. Cada ficha la audita una persona real, con vencimiento corto y re-verificación obligatoria.",
+    "trustPoint1": "Equipo editorial revisa cada ficha personalmente, con foto, llamada y datos de contacto.",
+    "trustPoint2": "Verificación con vencimiento a 12 meses; cada ficha se re-audita o pierde el sello.",
+    "trustPoint3": "Información accionable: precios, horarios y contacto reales, no copiados de redes.",
+    "trustPoint4": "Sin reseñas falsas: no las publicamos ni las solicitamos a cambio de visibilidad."
   },
   "Header": {
     "signIn": "Acceder",

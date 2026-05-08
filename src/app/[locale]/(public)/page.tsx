@@ -5,6 +5,8 @@ import {
   CategoriesGrid,
   type CategoryCardData,
 } from "@/components/public/CategoriesGrid";
+import { VerifiedBadge } from "@/components/ui";
+import { Check } from "@/components/ui/icons";
 import { prisma } from "@/lib/db";
 
 type Props = {
@@ -101,6 +103,65 @@ export default async function HomePage({ params }: Props) {
           <CategoriesGrid categories={categories} />
         </div>
       </section>
+
+      <TrustSection />
     </>
+  );
+}
+
+async function TrustSection() {
+  const t = await getTranslations("Home");
+  /*
+    Fechas relativas: badge siempre en estado "active" como demo
+    institucional. Las fichas reales tendrán fechas propias.
+  */
+  const verifiedAt = new Date();
+  verifiedAt.setMonth(verifiedAt.getMonth() - 1);
+  const expiresAt = new Date(verifiedAt);
+  expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+  const points = [
+    t("trustPoint1"),
+    t("trustPoint2"),
+    t("trustPoint3"),
+    t("trustPoint4"),
+  ];
+
+  return (
+    <section className="bg-[var(--surface-base)] border-t border-[var(--border-subtle)]">
+      <div className="mx-auto max-w-4xl px-6 py-20 sm:py-24 text-center">
+        <div className="inline-flex">
+          <VerifiedBadge
+            size="lg"
+            verifiedAt={verifiedAt.toISOString()}
+            expiresAt={expiresAt.toISOString()}
+          />
+        </div>
+        <h2 className="mt-8 font-display text-[var(--text-3xl)] sm:text-[var(--text-4xl)] font-semibold leading-[var(--leading-tight)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
+          {t("trustHeading")}
+        </h2>
+        <p className="mt-4 text-[var(--text-md)] sm:text-[var(--text-lg)] leading-[var(--leading-snug)] text-[var(--text-secondary)] max-w-2xl mx-auto">
+          {t("trustSubheading")}
+        </p>
+        <ul className="mt-12 grid gap-3 sm:gap-4 sm:grid-cols-2 text-left">
+          {points.map((p, i) => (
+            <li
+              key={i}
+              className="flex items-start gap-3 p-4 rounded-[var(--radius-lg)] border border-[var(--border-subtle)] bg-[var(--surface-canvas)]"
+            >
+              <span
+                aria-hidden
+                className="grid place-items-center h-6 w-6 shrink-0 rounded-[var(--radius-pill)] bg-[var(--verified-bg)] text-[var(--verified-fg)] mt-0.5"
+              >
+                <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+              </span>
+              <span className="text-[var(--text-sm)] sm:text-[var(--text-base)] leading-[var(--leading-snug)] text-[var(--text-primary)]">
+                {p}
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }
