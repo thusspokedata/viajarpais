@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useLocale } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/components/ui";
 
@@ -19,25 +20,36 @@ type LocaleId = (typeof LOCALES)[number]["id"];
 export function FooterLocaleSwitcher({ className }: { className?: string }) {
   const router = useRouter();
   const pathname = usePathname();
+  const currentLocale = useLocale();
 
   function switchLocale(next: LocaleId) {
+    if (next === currentLocale) return;
     router.replace(pathname, { locale: next });
   }
 
   return (
     <div className={cn("flex items-center gap-3 text-[var(--text-xs)] text-[var(--text-muted)]", className)}>
-      {LOCALES.map((l, i) => (
-        <React.Fragment key={l.id}>
-          {i > 0 ? <span aria-hidden>·</span> : null}
-          <button
-            type="button"
-            onClick={() => switchLocale(l.id)}
-            className="hover:text-[var(--text-primary)] transition-colors duration-[var(--duration-fast)] focus:outline-none focus-visible:shadow-[var(--shadow-focus)] rounded-[var(--radius-xs)]"
-          >
-            {l.label}
-          </button>
-        </React.Fragment>
-      ))}
+      {LOCALES.map((l, i) => {
+        const isActive = l.id === currentLocale;
+        return (
+          <React.Fragment key={l.id}>
+            {i > 0 ? <span aria-hidden>·</span> : null}
+            <button
+              type="button"
+              onClick={() => switchLocale(l.id)}
+              aria-current={isActive ? "true" : undefined}
+              className={cn(
+                "transition-colors duration-[var(--duration-fast)] focus:outline-none focus-visible:shadow-[var(--shadow-focus)] rounded-[var(--radius-xs)]",
+                isActive
+                  ? "text-[var(--text-primary)] font-medium"
+                  : "hover:text-[var(--text-primary)]"
+              )}
+            >
+              {l.label}
+            </button>
+          </React.Fragment>
+        );
+      })}
     </div>
   );
 }
