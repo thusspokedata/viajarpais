@@ -24,6 +24,16 @@
     "closeMenu": "Close menu",
     "regionsHeading": "Regions"
   },
+  "VerifiedBadge": {
+    "label": "Verified",
+    "ariaActive": "Verified by ViajarPaís — expires {date}",
+    "ariaExpired": "Verification expired on {date}",
+    "tooltipActive": "Hand-verified by our editorial team.",
+    "tooltipExpired": "Verification expired — renewal in progress.",
+    "verifiedLabel": "Verified",
+    "expiresLabel": "Expires",
+    "daysRemaining": "{count, plural, one {# day remaining} other {# days remaining}}"
+  },
   "Footer": {
     "brandDescription": "Argentina's national tourism directory. Hand-verified by our editorial team — no fake reviews.",
     "regions": "Regions",

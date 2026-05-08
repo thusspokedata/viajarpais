@@ -24,6 +24,16 @@
     "closeMenu": "Fechar menu",
     "regionsHeading": "Regiões"
   },
+  "VerifiedBadge": {
+    "label": "Verificado",
+    "ariaActive": "Verificado pelo ViajarPaís — vence em {date}",
+    "ariaExpired": "Verificação vencida em {date}",
+    "tooltipActive": "Verificado manualmente pela nossa equipe editorial.",
+    "tooltipExpired": "Verificação vencida — renovação em andamento.",
+    "verifiedLabel": "Verificado",
+    "expiresLabel": "Vence",
+    "daysRemaining": "{count, plural, one {# dia restante} other {# dias restantes}}"
+  },
   "Footer": {
     "brandDescription": "Diretório nacional de turismo argentino. Verificado manualmente pela nossa equipe editorial — sem avaliações falsas.",
     "regions": "Regiões",
