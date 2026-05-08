@@ -16,6 +16,7 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "auth:generate": "better-auth generate --output prisma/schema.prisma --y",
+    "postinstall": "prisma generate",
     "prepare": "husky"
   },
   "dependencies": {
