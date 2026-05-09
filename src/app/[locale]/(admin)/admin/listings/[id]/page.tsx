@@ -9,7 +9,10 @@ import {
   listLocalitiesByDepartment,
   listCategories,
 } from "@/server/data/geo";
-import type { ListingFormInput } from "@/lib/listings/validation";
+import {
+  OpeningHoursSchema,
+  type ListingFormInput,
+} from "@/lib/listings/validation";
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -49,7 +52,16 @@ export default async function EditListingPage({ params, searchParams }: Props) {
     tiktok: listing.tiktok ?? undefined,
     youtube: listing.youtube ?? undefined,
     priceRange: listing.priceRange ?? null,
-    openingHours: (listing.openingHours as ListingFormInput["openingHours"]) ?? null,
+    /*
+      `openingHours` viene como `Json?` desde Prisma — el schema NO
+      garantiza la shape esperada por el form. Si una migración futura
+      cambia la estructura o si un row tiene formato viejo, el cast
+      directo dejaba pasar data inválida hasta que el form se rompía
+      silenciosamente. `OpeningHoursSchema.catch(null).parse()` valida
+      en runtime: si la shape no matchea, cae a `null` y el form
+      muestra "sin horarios" en lugar de explotar.
+    */
+    openingHours: OpeningHoursSchema.catch(null).parse(listing.openingHours),
     paymentMethods: listing.paymentMethods ?? [],
     languages: listing.languages ?? [],
     attributes:
