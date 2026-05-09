@@ -1,8 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/authz";
+
+/*
+  TODO (v0.2.b — Cloudinary): cuando se implemente `hardDeleteListing`,
+  ANTES del `prisma.listing.delete()` hay que iterar las
+  `ListingImage.cloudinaryPublicId` y llamar `cloudinary.uploader.destroy()`
+  por cada una. La cascade de Prisma borra los rows en DB pero los
+  assets en el CDN quedan huérfanos sin esto. Decisión cerrada en
+  AGENTS.md (sección "Cloudinary cleanup en hard-delete de Listing").
+*/
 
 export type LifecycleResult =
   | { ok: true }
@@ -10,33 +20,47 @@ export type LifecycleResult =
 
 const TWELVE_MONTHS_MS = 365 * 24 * 60 * 60 * 1000;
 
-function ensureExists<T>(value: T | null, label: string) {
-  if (!value) throw new Error(`${label} no encontrada.`);
-  return value;
+const NOT_FOUND_RESULT: LifecycleResult = {
+  ok: false,
+  message: "La ficha no existe o fue eliminada.",
+};
+
+/**
+ * Atrapa `P2025` (Record not found) de Prisma y lo convierte en un
+ * `LifecycleResult` no-ok en vez de dejarlo bubble-up como excepción
+ * con stack trace al cliente.
+ */
+function isRecordNotFoundError(err: unknown): boolean {
+  return (
+    err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2025"
+  );
 }
 
 export async function publishListing(id: string): Promise<LifecycleResult> {
   await requireRole(["ADMIN", "EDITOR"]);
 
-  const existing = ensureExists(
-    await prisma.listing.findUnique({
-      where: { id },
-      select: { id: true, status: true },
-    }),
-    "Ficha",
-  );
+  const existing = await prisma.listing.findUnique({
+    where: { id },
+    select: { id: true, status: true },
+  });
+  if (!existing) return NOT_FOUND_RESULT;
 
   if (existing.status === "PUBLISHED") {
     return { ok: true };
   }
 
-  await prisma.listing.update({
-    where: { id },
-    data: {
-      status: "PUBLISHED",
-      archivedAt: null,
-    },
-  });
+  try {
+    await prisma.listing.update({
+      where: { id },
+      data: {
+        status: "PUBLISHED",
+        archivedAt: null,
+      },
+    });
+  } catch (err) {
+    if (isRecordNotFoundError(err)) return NOT_FOUND_RESULT;
+    throw err;
+  }
 
   revalidatePath("/admin/listings");
   revalidatePath(`/admin/listings/${id}`);
@@ -46,13 +70,11 @@ export async function publishListing(id: string): Promise<LifecycleResult> {
 export async function unpublishListing(id: string): Promise<LifecycleResult> {
   await requireRole(["ADMIN", "EDITOR"]);
 
-  const existing = ensureExists(
-    await prisma.listing.findUnique({
-      where: { id },
-      select: { id: true, status: true },
-    }),
-    "Ficha",
-  );
+  const existing = await prisma.listing.findUnique({
+    where: { id },
+    select: { id: true, status: true },
+  });
+  if (!existing) return NOT_FOUND_RESULT;
 
   if (existing.status !== "PUBLISHED") {
     return {
@@ -61,10 +83,15 @@ export async function unpublishListing(id: string): Promise<LifecycleResult> {
     };
   }
 
-  await prisma.listing.update({
-    where: { id },
-    data: { status: "DRAFT" },
-  });
+  try {
+    await prisma.listing.update({
+      where: { id },
+      data: { status: "DRAFT" },
+    });
+  } catch (err) {
+    if (isRecordNotFoundError(err)) return NOT_FOUND_RESULT;
+    throw err;
+  }
 
   revalidatePath("/admin/listings");
   revalidatePath(`/admin/listings/${id}`);
@@ -74,13 +101,18 @@ export async function unpublishListing(id: string): Promise<LifecycleResult> {
 export async function archiveListing(id: string): Promise<LifecycleResult> {
   await requireRole(["ADMIN", "EDITOR"]);
 
-  await prisma.listing.update({
-    where: { id },
-    data: {
-      status: "ARCHIVED",
-      archivedAt: new Date(),
-    },
-  });
+  try {
+    await prisma.listing.update({
+      where: { id },
+      data: {
+        status: "ARCHIVED",
+        archivedAt: new Date(),
+      },
+    });
+  } catch (err) {
+    if (isRecordNotFoundError(err)) return NOT_FOUND_RESULT;
+    throw err;
+  }
 
   revalidatePath("/admin/listings");
   revalidatePath(`/admin/listings/${id}`);
@@ -90,13 +122,18 @@ export async function archiveListing(id: string): Promise<LifecycleResult> {
 export async function restoreListing(id: string): Promise<LifecycleResult> {
   await requireRole(["ADMIN", "EDITOR"]);
 
-  await prisma.listing.update({
-    where: { id },
-    data: {
-      status: "DRAFT",
-      archivedAt: null,
-    },
-  });
+  try {
+    await prisma.listing.update({
+      where: { id },
+      data: {
+        status: "DRAFT",
+        archivedAt: null,
+      },
+    });
+  } catch (err) {
+    if (isRecordNotFoundError(err)) return NOT_FOUND_RESULT;
+    throw err;
+  }
 
   revalidatePath("/admin/listings");
   revalidatePath(`/admin/listings/${id}`);
@@ -106,13 +143,11 @@ export async function restoreListing(id: string): Promise<LifecycleResult> {
 export async function verifyListing(id: string): Promise<LifecycleResult> {
   const { user } = await requireRole(["ADMIN", "EDITOR"]);
 
-  const existing = ensureExists(
-    await prisma.listing.findUnique({
-      where: { id },
-      select: { id: true, status: true },
-    }),
-    "Ficha",
-  );
+  const existing = await prisma.listing.findUnique({
+    where: { id },
+    select: { id: true, status: true },
+  });
+  if (!existing) return NOT_FOUND_RESULT;
 
   if (existing.status !== "PUBLISHED") {
     return {
@@ -123,14 +158,19 @@ export async function verifyListing(id: string): Promise<LifecycleResult> {
   }
 
   const now = new Date();
-  await prisma.listing.update({
-    where: { id },
-    data: {
-      verifiedAt: now,
-      verifiedUntil: new Date(now.getTime() + TWELVE_MONTHS_MS),
-      verifiedById: user.id,
-    },
-  });
+  try {
+    await prisma.listing.update({
+      where: { id },
+      data: {
+        verifiedAt: now,
+        verifiedUntil: new Date(now.getTime() + TWELVE_MONTHS_MS),
+        verifiedById: user.id,
+      },
+    });
+  } catch (err) {
+    if (isRecordNotFoundError(err)) return NOT_FOUND_RESULT;
+    throw err;
+  }
 
   revalidatePath("/admin/listings");
   revalidatePath(`/admin/listings/${id}`);
@@ -140,14 +180,19 @@ export async function verifyListing(id: string): Promise<LifecycleResult> {
 export async function unverifyListing(id: string): Promise<LifecycleResult> {
   await requireRole(["ADMIN", "EDITOR"]);
 
-  await prisma.listing.update({
-    where: { id },
-    data: {
-      verifiedAt: null,
-      verifiedUntil: null,
-      verifiedById: null,
-    },
-  });
+  try {
+    await prisma.listing.update({
+      where: { id },
+      data: {
+        verifiedAt: null,
+        verifiedUntil: null,
+        verifiedById: null,
+      },
+    });
+  } catch (err) {
+    if (isRecordNotFoundError(err)) return NOT_FOUND_RESULT;
+    throw err;
+  }
 
   revalidatePath("/admin/listings");
   revalidatePath(`/admin/listings/${id}`);
