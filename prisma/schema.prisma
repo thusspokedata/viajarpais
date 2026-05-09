@@ -185,13 +185,16 @@ model Listing {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   archivedAt     DateTime?
+  // verifiedAt: ver migracion add_listing_data_integrity_fixes —
+  // reemplazado por dos indices parciales (verified vs unverified)
+  // que Prisma no puede expresar via @@index.
 
   @@index([provinceId])
   @@index([departmentId])
   @@index([localityId])
   @@index([status])
   @@index([tier])
-  @@index([verifiedAt])
+  @@index([updatedAt(sort: Desc)])
 }
 
 model ListingCategory {
