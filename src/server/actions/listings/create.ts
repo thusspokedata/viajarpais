@@ -24,6 +24,20 @@ export type CreateListingResult =
       message?: string;
     };
 
+/**
+ * Helper: distingue undefined (no incluir el campo en el create) de
+ * null (clear explícito) para campos `Json?`. En create no es tan
+ * crítico como en update — Prisma trata undefined como "usar default"
+ * que es null — pero usamos el mismo patrón por consistencia.
+ */
+function jsonOrClear(
+  value: unknown,
+): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
+  if (value === null) return Prisma.JsonNull;
+  if (value === undefined) return undefined;
+  return value as Prisma.InputJsonValue;
+}
+
 export async function createListing(
   raw: ListingFormInput,
 ): Promise<CreateListingResult> {
@@ -94,45 +108,85 @@ export async function createListing(
     };
   }
 
-  const created = await prisma.listing.create({
-    data: {
-      name: data.name,
-      slug,
-      description: data.description,
-      provinceId: data.provinceId,
-      departmentId: data.departmentId,
-      localityId: data.localityId,
-      address: data.address,
-      lat: data.lat ?? null,
-      lng: data.lng ?? null,
-      phone: data.phone ?? null,
-      whatsapp: data.whatsapp ?? null,
-      email: data.email ?? null,
-      website: data.website ?? null,
-      instagram: data.instagram ?? null,
-      facebook: data.facebook ?? null,
-      tiktok: data.tiktok ?? null,
-      youtube: data.youtube ?? null,
-      priceRange: data.priceRange ?? null,
-      openingHours: data.openingHours ?? undefined,
-      paymentMethods: data.paymentMethods,
-      languages: data.languages,
-      attributes: (data.attributes ?? undefined) as Prisma.InputJsonValue | undefined,
-      metaTitle: data.metaTitle ?? null,
-      metaDescription: data.metaDescription ?? null,
-      status: "DRAFT",
-      tier: "FREE",
-      paymentStatus: "NONE",
-      createdById: user.id,
-      categories: {
-        create: data.categories.map((c) => ({
-          categoryId: c.categoryId,
-          isPrimary: c.isPrimary,
-        })),
+  let created: { id: string; slug: string };
+  try {
+    created = await prisma.listing.create({
+      data: {
+        name: data.name,
+        slug,
+        description: data.description,
+        provinceId: data.provinceId,
+        departmentId: data.departmentId,
+        localityId: data.localityId,
+        address: data.address,
+        lat: data.lat ?? null,
+        lng: data.lng ?? null,
+        phone: data.phone ?? null,
+        whatsapp: data.whatsapp ?? null,
+        email: data.email ?? null,
+        website: data.website ?? null,
+        instagram: data.instagram ?? null,
+        facebook: data.facebook ?? null,
+        tiktok: data.tiktok ?? null,
+        youtube: data.youtube ?? null,
+        priceRange: data.priceRange ?? null,
+        openingHours: jsonOrClear(data.openingHours),
+        paymentMethods: data.paymentMethods,
+        languages: data.languages,
+        attributes: jsonOrClear(data.attributes),
+        metaTitle: data.metaTitle ?? null,
+        metaDescription: data.metaDescription ?? null,
+        status: "DRAFT",
+        tier: "FREE",
+        paymentStatus: "NONE",
+        createdById: user.id,
+        categories: {
+          create: data.categories.map((c) => ({
+            categoryId: c.categoryId,
+            isPrimary: c.isPrimary,
+          })),
+        },
       },
-    },
-    select: { id: true, slug: true },
-  });
+      select: { id: true, slug: true },
+    });
+  } catch (err) {
+    /*
+      Race entre `assertSlugValidAndAvailable`/`generateUniqueSlug` y
+      `prisma.listing.create()`: otra request puede tomar el slug en
+      la ventana del medio. La unique constraint del schema atrapa el
+      duplicado y Prisma tira P2002. También cubre el partial unique
+      de `ListingCategory(listingId) WHERE isPrimary=true` por si zod
+      fallara en garantizar exactamente una primaria (defensa en
+      profundidad).
+    */
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+      const target = err.meta?.target;
+      const targetStr = Array.isArray(target) ? target.join(",") : String(target ?? "");
+      if (targetStr.includes("slug")) {
+        return {
+          ok: false,
+          fieldErrors: {
+            slug: ["Otro editor acaba de tomar este slug. Probá con otro."],
+          },
+        };
+      }
+      if (targetStr.includes("isPrimary")) {
+        return {
+          ok: false,
+          fieldErrors: {
+            categories: [
+              "Conflicto al guardar la categoría primaria. Reintentá.",
+            ],
+          },
+        };
+      }
+      return {
+        ok: false,
+        message: "Conflicto de unicidad al crear la ficha.",
+      };
+    }
+    throw err;
+  }
 
   revalidatePath("/admin/listings");
   redirect(`/admin/listings/${created.id}?created=1`);
