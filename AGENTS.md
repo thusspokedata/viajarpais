@@ -102,8 +102,90 @@ respetar estas reglas sin excepción.
 - Mapeo provincia → región: ver `prisma/seed.ts`.
 - Filtro de localidades de Georef: incluir `Localidad simple`,
   `Localidad compuesta`, `Componente de localidad compuesta`. Excluir `Entidad`.
-- Slug colisiones: fail-fast con detalle, no auto-resolver con sufijo numérico.
-  Override manual via `LOCALITY_SLUG_OVERRIDES` cuando haga falta.
+- Slug colisiones de localidades: fail-fast con detalle, no auto-resolver con
+  sufijo numérico. Override manual via `LOCALITY_SLUG_OVERRIDES` cuando haga
+  falta.
+- **Slug de Listings**: vacío en form → autogenera de `name`; si colisiona,
+  agrega sufijo de localidad (`cabanas-don-pedro` → `cabanas-don-pedro-uspallata`);
+  si la versión con localidad también colisiona, fail explícito (editor escribe
+  a mano). Editor escribe a mano → valida formato + unicidad, NO autogenera
+  alternativa.
+- **Listing crítico para re-verificación**: el cambio de `name`, `address`,
+  `provinceId`, `departmentId`, `localityId` o `categories` en una ficha
+  verificada resetea `verifiedAt` y `verifiedUntil` pero **preserva
+  `verifiedById`** — el banner de re-verificación se dispara via
+  `verifiedById !== null && verifiedAt === null`.
+- **`Listing.createdById ON DELETE RESTRICT`**: borrar un usuario que creó
+  fichas requiere reasignación previa de las fichas a otro user. Hoy NO existe
+  UI ni server action para reasignar; hasta que exista una `reassignListings`,
+  el cleanup de cuentas se hace via SQL manual. Decisión consciente para
+  preservar autoría editorial.
+- **Cloudinary cleanup en hard-delete de Listing**: cuando se implemente
+  `hardDeleteListing` (v0.2.b o posterior), ANTES del `prisma.listing.delete()`
+  hay que iterar `ListingImage.cloudinaryPublicId` y llamar
+  `cloudinary.uploader.destroy()` por cada uno. La cascade de Prisma borra los
+  rows pero los assets en el CDN quedan huérfanos. Hay un TODO inline en
+  `src/server/actions/listings/lifecycle.ts` apuntando acá.
+- **v0.2.a NO es infraestructura durmiente**: el CRUD de fichas es un sistema
+  activo conectado al contenido geográfico. Las páginas de localidad listan
+  fichas adentro y las fichas linkean a sus padres geográficos vía
+  breadcrumbs. Bugs en v0.2.a se pisan al renderizar contenido público.
+
+## i18n del contenido editorial (roadmap, NO implementado todavía)
+
+El admin UI queda en `es` por defecto. Pero el **contenido** que el editor
+carga (descripción de listings, regiones, provincias, departamentos,
+localidades, meta description) sí se traduce a `en` y `pt-BR` con el
+siguiente flow:
+
+- **Modelo**: traducción automática al guardar con DeepL.
+- **Fuente de verdad**: `es` siempre. NO detección automática, NO permitir
+  elegir otro idioma de origen.
+- **Flujo**: el editor escribe en español. Al guardar (create o update), el
+  server action dispara DeepL síncrono (1-3 segundos). Las 3 versiones se
+  guardan en DB. Botón "Guardar" muestra estado loading "Guardando y
+  generando traducciones…".
+- **Si DeepL falla**: el guardado en español sí se completa, las traducciones
+  quedan en estado `NONE`, y aparece toast amarillo + warning en el admin
+  para reintentar.
+- **Re-edición del español**: las traducciones automáticas se regeneran,
+  excepto las marcadas `REVIEWED` que se preservan con banner "el texto base
+  cambió desde la última revisión".
+
+### Schema previsto (a aplicar a `Listing`, `Region`, `Province`, `Department`, `Locality` cuando llegue el PR)
+
+```prisma
+enum TranslationSource {
+  NONE        // sin traducir todavía
+  MACHINE     // generada por DeepL
+  REVIEWED    // generada por DeepL pero validada por un editor
+  HUMAN       // editor escribió manualmente (caso futuro)
+}
+
+descriptionEs               String                                  // fuente de verdad
+descriptionEn               String?
+descriptionPtBr             String?
+descriptionEnSource         TranslationSource @default(NONE)
+descriptionPtBrSource       TranslationSource @default(NONE)
+descriptionEnTranslatedAt   DateTime?
+descriptionPtBrTranslatedAt DateTime?
+```
+
+Mismo patrón para `metaDescription`. Otros campos (`name`, `address`,
+contacto, redes) NO se traducen — son topónimos o datos puros.
+
+### Manejo de cuota DeepL
+
+- DeepL Free Plan: 500k caracteres/mes. API key en `.env.local` como
+  `DEEPL_API_KEY`. Endpoint detectado por sufijo `:fx` (free) vs no-sufijo
+  (pro).
+- Tabla `TranslationUsage` con caracteres consumidos por mes.
+- Al **80%**: alerta por email vía Resend (`RESEND_API_KEY`).
+- Al **100%**: traducciones se pausan, las fichas nuevas guardan solo en
+  español con flag `pending_quota_exceeded`, banner global en admin.
+
+Variables de entorno previstas (ya en `.env.example` con valor vacío):
+`DEEPL_API_KEY`, `RESEND_API_KEY`.
 
 ## Cuando dudes, preguntá
 

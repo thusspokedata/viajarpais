@@ -24,14 +24,14 @@ export default function AdminLoginPage() {
     const { error: signInError } = await authClient.signIn.email({
       email,
       password,
-      callbackURL: `${prefix}/admin/health`,
+      callbackURL: `${prefix}/admin/listings`,
     });
     setLoading(false);
     if (signInError) {
       setError(signInError.message ?? t("errorGeneric"));
       return;
     }
-    router.push(`${prefix}/admin/health`);
+    router.push(`${prefix}/admin/listings`);
     router.refresh();
   }
 
