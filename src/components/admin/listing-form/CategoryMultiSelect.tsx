@@ -37,12 +37,16 @@ export function CategoryMultiSelect({
 
   function toggle(categoryId: string) {
     if (selectedIds.has(categoryId)) {
-      const next = value.filter((v) => v.categoryId !== categoryId);
+      const filtered = value.filter((v) => v.categoryId !== categoryId);
       // Si quedó alguna sin primary y había una sola antes seleccionada,
-      // promover la primera a primary.
-      if (next.length > 0 && !next.some((v) => v.isPrimary)) {
-        next[0].isPrimary = true;
-      }
+      // promover la primera a primary. Reconstruimos el array sin mutar
+      // los entries (eran derivados del form state — mutarlos genera
+      // estados inconsistentes en RHF).
+      const needsPromotion =
+        filtered.length > 0 && !filtered.some((v) => v.isPrimary);
+      const next = needsPromotion
+        ? filtered.map((v, i) => (i === 0 ? { ...v, isPrimary: true } : v))
+        : filtered;
       onChange(next);
     } else {
       const next = [...value, { categoryId, isPrimary: value.length === 0 }];

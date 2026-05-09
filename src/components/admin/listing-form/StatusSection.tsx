@@ -58,12 +58,28 @@ export function StatusSection({
   function run(action: () => Promise<{ ok: boolean; message?: string }>) {
     setError(null);
     startTransition(async () => {
-      const result = await action();
-      if (!result.ok) {
-        setError(result.message ?? "No se pudo completar la acción.");
-        return;
+      /*
+        Wrap en try/catch: aunque las lifecycle actions ahora devuelven
+        `LifecycleResult` en vez de throw (ver `fix(db): lifecycle ...`),
+        un fallo de red o una excepción inesperada del servidor todavía
+        puede surgir. Sin este catch, el thrown error queda silencioso
+        para el editor — la UI vuelve al estado idle como si nada hubiera
+        pasado.
+      */
+      try {
+        const result = await action();
+        if (!result.ok) {
+          setError(result.message ?? "No se pudo completar la acción.");
+          return;
+        }
+        router.refresh();
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Error inesperado. Probá de nuevo.",
+        );
       }
-      router.refresh();
     });
   }
 
