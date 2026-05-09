@@ -44,6 +44,14 @@ export function useAutosave<T>(args: {
     saveRef.current = save;
   }, [save]);
 
+  /*
+    `state.lastSavedAt` NO entra en el dep array a propósito. Si lo
+    incluyera, cada save exitoso re-armaría el timer y dispararía un
+    nuevo autosave inmediatamente — autosaves más frecuentes que los
+    `delayMs` configurados. Para preservar el timestamp en el branch de
+    error usamos un updater functional (`setState((s) => ...)`) que lee
+    el valor anterior sin necesidad de tenerlo como dependencia.
+  */
   React.useEffect(() => {
     if (!enabled || !isValid) return;
 
@@ -70,17 +78,17 @@ export function useAutosave<T>(args: {
             setState((s) => ({ ...s, status: "idle" }));
             return;
           }
-          setState({
+          setState((s) => ({
             status: "error",
-            lastSavedAt: state.lastSavedAt,
+            lastSavedAt: s.lastSavedAt,
             lastError:
               err instanceof Error ? err.message : "Error guardando.",
-          });
+          }));
         });
     }, delayMs);
 
     return () => clearTimeout(handle);
-  }, [data, enabled, isValid, delayMs, state.lastSavedAt]);
+  }, [data, enabled, isValid, delayMs]);
 
   const cancelInFlight = React.useCallback(() => {
     ctrlRef.current?.abort();

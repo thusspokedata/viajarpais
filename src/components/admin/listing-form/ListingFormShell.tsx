@@ -72,17 +72,24 @@ export function ListingFormShell(props: ListingFormShellProps) {
 
   const [serverError, setServerError] = React.useState<string | null>(null);
   const [submitting, startSubmit] = React.useTransition();
+
+  /*
+    `attributesText` mantiene el texto crudo que el editor escribe en el
+    textarea. Cada cambio se parsea y, si el JSON es válido, se sincroniza
+    al form via `setValue("attributes", parsed)`. Si no, `setError` marca
+    el campo invalido — el form keep el último valor parseado correctamente
+    o `undefined`. Asi el autosave (que lee `form.attributes` watched)
+    persiste cambios de attributes; antes vivian solo en `attributesText`
+    local y el autosave nunca los veia.
+  */
   const [attributesText, setAttributesText] = React.useState<string>(() =>
     props.defaultValues.attributes
       ? JSON.stringify(props.defaultValues.attributes, null, 2)
       : "",
   );
-  const [attributesError, setAttributesError] = React.useState<string | null>(
-    null,
-  );
 
   const watchedData = useWatch({ control: form.control });
-  const isFormValid = form.formState.isValid && !attributesError;
+  const isFormValid = form.formState.isValid;
 
   const autosaveSave = React.useCallback(
     async (data: ListingFormInput, signal: AbortSignal) => {
@@ -125,20 +132,31 @@ export function ListingFormShell(props: ListingFormShellProps) {
     }
   }
 
+  function handleAttributesChange(text: string) {
+    setAttributesText(text);
+    const parsed = parseAttributesText(text);
+    if (parsed.ok) {
+      form.setValue("attributes", parsed.value, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.clearErrors("attributes");
+    } else {
+      form.setError("attributes", { type: "manual", message: parsed.error });
+    }
+  }
+
   function handleSubmit(data: ListingFormInput) {
     setServerError(null);
-    setAttributesError(null);
     autosave.cancelInFlight();
 
-    const attrParse = parseAttributesText(attributesText);
-    if (!attrParse.ok) {
-      setAttributesError(attrParse.error);
-      return;
-    }
-    const payload: ListingFormInput = {
-      ...data,
-      attributes: attrParse.value,
-    };
+    /*
+      `data.attributes` ya viene parseado y validado: se sincroniza desde
+      el textarea via `handleAttributesChange`. Si el JSON está mal, el
+      form ya marcó error y `handleSubmit` no se ejecuta (RHF bloquea
+      submit con errores). Por eso acá solo reenviamos `data` tal cual.
+    */
+    const payload: ListingFormInput = data;
 
     startSubmit(async () => {
       if (isEdit && props.listingId) {
@@ -499,19 +517,22 @@ export function ListingFormShell(props: ListingFormShellProps) {
           title="Atributos específicos"
           description="Campo experimental. Se completa en versiones futuras según categoría."
         >
-          <FieldRow label="Atributos (JSON opcional)" error={attributesError ?? undefined}>
+          <FieldRow
+            label="Atributos (JSON opcional)"
+            error={
+              form.formState.errors.attributes?.message as string | undefined
+            }
+          >
             <Textarea
               value={attributesText}
-              onChange={(e) => {
-                setAttributesText(e.target.value);
-                setAttributesError(null);
-              }}
+              onChange={(e) => handleAttributesChange(e.target.value)}
               rows={5}
               placeholder='{ "wifi": true, "estacionamiento": "gratis" }'
               className="font-mono text-[var(--text-xs)]"
             />
             <p className="text-[var(--text-xs)] text-[var(--text-muted)] mt-1">
               Tiene que ser un objeto JSON parseable. Dejalo vacío si no aplica.
+              El autosave persiste cambios validos automáticamente.
             </p>
           </FieldRow>
         </FormSection>
