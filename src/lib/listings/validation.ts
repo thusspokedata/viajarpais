@@ -91,12 +91,41 @@ const optionalEmail = z
   .optional()
   .transform((v) => (v && v.length > 0 ? v : undefined));
 
+/*
+  Coordenadas opcionales. Si el campo está vacío o null, queda como
+  `undefined`. Si tiene contenido, debe parsear a número finito —
+  caso contrario el form muestra error inline en vez de descartarlo
+  silenciosamente como hacía la versión anterior con `transform`.
+  Antes, escribir "abc" en lat se traducía a `undefined` y se guardaba
+  como null sin avisar al editor.
+*/
 const optionalLatLng = z
   .union([z.number(), z.string(), z.null()])
   .optional()
+  .superRefine((v, ctx) => {
+    if (v === null || v === undefined) return;
+    if (typeof v === "number") {
+      if (!Number.isFinite(v)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Número inválido.",
+        });
+      }
+      return;
+    }
+    const s = v.trim();
+    if (!s) return;
+    const n = Number(s);
+    if (!Number.isFinite(n)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Coordenada inválida — usá un número decimal (ej. -32.8908).",
+      });
+    }
+  })
   .transform((v) => {
     if (v === null || v === undefined) return undefined;
-    if (typeof v === "number") return Number.isFinite(v) ? v : undefined;
+    if (typeof v === "number") return v;
     const s = v.trim();
     if (!s) return undefined;
     const n = Number(s);
