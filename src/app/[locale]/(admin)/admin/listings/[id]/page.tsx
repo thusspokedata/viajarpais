@@ -65,23 +65,18 @@ export default async function EditListingPage({ params, searchParams }: Props) {
   };
 
   /*
-    needsReverify: heurística para que el banner aparezca cuando una
-    ficha en DRAFT/PUBLISHED tiene `verifiedAt=null` pero antes estaba
-    verificada. v0.2.a no rastrea historial — usamos un proxy: si la
-    ficha tiene `verifiedUntil=null` Y fue editada después de haberse
-    creado (updatedAt > createdAt + 1min) ESTÁ pendiente de verificar.
-    En la práctica el banner aparece para fichas previamente verificadas
-    cuyo updateListing reseteó verifiedAt; las nunca-verificadas también
-    "necesitan verificación" pero el copy del banner sigue aplicando.
-
-    Para el smoke test del usuario (#5): cuando el editor cambia el
-    nombre de una ficha verificada, el server action resetea verifiedAt
-    a null y el reload acá hace que el banner se muestre.
+    needsReverify: detección directa, sin heurística temporal.
+    `verifiedById !== null && verifiedAt === null` = "esta ficha fue
+    verificada por alguien y ahora está en estado no-verificado". La
+    señal funciona porque `updateListing` resetea `verifiedAt` cuando
+    se cambian campos críticos pero PRESERVA `verifiedById` (ver el
+    commit anterior `fix(db): updateListing CAS + ...`). Así una ficha
+    nunca-verificada (`verifiedById=null`) NO dispara el banner aunque
+    se la edite muchas veces, y una ficha previamente verificada cuyo
+    `verifiedAt` se reseteó SÍ lo dispara.
   */
   const needsReverify =
-    listing.verifiedAt === null &&
-    listing.status !== "ARCHIVED" &&
-    listing.updatedAt.getTime() - listing.createdAt.getTime() > 60_000;
+    listing.verifiedById !== null && listing.verifiedAt === null;
 
   const justCreated = sp.created === "1";
 
