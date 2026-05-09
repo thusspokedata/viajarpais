@@ -55,6 +55,21 @@ export function LocationCascade({
     React.useState<LocalityOption[]>(initialLocalities);
   const [, startTx] = React.useTransition();
 
+  /*
+    Last-write-wins guards. Sin esto, click rápido en Cuyo → Buenos Aires
+    podía mostrar deptos de Cuyo si el primer fetch llegaba tarde. Cada
+    cascada (depts/locs) tiene su propio counter de request id y un
+    AbortController. Las respuestas con `myId !== refId.current` se
+    descartan sin aplicar setState. El AbortController sólo señaliza
+    "ya no me importa" porque server actions de Next no propagan signal
+    al servidor — el ref-id es la garantía real, AbortController es
+    consistencia con el patrón de `useAutosave`.
+  */
+  const deptCtrlRef = React.useRef<AbortController | null>(null);
+  const deptReqIdRef = React.useRef(0);
+  const locCtrlRef = React.useRef<AbortController | null>(null);
+  const locReqIdRef = React.useRef(0);
+
   function selectProvince(provinceId: string, currentValue: string) {
     if (provinceId === currentValue) return;
     setValue("provinceId", provinceId, { shouldDirty: true });
@@ -62,9 +77,21 @@ export function LocationCascade({
     setValue("localityId", "", { shouldDirty: true });
     setDepartments([]);
     setLocalities([]);
+
+    // Cancelar cualquier fetch de depts/locs en vuelo: la elección de
+    // provincia los invalidó.
+    deptCtrlRef.current?.abort();
+    locCtrlRef.current?.abort();
+    locReqIdRef.current += 1;
+
     if (!provinceId) return;
+    const ctrl = new AbortController();
+    deptCtrlRef.current = ctrl;
+    const myId = ++deptReqIdRef.current;
+
     startTx(async () => {
       const next = await getDepartmentsByProvinceAction(provinceId);
+      if (ctrl.signal.aborted || myId !== deptReqIdRef.current) return;
       setDepartments(next);
     });
   }
@@ -74,9 +101,17 @@ export function LocationCascade({
     setValue("departmentId", departmentId, { shouldDirty: true });
     setValue("localityId", "", { shouldDirty: true });
     setLocalities([]);
+
+    locCtrlRef.current?.abort();
+
     if (!departmentId) return;
+    const ctrl = new AbortController();
+    locCtrlRef.current = ctrl;
+    const myId = ++locReqIdRef.current;
+
     startTx(async () => {
       const next = await getLocalitiesByDepartmentAction(departmentId);
+      if (ctrl.signal.aborted || myId !== locReqIdRef.current) return;
       setLocalities(next);
     });
   }

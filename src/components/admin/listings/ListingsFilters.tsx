@@ -75,6 +75,16 @@ export function ListingsFilters({
   const [localities, setLocalities] =
     React.useState<LocalityOption[]>(initialLocalities);
 
+  /*
+    Last-write-wins guards. Mismo patrón que `LocationCascade`. Click
+    rápido en provincias distintas no debe ensuciar la lista de deptos
+    con la respuesta de la primera elección.
+  */
+  const deptCtrlRef = React.useRef<AbortController | null>(null);
+  const deptReqIdRef = React.useRef(0);
+  const locCtrlRef = React.useRef<AbortController | null>(null);
+  const locReqIdRef = React.useRef(0);
+
   function navigate(updater: (params: URLSearchParams) => void) {
     const next = new URLSearchParams(searchParams.toString());
     updater(next);
@@ -112,9 +122,19 @@ export function ListingsFilters({
     });
     setDepartments([]);
     setLocalities([]);
+
+    deptCtrlRef.current?.abort();
+    locCtrlRef.current?.abort();
+    locReqIdRef.current += 1;
+
     if (!value) return;
+    const ctrl = new AbortController();
+    deptCtrlRef.current = ctrl;
+    const myId = ++deptReqIdRef.current;
+
     startTx(async () => {
       const next = await getDepartmentsByProvinceAction(value);
+      if (ctrl.signal.aborted || myId !== deptReqIdRef.current) return;
       setDepartments(next);
     });
   }
@@ -127,9 +147,17 @@ export function ListingsFilters({
       p.delete("localityId");
     });
     setLocalities([]);
+
+    locCtrlRef.current?.abort();
+
     if (!value) return;
+    const ctrl = new AbortController();
+    locCtrlRef.current = ctrl;
+    const myId = ++locReqIdRef.current;
+
     startTx(async () => {
       const next = await getLocalitiesByDepartmentAction(value);
+      if (ctrl.signal.aborted || myId !== locReqIdRef.current) return;
       setLocalities(next);
     });
   }
