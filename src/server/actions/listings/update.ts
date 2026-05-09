@@ -26,10 +26,27 @@ export type UpdateListingResult =
     };
 
 /**
+ * Helper: distingue undefined (no tocar el campo en DB) de null (clear
+ * explícito) para campos `Json?` de Prisma. `?? undefined` solo no
+ * limpia el valor previo cuando el editor borra attributes/openingHours.
+ */
+function jsonOrClear(
+  value: unknown,
+): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
+  if (value === null) return Prisma.JsonNull;
+  if (value === undefined) return undefined;
+  return value as Prisma.InputJsonValue;
+}
+
+/**
  * `expectedUpdatedAt` opcional: si lo mandás, se chequea optimistic
- * locking. Útil para detectar conflictos entre autosave y submit
- * manual. Si no coincide, devuelve `{ ok: false, conflict: true }` y el
- * cliente puede mostrar UI de conflicto.
+ * locking via Compare-And-Swap dentro de la transacción (no fuera).
+ * Si la fila no matchea por updatedAt distinto, Prisma tira `P2025` y
+ * la tx se rolea entera; el caller recibe `{ ok: false, conflict: true }`.
+ *
+ * La transacción corre en `RepeatableRead` para que el delete+create
+ * de categorías no produzca ventana donde un read concurrente vea la
+ * ficha sin categorías (snapshot estable durante toda la tx).
  */
 export async function updateListing(
   id: string,
@@ -46,18 +63,6 @@ export async function updateListing(
   });
   if (!existing) {
     return { ok: false, message: "La ficha no existe o fue archivada." };
-  }
-
-  if (
-    expectedUpdatedAt &&
-    new Date(expectedUpdatedAt).getTime() !== existing.updatedAt.getTime()
-  ) {
-    return {
-      ok: false,
-      conflict: true,
-      message:
-        "La ficha cambió desde la última vez que la abriste. Recargá la página para ver los cambios.",
-    };
   }
 
   const parsed = ListingFormSchema.safeParse(raw);
@@ -161,62 +166,122 @@ export async function updateListing(
   const wasVerified = existing.verifiedAt !== null;
   const reverify = wasVerified && changedCritical.length > 0;
 
-  const updated = await prisma.$transaction(async (tx) => {
-    await tx.listingCategory.deleteMany({ where: { listingId: id } });
-    await tx.listingCategory.createMany({
-      data: data.categories.map((c) => ({
-        listingId: id,
-        categoryId: c.categoryId,
-        isPrimary: c.isPrimary,
-      })),
-    });
+  try {
+    const updated = await prisma.$transaction(
+      async (tx) => {
+        await tx.listingCategory.deleteMany({ where: { listingId: id } });
+        await tx.listingCategory.createMany({
+          data: data.categories.map((c) => ({
+            listingId: id,
+            categoryId: c.categoryId,
+            isPrimary: c.isPrimary,
+          })),
+        });
 
-    return tx.listing.update({
-      where: { id },
-      data: {
-        name: data.name,
-        slug,
-        description: data.description,
-        provinceId: data.provinceId,
-        departmentId: data.departmentId,
-        localityId: data.localityId,
-        address: data.address,
-        lat: data.lat ?? null,
-        lng: data.lng ?? null,
-        phone: data.phone ?? null,
-        whatsapp: data.whatsapp ?? null,
-        email: data.email ?? null,
-        website: data.website ?? null,
-        instagram: data.instagram ?? null,
-        facebook: data.facebook ?? null,
-        tiktok: data.tiktok ?? null,
-        youtube: data.youtube ?? null,
-        priceRange: data.priceRange ?? null,
-        openingHours: data.openingHours ?? undefined,
-        paymentMethods: data.paymentMethods,
-        languages: data.languages,
-        attributes: (data.attributes ?? undefined) as Prisma.InputJsonValue | undefined,
-        metaTitle: data.metaTitle ?? null,
-        metaDescription: data.metaDescription ?? null,
-        lastEditedById: user.id,
-        ...(reverify
-          ? {
-              verifiedAt: null,
-              verifiedUntil: null,
-              verifiedById: null,
-            }
-          : {}),
+        /*
+          Compare-And-Swap: si `expectedUpdatedAt` viene seteado, lo
+          metemos en el WHERE. Si la fila cambió desde que el editor la
+          abrió, Prisma tira `P2025` (record not found) y la transacción
+          entera (incluido el delete/create de categorías) se rolea.
+        */
+        return tx.listing.update({
+          where: {
+            id,
+            ...(expectedUpdatedAt
+              ? { updatedAt: new Date(expectedUpdatedAt) }
+              : {}),
+          },
+          data: {
+            name: data.name,
+            slug,
+            description: data.description,
+            provinceId: data.provinceId,
+            departmentId: data.departmentId,
+            localityId: data.localityId,
+            address: data.address,
+            lat: data.lat ?? null,
+            lng: data.lng ?? null,
+            phone: data.phone ?? null,
+            whatsapp: data.whatsapp ?? null,
+            email: data.email ?? null,
+            website: data.website ?? null,
+            instagram: data.instagram ?? null,
+            facebook: data.facebook ?? null,
+            tiktok: data.tiktok ?? null,
+            youtube: data.youtube ?? null,
+            priceRange: data.priceRange ?? null,
+            openingHours: jsonOrClear(data.openingHours),
+            paymentMethods: data.paymentMethods,
+            languages: data.languages,
+            attributes: jsonOrClear(data.attributes),
+            metaTitle: data.metaTitle ?? null,
+            metaDescription: data.metaDescription ?? null,
+            lastEditedById: user.id,
+            ...(reverify
+              ? {
+                  verifiedAt: null,
+                  verifiedUntil: null,
+                  // `verifiedById` se PRESERVA a propósito. Lo usa el
+                  // banner de re-verificación: una ficha "que fue
+                  // verificada y ahora no está" se detecta como
+                  // `verifiedById !== null && verifiedAt === null`.
+                  // Si lo borráramos, perderíamos esa señal.
+                }
+              : {}),
+          },
+          select: { updatedAt: true },
+        });
       },
-      select: { updatedAt: true },
-    });
-  });
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead,
+      },
+    );
 
-  revalidatePath("/admin/listings");
-  revalidatePath(`/admin/listings/${id}`);
+    revalidatePath("/admin/listings");
+    revalidatePath(`/admin/listings/${id}`);
 
-  return {
-    ok: true,
-    updatedAt: updated.updatedAt.toISOString(),
-    reverified: reverify,
-  };
+    return {
+      ok: true,
+      updatedAt: updated.updatedAt.toISOString(),
+      reverified: reverify,
+    };
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2025") {
+        return {
+          ok: false,
+          conflict: true,
+          message:
+            "La ficha cambió desde la última vez que la abriste. Recargá la página para ver los cambios.",
+        };
+      }
+      if (err.code === "P2002") {
+        const target = err.meta?.target;
+        const targetStr = Array.isArray(target) ? target.join(",") : String(target ?? "");
+        if (targetStr.includes("slug")) {
+          return {
+            ok: false,
+            fieldErrors: {
+              slug: ["Otro editor acaba de tomar este slug. Probá con otro."],
+            },
+          };
+        }
+        if (targetStr.includes("isPrimary")) {
+          return {
+            ok: false,
+            fieldErrors: {
+              categories: [
+                "Conflicto al guardar la categoría primaria. Reintentá.",
+              ],
+            },
+          };
+        }
+        return {
+          ok: false,
+          message: "Conflicto de unicidad al guardar la ficha.",
+        };
+      }
+    }
+    throw err;
+  }
 }
