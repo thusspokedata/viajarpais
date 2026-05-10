@@ -14,6 +14,14 @@ export type AutosaveState = {
  * - Re-arma el timer cada vez que `data` cambia (se "resetea" mientras
  *   el editor sigue tipeando).
  * - No dispara si `enabled === false` o `isValid === false`.
+ * - Si recibe `validate`, lo invoca DESPUÉS del debounce y ANTES de
+ *   `save()`. Si retorna `false`, el autosave se aborta silenciosamente
+ *   (status pasa a `idle`). Esto cubre el gap de `mode: "onBlur"` en
+ *   RHF: `isValid` no se actualiza durante el typing, así que el flag
+ *   puede estar stale cuando el timer dispara. `validate` (típicamente
+ *   `form.trigger`) fuerza una revalidación fresca contra el resolver y
+ *   además hace visibles los errores en pantalla — el editor ve qué
+ *   corregir en lugar de un "Error al guardar" genérico.
  * - Cancela el request en flight cuando `cancelInFlight()` se llama
  *   (típicamente antes del submit manual).
  * - Last-write-wins via `requestId`: si llega tarde un response viejo,
@@ -29,8 +37,9 @@ export function useAutosave<T>(args: {
   isValid: boolean;
   delayMs?: number;
   save: (data: T, signal: AbortSignal) => Promise<void>;
+  validate?: () => Promise<boolean>;
 }) {
-  const { data, enabled, isValid, delayMs = 30_000, save } = args;
+  const { data, enabled, isValid, delayMs = 30_000, save, validate } = args;
   const [state, setState] = React.useState<AutosaveState>({
     status: "idle",
     lastSavedAt: null,
@@ -40,9 +49,13 @@ export function useAutosave<T>(args: {
   const reqIdRef = React.useRef(0);
   const ctrlRef = React.useRef<AbortController | null>(null);
   const saveRef = React.useRef(save);
+  const validateRef = React.useRef(validate);
   React.useEffect(() => {
     saveRef.current = save;
   }, [save]);
+  React.useEffect(() => {
+    validateRef.current = validate;
+  }, [validate]);
 
   /*
     `state.lastSavedAt` NO entra en el dep array a propósito. Si lo
@@ -55,7 +68,23 @@ export function useAutosave<T>(args: {
   React.useEffect(() => {
     if (!enabled || !isValid) return;
 
-    const handle = setTimeout(() => {
+    const handle = setTimeout(async () => {
+      /*
+        Revalidación fresca contra el resolver. RHF con `mode: "onBlur"`
+        no recalcula `isValid` durante el typing — el flag puede haber
+        quedado en `true` desde un blur anterior, aunque la data actual
+        sea inválida. Llamar a `validate` (típicamente `form.trigger`)
+        fuerza el chequeo ahora y, como side-effect, muestra los errores
+        de campo si los hay.
+      */
+      if (validateRef.current) {
+        const valid = await validateRef.current();
+        if (!valid) {
+          setState((s) => ({ ...s, status: "idle" }));
+          return;
+        }
+      }
+
       ctrlRef.current?.abort();
       const ctrl = new AbortController();
       ctrlRef.current = ctrl;

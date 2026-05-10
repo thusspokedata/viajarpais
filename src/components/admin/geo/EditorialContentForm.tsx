@@ -109,6 +109,10 @@ export function EditorialContentForm(props: EditorialContentFormProps) {
     enabled: form.formState.isDirty,
     isValid: form.formState.isValid,
     save: autosaveSave,
+    // Con `mode: "onBlur"`, `isValid` no se actualiza durante el typing —
+    // `form.trigger()` fuerza la revalidación al momento del autosave, así
+    // no persistimos data inválida con un `isValid` cacheado en `true`.
+    validate: form.trigger,
   });
 
   function applyServerErrors(
