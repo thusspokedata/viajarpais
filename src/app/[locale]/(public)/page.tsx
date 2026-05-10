@@ -35,7 +35,10 @@ async function loadRegions(): Promise<RegionCardData[]> {
 
   return regions.map((r) => ({
     code: r.code,
-    name: r.name,
+    // Por ahora español. v0.4 va a leer `r.nameEn`/`r.namePtBr` según
+    // el `locale` del request. Comentario `TODO: i18n` en RegionsGrid
+    // ya documentaba esto antes de que las columnas existieran.
+    name: r.nameEs,
     provincesCount: r.provinces.length,
     localitiesCount: r.provinces.reduce(
       (sum, p) => sum + p._count.localities,

@@ -15,6 +15,13 @@ jobs:
       BETTER_AUTH_URL: http://localhost:3006
       NEXT_PUBLIC_SITE_URL: http://localhost:3006
       NEXT_PUBLIC_BETTER_AUTH_URL: http://localhost:3006
+      # Cloudinary: el SDK hace throw al import si CLOUDINARY_URL no está
+      # seteada (política fail-fast, igual que `db.ts`/`auth.ts`). Build
+      # solo valida formato del URL, no hace requests al servidor — un
+      # placeholder sintácticamente válido alcanza.
+      # Cuando lleguen DEEPL_API_KEY/RESEND_API_KEY en v0.3-geo-b+, también
+      # van a necesitar placeholder acá.
+      CLOUDINARY_URL: cloudinary://000000000000000:abcdefghijklmnopqrstuvwxyz0@viajarpais-ci
     steps:
       - uses: actions/checkout@v4
 

@@ -114,6 +114,10 @@ export function ListingFormShell(props: ListingFormShellProps) {
     enabled: isEdit && form.formState.isDirty,
     isValid: isFormValid,
     save: autosaveSave,
+    // Con `mode: "onBlur"`, `isValid` no se actualiza durante el typing —
+    // `form.trigger()` fuerza la revalidación al momento del autosave, así
+    // no persistimos data inválida con un `isValid` cacheado en `true`.
+    validate: form.trigger,
   });
 
   function applyServerErrors(

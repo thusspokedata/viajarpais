@@ -36,7 +36,9 @@ export default async function EditListingPage({ params, searchParams }: Props) {
   const defaultValues: ListingFormInput = {
     name: listing.name,
     slug: listing.slug,
-    description: listing.description,
+    // El form todavía usa `description` (single field). Cuando v0.3-geo-b
+    // cablee DeepL, el form va a manejar las 3 traducciones.
+    description: listing.descriptionEs,
     provinceId: listing.provinceId,
     departmentId: listing.departmentId,
     localityId: listing.localityId,
@@ -68,8 +70,8 @@ export default async function EditListingPage({ params, searchParams }: Props) {
       typeof listing.attributes === "object" && listing.attributes !== null
         ? (listing.attributes as Record<string, unknown>)
         : undefined,
-    metaTitle: listing.metaTitle ?? undefined,
-    metaDescription: listing.metaDescription ?? undefined,
+    metaTitle: listing.metaTitleEs ?? undefined,
+    metaDescription: listing.metaDescriptionEs ?? undefined,
     categories: listing.categories.map((c) => ({
       categoryId: c.categoryId,
       isPrimary: c.isPrimary,

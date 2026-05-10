@@ -58,56 +58,200 @@ enum SpokenLanguage {
   IT
 }
 
+/**
+ * Origen de cada traducción de campos editoriales (`tagline*En/PtBr`,
+ * `description*En/PtBr`, etc.). La fuente de verdad es siempre español
+ * (no se persiste source para `*Es`).
+ * - NONE: sin traducir todavía.
+ * - MACHINE: generada automáticamente por DeepL al guardar.
+ * - REVIEWED: generada por DeepL pero un editor la revisó y validó.
+ * - HUMAN: editor escribió la traducción manualmente.
+ * Lógica de DeepL = v0.3-geo-b. En v0.3-geo-a este enum solo existe en
+ * schema; los campos se llenan en EN/PT-BR cuando se cargue la
+ * traducción automática en el siguiente PR.
+ */
+enum TranslationSource {
+  NONE
+  MACHINE
+  REVIEWED
+  HUMAN
+}
+
 model Region {
-  id        String     @id @default(cuid())
-  code      String     @unique
-  name      String
-  order     Int        @default(0)
+  id        String        @id @default(cuid())
+  code      String        @unique
+  // Nombres por idioma. `nameEs` viene de la columna `name` original
+  // (renombrada en migracion). `nameEn` y `namePtBr` se cargan via seed
+  // upsert. Editor NO los modifica desde admin — son hardcoded.
+  nameEs    String
+  nameEn    String
+  namePtBr  String
+  order     Int           @default(0)
   provinces Province[]
+  listings  Listing[]
+  images    RegionImage[]
+
+  // Contenido editorial (nullable; el editor los completa desde admin).
+  taglineEs               String?
+  taglineEn               String?
+  taglinePtBr             String?
+  taglineEnSource         TranslationSource @default(NONE)
+  taglinePtBrSource       TranslationSource @default(NONE)
+  taglineEnTranslatedAt   DateTime?
+  taglinePtBrTranslatedAt DateTime?
+
+  descriptionEs               String?
+  descriptionEn               String?
+  descriptionPtBr             String?
+  descriptionEnSource         TranslationSource @default(NONE)
+  descriptionPtBrSource       TranslationSource @default(NONE)
+  descriptionEnTranslatedAt   DateTime?
+  descriptionPtBrTranslatedAt DateTime?
+
+  metaTitleEs         String?
+  metaTitleEn         String?
+  metaTitlePtBr       String?
+  metaDescriptionEs   String?
+  metaDescriptionEn   String?
+  metaDescriptionPtBr String?
+
+  // Auditoria. `createdAt` no aplica porque las regiones se crean por
+  // seed (idempotente). `updatedAt` y `lastEditedById` se usan para
+  // optimistic locking en updateRegion.
+  updatedAt      DateTime @updatedAt
+  lastEditedById String?
+  lastEditedBy   User?    @relation("RegionLastEdited", fields: [lastEditedById], references: [id])
 
   @@index([order])
 }
 
 model Province {
-  id          String       @id @default(cuid())
-  code        String       @unique
-  slug        String       @unique
+  id          String          @id @default(cuid())
+  code        String          @unique
+  slug        String          @unique
   name        String
   regionId    String
-  region      Region       @relation(fields: [regionId], references: [id])
+  region      Region          @relation(fields: [regionId], references: [id])
   departments Department[]
   localities  Locality[]
   listings    Listing[]
+  images      ProvinceImage[]
+
+  // Contenido editorial (nullable; el editor los completa desde admin).
+  taglineEs               String?
+  taglineEn               String?
+  taglinePtBr             String?
+  taglineEnSource         TranslationSource @default(NONE)
+  taglinePtBrSource       TranslationSource @default(NONE)
+  taglineEnTranslatedAt   DateTime?
+  taglinePtBrTranslatedAt DateTime?
+
+  descriptionEs               String?
+  descriptionEn               String?
+  descriptionPtBr             String?
+  descriptionEnSource         TranslationSource @default(NONE)
+  descriptionPtBrSource       TranslationSource @default(NONE)
+  descriptionEnTranslatedAt   DateTime?
+  descriptionPtBrTranslatedAt DateTime?
+
+  metaTitleEs         String?
+  metaTitleEn         String?
+  metaTitlePtBr       String?
+  metaDescriptionEs   String?
+  metaDescriptionEn   String?
+  metaDescriptionPtBr String?
+
+  updatedAt      DateTime @updatedAt
+  lastEditedById String?
+  lastEditedBy   User?    @relation("ProvinceLastEdited", fields: [lastEditedById], references: [id])
 
   @@index([regionId])
 }
 
 model Department {
-  id         String     @id @default(cuid())
-  code       String     @unique
+  id         String            @id @default(cuid())
+  code       String            @unique
   slug       String
   name       String
   provinceId String
-  province   Province   @relation(fields: [provinceId], references: [id])
+  province   Province          @relation(fields: [provinceId], references: [id])
   localities Locality[]
   listings   Listing[]
+  images     DepartmentImage[]
+
+  // Contenido editorial (nullable; el editor los completa desde admin).
+  taglineEs               String?
+  taglineEn               String?
+  taglinePtBr             String?
+  taglineEnSource         TranslationSource @default(NONE)
+  taglinePtBrSource       TranslationSource @default(NONE)
+  taglineEnTranslatedAt   DateTime?
+  taglinePtBrTranslatedAt DateTime?
+
+  descriptionEs               String?
+  descriptionEn               String?
+  descriptionPtBr             String?
+  descriptionEnSource         TranslationSource @default(NONE)
+  descriptionPtBrSource       TranslationSource @default(NONE)
+  descriptionEnTranslatedAt   DateTime?
+  descriptionPtBrTranslatedAt DateTime?
+
+  metaTitleEs         String?
+  metaTitleEn         String?
+  metaTitlePtBr       String?
+  metaDescriptionEs   String?
+  metaDescriptionEn   String?
+  metaDescriptionPtBr String?
+
+  updatedAt      DateTime @updatedAt
+  lastEditedById String?
+  lastEditedBy   User?    @relation("DepartmentLastEdited", fields: [lastEditedById], references: [id])
 
   @@unique([provinceId, slug])
   @@index([provinceId])
 }
 
 model Locality {
-  id           String     @id @default(cuid())
-  code         String     @unique
+  id           String          @id @default(cuid())
+  code         String          @unique
   slug         String
   name         String
-  lat          Decimal?   @db.Decimal(10, 7)
-  lng          Decimal?   @db.Decimal(10, 7)
+  lat          Decimal?        @db.Decimal(10, 7)
+  lng          Decimal?        @db.Decimal(10, 7)
   departmentId String
   provinceId   String
-  department   Department @relation(fields: [departmentId], references: [id])
-  province     Province   @relation(fields: [provinceId], references: [id])
+  department   Department      @relation(fields: [departmentId], references: [id])
+  province     Province        @relation(fields: [provinceId], references: [id])
   listings     Listing[]
+  images       LocalityImage[]
+
+  // Contenido editorial (nullable; el editor los completa desde admin).
+  taglineEs               String?
+  taglineEn               String?
+  taglinePtBr             String?
+  taglineEnSource         TranslationSource @default(NONE)
+  taglinePtBrSource       TranslationSource @default(NONE)
+  taglineEnTranslatedAt   DateTime?
+  taglinePtBrTranslatedAt DateTime?
+
+  descriptionEs               String?
+  descriptionEn               String?
+  descriptionPtBr             String?
+  descriptionEnSource         TranslationSource @default(NONE)
+  descriptionPtBrSource       TranslationSource @default(NONE)
+  descriptionEnTranslatedAt   DateTime?
+  descriptionPtBrTranslatedAt DateTime?
+
+  metaTitleEs         String?
+  metaTitleEn         String?
+  metaTitlePtBr       String?
+  metaDescriptionEs   String?
+  metaDescriptionEn   String?
+  metaDescriptionPtBr String?
+
+  updatedAt      DateTime @updatedAt
+  lastEditedById String?
+  lastEditedBy   User?    @relation("LocalityLastEdited", fields: [lastEditedById], references: [id])
 
   @@unique([provinceId, slug])
   @@index([departmentId])
@@ -131,11 +275,40 @@ model Category {
 }
 
 model Listing {
-  id          String @id @default(cuid())
-  name        String
-  slug        String @unique
-  description String
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
 
+  /**
+   * `descriptionEs` viene del rename de `description` (preservar
+   * contenido en migracion). Tagline + i18n agregados para alinear con
+   * el patron de los niveles geograficos (DeepL en v0.3-geo-b).
+   */
+  taglineEs               String?
+  taglineEn               String?
+  taglinePtBr             String?
+  taglineEnSource         TranslationSource @default(NONE)
+  taglinePtBrSource       TranslationSource @default(NONE)
+  taglineEnTranslatedAt   DateTime?
+  taglinePtBrTranslatedAt DateTime?
+
+  descriptionEs               String
+  descriptionEn               String?
+  descriptionPtBr             String?
+  descriptionEnSource         TranslationSource @default(NONE)
+  descriptionPtBrSource       TranslationSource @default(NONE)
+  descriptionEnTranslatedAt   DateTime?
+  descriptionPtBrTranslatedAt DateTime?
+
+  /**
+   * Geografia: `regionId` esta denormalizado para queries publicas de
+   * region (ej. listar fichas de una region sin JOIN de 3 niveles). Se
+   * resuelve automaticamente desde la cadena Locality -> Department ->
+   * Province -> Region en `createListing` y en `updateListing` (solo
+   * cuando cambia `localityId`). NO editable por el editor.
+   */
+  regionId     String
+  region       Region     @relation(fields: [regionId], references: [id])
   provinceId   String
   province     Province   @relation(fields: [provinceId], references: [id])
   departmentId String
@@ -163,8 +336,12 @@ model Listing {
 
   attributes Json?
 
-  metaTitle       String?
-  metaDescription String?
+  metaTitleEs         String?
+  metaTitleEn         String?
+  metaTitlePtBr       String?
+  metaDescriptionEs   String?
+  metaDescriptionEn   String?
+  metaDescriptionPtBr String?
 
   categories ListingCategory[]
   images     ListingImage[]
@@ -192,6 +369,8 @@ model Listing {
   @@index([provinceId])
   @@index([departmentId])
   @@index([localityId])
+  @@index([regionId])
+  @@index([regionId, status])
   @@index([status])
   @@index([tier])
   @@index([updatedAt(sort: Desc)])
@@ -226,6 +405,77 @@ model ListingImage {
   @@index([listingId, isPrimary])
 }
 
+/**
+ * Imágenes asociadas a niveles geográficos. Mismo shape que
+ * `ListingImage`. Constraint "una sola primary por padre" se enforza
+ * en server actions (no en DB con partial unique como `ListingCategory`)
+ * porque la lógica de set-primary aquí es atómica: la transacción
+ * setea isPrimary=false a las hermanas y true a la elegida.
+ */
+model RegionImage {
+  id                 String   @id @default(cuid())
+  regionId           String
+  region             Region   @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  cloudinaryPublicId String   @unique
+  url                String
+  caption            String?
+  altText            String?
+  order              Int      @default(0)
+  isPrimary          Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([regionId, order])
+  @@index([regionId, isPrimary])
+}
+
+model ProvinceImage {
+  id                 String   @id @default(cuid())
+  provinceId         String
+  province           Province @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+  cloudinaryPublicId String   @unique
+  url                String
+  caption            String?
+  altText            String?
+  order              Int      @default(0)
+  isPrimary          Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([provinceId, order])
+  @@index([provinceId, isPrimary])
+}
+
+model DepartmentImage {
+  id                 String     @id @default(cuid())
+  departmentId       String
+  department         Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  cloudinaryPublicId String     @unique
+  url                String
+  caption            String?
+  altText            String?
+  order              Int        @default(0)
+  isPrimary          Boolean    @default(false)
+  createdAt          DateTime   @default(now())
+
+  @@index([departmentId, order])
+  @@index([departmentId, isPrimary])
+}
+
+model LocalityImage {
+  id                 String   @id @default(cuid())
+  localityId         String
+  locality           Locality @relation(fields: [localityId], references: [id], onDelete: Cascade)
+  cloudinaryPublicId String   @unique
+  url                String
+  caption            String?
+  altText            String?
+  order              Int      @default(0)
+  isPrimary          Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  @@index([localityId, order])
+  @@index([localityId, isPrimary])
+}
+
 model User {
   id            String    @id
   name          String
@@ -241,6 +491,13 @@ model User {
   createdListings    Listing[] @relation("CreatedListings")
   lastEditedListings Listing[] @relation("LastEditedListings")
   verifiedListings   Listing[] @relation("VerifiedListings")
+
+  // Geo: el editor que dejó la última edición de contenido editorial
+  // en cada nivel geográfico.
+  lastEditedRegions     Region[]     @relation("RegionLastEdited")
+  lastEditedProvinces   Province[]   @relation("ProvinceLastEdited")
+  lastEditedDepartments Department[] @relation("DepartmentLastEdited")
+  lastEditedLocalities  Locality[]   @relation("LocalityLastEdited")
 
   @@unique([email])
   @@map("user")

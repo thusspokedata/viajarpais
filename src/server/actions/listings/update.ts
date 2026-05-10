@@ -59,6 +59,7 @@ export async function updateListing(
     where: { id },
     include: {
       categories: { select: { categoryId: true, isPrimary: true } },
+      locality: { select: { slug: true } },
     },
   });
   if (!existing) {
@@ -80,23 +81,62 @@ export async function updateListing(
   }
   const data = parsed.data;
 
-  const locality = await prisma.locality.findUnique({
-    where: { id: data.localityId },
-    select: { slug: true, departmentId: true, provinceId: true },
-  });
-  if (!locality) {
-    return { ok: false, fieldErrors: { localityId: ["Localidad inválida."] } };
-  }
-  if (
-    locality.departmentId !== data.departmentId ||
-    locality.provinceId !== data.provinceId
-  ) {
-    return {
-      ok: false,
-      formErrors: [
-        "La localidad seleccionada no pertenece al departamento o provincia indicados.",
-      ],
-    };
+  /*
+    Resolución de `regionId` y validación de consistencia geo:
+
+    - Si el editor NO cambió la localidad, usamos `existing.regionId` y
+      `existing.locality.slug` cacheados — evitamos un round-trip extra
+      a Locality. ~80% de los updates no tocan ubicación.
+    - Si cambió, fetcheamos la nueva localidad para validar que pertenece
+      al departamento/provincia seleccionados Y para resolver el nuevo
+      `regionId` desde la cadena.
+
+    También validamos que `data.provinceId`/`data.departmentId` matcheen
+    con la cadena real cuando localityId NO cambió pero el editor pudo
+    haber cambiado uno de los selects superiores manualmente.
+  */
+  let localitySlug: string;
+  let regionId: string;
+  if (data.localityId === existing.localityId) {
+    if (
+      data.departmentId !== existing.departmentId ||
+      data.provinceId !== existing.provinceId
+    ) {
+      return {
+        ok: false,
+        formErrors: [
+          "La localidad seleccionada no pertenece al departamento o provincia indicados.",
+        ],
+      };
+    }
+    localitySlug = existing.locality.slug;
+    regionId = existing.regionId;
+  } else {
+    const locality = await prisma.locality.findUnique({
+      where: { id: data.localityId },
+      select: {
+        slug: true,
+        departmentId: true,
+        provinceId: true,
+        province: { select: { regionId: true } },
+      },
+    });
+    if (!locality) {
+      return { ok: false, fieldErrors: { localityId: ["Localidad inválida."] } };
+    }
+    if (
+      locality.departmentId !== data.departmentId ||
+      locality.provinceId !== data.provinceId
+    ) {
+      return {
+        ok: false,
+        formErrors: [
+          "La localidad seleccionada no pertenece al departamento o provincia indicados.",
+        ],
+      };
+    }
+    localitySlug = locality.slug;
+    regionId = locality.province.regionId;
   }
 
   const validCategories = await prisma.category.findMany({
@@ -129,7 +169,7 @@ export async function updateListing(
       slug = await generateUniqueSlug(
         prisma,
         data.name,
-        locality.slug,
+        localitySlug,
         existing.id,
       );
     } catch (err) {
@@ -194,7 +234,8 @@ export async function updateListing(
           data: {
             name: data.name,
             slug,
-            description: data.description,
+            descriptionEs: data.description,
+            regionId,
             provinceId: data.provinceId,
             departmentId: data.departmentId,
             localityId: data.localityId,
@@ -214,8 +255,8 @@ export async function updateListing(
             paymentMethods: data.paymentMethods,
             languages: data.languages,
             attributes: jsonOrClear(data.attributes),
-            metaTitle: data.metaTitle ?? null,
-            metaDescription: data.metaDescription ?? null,
+            metaTitleEs: data.metaTitle ?? null,
+            metaDescriptionEs: data.metaDescription ?? null,
             lastEditedById: user.id,
             ...(reverify
               ? {
