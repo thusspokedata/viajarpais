@@ -39,6 +39,14 @@ UPDATE "Region" SET "nameEn" = 'Central Region',         "namePtBr" = 'Região C
 UPDATE "Region" SET "nameEn" = 'Pampas Region',          "namePtBr" = 'Região Pampeana'         WHERE "code" = 'pampeana';
 UPDATE "Region" SET "nameEn" = 'Patagonia',              "namePtBr" = 'Patagônia'               WHERE "code" = 'patagonia';
 
+-- Defensivo: si en algun ambiente futuro hay regiones con codes distintos
+-- de los 6 conocidos (drift, fork, error de seed manual), el `SET NOT NULL`
+-- abajo abortaria la migracion. Usamos `nameEs` como fallback —
+-- comportamiento detectable (queda nombre repetido en los 3 idiomas) sin
+-- placeholder magico tipo 'TBD' que sea mas dificil de identificar.
+UPDATE "Region" SET "nameEn"   = "nameEs" WHERE "nameEn"   IS NULL;
+UPDATE "Region" SET "namePtBr" = "nameEs" WHERE "namePtBr" IS NULL;
+
 ALTER TABLE "Region" ALTER COLUMN "nameEn" SET NOT NULL;
 ALTER TABLE "Region" ALTER COLUMN "namePtBr" SET NOT NULL;
 
