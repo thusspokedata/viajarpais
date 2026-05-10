@@ -147,13 +147,61 @@ async function seedAdmin(): Promise<void> {
  * 6 regiones del directorio. Slugs DEFINITIVOS — cambiarlos rompe URLs.
  * Order is the canonical display order in nav / filters.
  */
-const REGIONS: Array<{ code: string; name: string; order: number }> = [
-  { code: "cuyo", name: "Cuyo", order: 1 },
-  { code: "noa", name: "Noroeste Argentino", order: 2 },
-  { code: "nea", name: "Nordeste Argentino", order: 3 },
-  { code: "centro", name: "Centro", order: 4 },
-  { code: "pampeana", name: "Pampeana", order: 5 },
-  { code: "patagonia", name: "Patagonia", order: 6 },
+/*
+  Region: 6 regiones con traducciones hardcodeadas. La fuente de verdad
+  para los nombres de region es ESTE archivo — el editor NO los modifica
+  desde admin. Si en el futuro cambia una traducción, se ajusta acá y
+  se re-corre `npm run db:seed` (idempotente via upsert).
+*/
+const REGIONS: Array<{
+  code: string;
+  nameEs: string;
+  nameEn: string;
+  namePtBr: string;
+  order: number;
+}> = [
+  {
+    code: "cuyo",
+    nameEs: "Cuyo",
+    nameEn: "Cuyo",
+    namePtBr: "Cuyo",
+    order: 1,
+  },
+  {
+    code: "noa",
+    nameEs: "Noroeste Argentino",
+    nameEn: "Northwestern Argentina",
+    namePtBr: "Noroeste da Argentina",
+    order: 2,
+  },
+  {
+    code: "nea",
+    nameEs: "Nordeste Argentino",
+    nameEn: "Northeastern Argentina",
+    namePtBr: "Nordeste da Argentina",
+    order: 3,
+  },
+  {
+    code: "centro",
+    nameEs: "Centro",
+    nameEn: "Central Region",
+    namePtBr: "Região Central",
+    order: 4,
+  },
+  {
+    code: "pampeana",
+    nameEs: "Región Pampeana",
+    nameEn: "Pampas Region",
+    namePtBr: "Região Pampeana",
+    order: 5,
+  },
+  {
+    code: "patagonia",
+    nameEs: "Patagonia",
+    nameEn: "Patagonia",
+    namePtBr: "Patagônia",
+    order: 6,
+  },
 ];
 
 type ProvinceSnapshot = { code: string; slug: string; name: string; regionCode: string };
@@ -170,9 +218,10 @@ type LocalitySnapshot = {
 
 async function seedGeo(): Promise<void> {
   // ── Regions ──
-  // Las traducciones EN/PT-BR de cada region viven en el commit
-  // siguiente (`feat(db): seed upsert traducciones regiones`). Aca el
-  // upsert solo asegura que las regiones existen con nameEs.
+  // Upsert idempotente. Re-correr el seed actualiza las traducciones a
+  // los valores en `REGIONS` (fuente de verdad), preservando todo el
+  // contenido editorial (taglines, descriptions) que el editor haya
+  // cargado desde admin — esos campos no aparecen en `update` aca.
   console.log(`Seeding ${REGIONS.length} regions…`);
   const regionIdByCode = new Map<string, string>();
   for (const r of REGIONS) {
@@ -180,12 +229,17 @@ async function seedGeo(): Promise<void> {
       where: { code: r.code },
       create: {
         code: r.code,
-        nameEs: r.name,
-        nameEn: r.name,
-        namePtBr: r.name,
+        nameEs: r.nameEs,
+        nameEn: r.nameEn,
+        namePtBr: r.namePtBr,
         order: r.order,
       },
-      update: { nameEs: r.name, order: r.order },
+      update: {
+        nameEs: r.nameEs,
+        nameEn: r.nameEn,
+        namePtBr: r.namePtBr,
+        order: r.order,
+      },
     });
     regionIdByCode.set(row.code, row.id);
   }
