@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "@/components/ui/icons";
 import { CascadeGeoFilters } from "@/components/admin/geo/CascadeGeoFilters";
-import { listRegionsWithStats } from "@/server/data/geo/regions";
-import { listProvincesWithStats } from "@/server/data/geo/provinces";
+import { Th, Td } from "@/components/admin/geo/Table";
+import { listRegionOptions } from "@/server/data/geo/regions";
+import { listProvinceOptions } from "@/server/data/geo/provinces";
 import { listDepartmentsWithStats } from "@/server/data/geo/departments";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -25,10 +26,17 @@ export default async function DepartmentsIndexPage({
   const page =
     Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1;
 
+  /*
+    Regions y provinces solo alimentan el cascade filter — solo
+    necesitamos id/code/name/regionId. `listRegionOptions` y
+    `listProvinceOptions` evitan los `_count` joins que requeriría la
+    versión `*WithStats` (que existe para los listados que renderean
+    columnas de conteos, no para selects).
+  */
   const [{ items, total, pageCount }, regions, provinces] = await Promise.all([
     listDepartmentsWithStats({ regionId, provinceId, search, page }),
-    listRegionsWithStats(),
-    listProvincesWithStats(),
+    listRegionOptions(),
+    listProvinceOptions(),
   ]);
 
   return (
@@ -68,25 +76,13 @@ export default async function DepartmentsIndexPage({
         <table className="w-full text-[var(--text-sm)]">
           <thead className="bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
             <tr>
-              <th className="text-left font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Nombre
-              </th>
-              <th className="text-left font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Provincia
-              </th>
-              <th className="text-left font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Región
-              </th>
-              <th className="text-right font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Locs.
-              </th>
-              <th className="text-right font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Fichas
-              </th>
-              <th className="text-left font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Tagline
-              </th>
-              <th className="px-4 py-2.5"></th>
+              <Th>Nombre</Th>
+              <Th>Provincia</Th>
+              <Th>Región</Th>
+              <Th className="text-right">Locs.</Th>
+              <Th className="text-right">Fichas</Th>
+              <Th>Tagline</Th>
+              <Th></Th>
             </tr>
           </thead>
           <tbody>
@@ -95,7 +91,7 @@ export default async function DepartmentsIndexPage({
                 key={d.id}
                 className="border-t border-[var(--border-subtle)] hover:bg-[var(--surface-sunken)]/50"
               >
-                <td className="px-4 py-3 align-top">
+                <Td>
                   <Link
                     href={`/admin/geo/departments/${d.code}`}
                     className="font-medium text-[var(--text-primary)] hover:text-[var(--text-link)]"
@@ -105,27 +101,27 @@ export default async function DepartmentsIndexPage({
                   <div className="text-[var(--text-xs)] text-[var(--text-muted)] font-mono mt-0.5">
                     /{d.slug}
                   </div>
-                </td>
-                <td className="px-4 py-3 align-top text-[var(--text-secondary)]">
+                </Td>
+                <Td className="text-[var(--text-secondary)]">
                   {d.province.name}
-                </td>
-                <td className="px-4 py-3 align-top text-[var(--text-muted)] text-[var(--text-xs)]">
+                </Td>
+                <Td className="text-[var(--text-muted)] text-[var(--text-xs)]">
                   {d.province.region.nameEs}
-                </td>
-                <td className="px-4 py-3 align-top text-right font-mono text-[var(--text-xs)]">
+                </Td>
+                <Td className="text-right font-mono text-[var(--text-xs)]">
                   {d._count.localities}
-                </td>
-                <td className="px-4 py-3 align-top text-right font-mono text-[var(--text-xs)]">
+                </Td>
+                <Td className="text-right font-mono text-[var(--text-xs)]">
                   {d._count.listings}
-                </td>
-                <td className="px-4 py-3 align-top text-[var(--text-xs)] text-[var(--text-muted)] max-w-xs">
+                </Td>
+                <Td className="text-[var(--text-xs)] text-[var(--text-muted)] max-w-xs">
                   {d.taglineEs ? (
                     <span className="line-clamp-1">{d.taglineEs}</span>
                   ) : (
                     <span className="italic">—</span>
                   )}
-                </td>
-                <td className="px-4 py-3 align-top">
+                </Td>
+                <Td>
                   <Link
                     href={`/admin/geo/departments/${d.code}`}
                     className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -133,7 +129,7 @@ export default async function DepartmentsIndexPage({
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Link>
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>

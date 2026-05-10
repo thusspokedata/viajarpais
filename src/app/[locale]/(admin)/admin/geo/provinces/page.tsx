@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "@/components/ui/icons";
 import { RegionFilterSelect } from "@/components/admin/geo/RegionFilterSelect";
-import { listRegionsWithStats } from "@/server/data/geo/regions";
+import { Th, Td } from "@/components/admin/geo/Table";
+import { listRegionOptions } from "@/server/data/geo/regions";
 import { listProvincesWithStats } from "@/server/data/geo/provinces";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -21,7 +22,7 @@ export default async function ProvincesIndexPage({
 
   const [provinces, regions] = await Promise.all([
     listProvincesWithStats({ regionId }),
-    listRegionsWithStats(),
+    listRegionOptions(),
   ]);
 
   return (
@@ -115,33 +116,5 @@ export default async function ProvincesIndexPage({
         {provinces.length} provincia{provinces.length === 1 ? "" : "s"}
       </div>
     </div>
-  );
-}
-
-function Th({
-  children,
-  className,
-}: {
-  children?: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <th
-      className={`text-left font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)] ${className ?? ""}`}
-    >
-      {children}
-    </th>
-  );
-}
-
-function Td({
-  children,
-  className,
-}: {
-  children?: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <td className={`px-4 py-3 align-top ${className ?? ""}`}>{children}</td>
   );
 }

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "@/components/ui/icons";
 import { CascadeGeoFilters } from "@/components/admin/geo/CascadeGeoFilters";
-import { listRegionsWithStats } from "@/server/data/geo/regions";
-import { listProvincesWithStats } from "@/server/data/geo/provinces";
+import { Th, Td } from "@/components/admin/geo/Table";
+import { listRegionOptions } from "@/server/data/geo/regions";
+import { listProvinceOptions } from "@/server/data/geo/provinces";
 import { listDepartmentsWithStats } from "@/server/data/geo/departments";
 import { listLocalitiesWithStats } from "@/server/data/geo/localities";
 
@@ -28,10 +29,12 @@ export default async function LocalitiesIndexPage({
     Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1;
 
   /*
-    Departamentos: solo precargo los de la provincia actualmente
-    seleccionada (si la hay). Sin filtro de provincia, no precargo nada
-    — son ~530 deptos, demasiado para un select. El editor primero
-    debe elegir provincia para que aparezca el filtro de departamento.
+    Regions y provinces solo alimentan el cascade — usar las versiones
+    `*Options` evita los `_count` joins. Departamentos: solo precargo
+    los de la provincia seleccionada (si la hay). Sin filtro de
+    provincia, son ~530 deptos, demasiado para un select; el editor
+    primero debe elegir provincia para que aparezca ese nivel del
+    cascade.
   */
   const [{ items, total, pageCount }, regions, provinces, departments] =
     await Promise.all([
@@ -42,8 +45,8 @@ export default async function LocalitiesIndexPage({
         search,
         page,
       }),
-      listRegionsWithStats(),
-      listProvincesWithStats(),
+      listRegionOptions(),
+      listProvinceOptions(),
       provinceId
         ? listDepartmentsWithStats({ provinceId, pageSize: 200 }).then(
             (r) => r.items,
@@ -92,19 +95,11 @@ export default async function LocalitiesIndexPage({
         <table className="w-full text-[var(--text-sm)]">
           <thead className="bg-[var(--surface-sunken)] text-[var(--text-secondary)]">
             <tr>
-              <th className="text-left font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Nombre
-              </th>
-              <th className="text-left font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Jerarquía
-              </th>
-              <th className="text-right font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Fichas
-              </th>
-              <th className="text-left font-medium px-4 py-2.5 text-[10px] font-display uppercase tracking-[var(--tracking-caps)]">
-                Tagline
-              </th>
-              <th className="px-4 py-2.5"></th>
+              <Th>Nombre</Th>
+              <Th>Jerarquía</Th>
+              <Th className="text-right">Fichas</Th>
+              <Th>Tagline</Th>
+              <Th></Th>
             </tr>
           </thead>
           <tbody>
@@ -113,7 +108,7 @@ export default async function LocalitiesIndexPage({
                 key={l.id}
                 className="border-t border-[var(--border-subtle)] hover:bg-[var(--surface-sunken)]/50"
               >
-                <td className="px-4 py-3 align-top">
+                <Td>
                   <Link
                     href={`/admin/geo/localities/${l.code}`}
                     className="font-medium text-[var(--text-primary)] hover:text-[var(--text-link)]"
@@ -123,22 +118,22 @@ export default async function LocalitiesIndexPage({
                   <div className="text-[var(--text-xs)] text-[var(--text-muted)] font-mono mt-0.5">
                     /{l.slug}
                   </div>
-                </td>
-                <td className="px-4 py-3 align-top text-[var(--text-secondary)] text-[var(--text-xs)]">
+                </Td>
+                <Td className="text-[var(--text-secondary)] text-[var(--text-xs)]">
                   {l.province.region.nameEs} → {l.province.name} →{" "}
                   {l.department.name}
-                </td>
-                <td className="px-4 py-3 align-top text-right font-mono text-[var(--text-xs)]">
+                </Td>
+                <Td className="text-right font-mono text-[var(--text-xs)]">
                   {l._count.listings}
-                </td>
-                <td className="px-4 py-3 align-top text-[var(--text-xs)] text-[var(--text-muted)] max-w-xs">
+                </Td>
+                <Td className="text-[var(--text-xs)] text-[var(--text-muted)] max-w-xs">
                   {l.taglineEs ? (
                     <span className="line-clamp-1">{l.taglineEs}</span>
                   ) : (
                     <span className="italic">—</span>
                   )}
-                </td>
-                <td className="px-4 py-3 align-top">
+                </Td>
+                <Td>
                   <Link
                     href={`/admin/geo/localities/${l.code}`}
                     className="text-[var(--text-muted)] hover:text-[var(--text-primary)]"
@@ -146,7 +141,7 @@ export default async function LocalitiesIndexPage({
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Link>
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>

@@ -67,6 +67,23 @@ export async function listRegionsWithStats() {
   }));
 }
 
+/*
+  Helper liviano para selects/cascade filters. Devuelve solo los campos
+  que el chrome del admin necesita (id, code, nombre por locale) — sin
+  los `_count` joins anidados de `listRegionsWithStats`. Mismo patrón
+  que `listProvinceOptions` en `provinces.ts`.
+*/
+export async function listRegionOptions() {
+  return prisma.region.findMany({
+    orderBy: { order: "asc" },
+    select: {
+      id: true,
+      code: true,
+      nameEs: true,
+    },
+  });
+}
+
 export async function getRegionByCode(code: string) {
   const region = await prisma.region.findUnique({
     where: { code },
