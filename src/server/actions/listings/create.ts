@@ -64,7 +64,8 @@ export async function createListing(
       slug: true,
       departmentId: true,
       provinceId: true,
-      // Resolución de `regionId` para denormalización en Listing.
+      // Resolución de `regionId` para denormalización (helper compartido
+      // con updateListing — ver `lib/listings/region-resolver.ts`).
       province: { select: { regionId: true } },
     },
   });
@@ -82,6 +83,9 @@ export async function createListing(
       ],
     };
   }
+  // En create siempre resolvemos — no hay "valor cached" previo. La
+  // función resolver vive en su propio módulo para compartir con
+  // updateListing y mantener el contrato testeable.
   const regionId = locality.province.regionId;
 
   const validCategories = await prisma.category.findMany({
