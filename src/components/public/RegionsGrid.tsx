@@ -31,10 +31,12 @@ export async function RegionsGrid({ regions }: RegionsGridProps) {
           >
             <div className="flex items-start justify-between gap-3">
               {/*
-                TODO: i18n — agregar nameEn/namePtBr al schema Region en una
-                migración futura si "Noroeste Argentino" / "Nordeste Argentino"
-                deben traducirse a EN/PT-BR. Topónimos cortos (Cuyo, Patagonia)
-                no se traducen.
+                `r.name` viene del loader como `nameEs` (ver
+                `loadRegions` en `(public)/page.tsx`). El switch por
+                locale para usar `nameEn`/`namePtBr` — ya existentes
+                en el schema desde v0.3-geo-a — llega cuando v0.4
+                renderice contenido público localizado. En este
+                componente solo consumimos lo que el loader le pasa.
               */}
               <h3 className="font-display text-[var(--text-2xl)] sm:text-[var(--text-3xl)] font-semibold leading-[var(--leading-tight)] tracking-[var(--tracking-tight)] text-[var(--text-primary)]">
                 {r.name}
