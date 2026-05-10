@@ -82,11 +82,20 @@ export async function updateListing(
 
   const locality = await prisma.locality.findUnique({
     where: { id: data.localityId },
-    select: { slug: true, departmentId: true, provinceId: true },
+    select: {
+      slug: true,
+      departmentId: true,
+      provinceId: true,
+      // Resolución de regionId para denormalización (commit 4 introduce
+      // logica condicional para evitar este round-trip cuando no cambia
+      // localityId).
+      province: { select: { regionId: true } },
+    },
   });
   if (!locality) {
     return { ok: false, fieldErrors: { localityId: ["Localidad inválida."] } };
   }
+  const regionId = locality.province.regionId;
   if (
     locality.departmentId !== data.departmentId ||
     locality.provinceId !== data.provinceId
@@ -194,7 +203,8 @@ export async function updateListing(
           data: {
             name: data.name,
             slug,
-            description: data.description,
+            descriptionEs: data.description,
+            regionId,
             provinceId: data.provinceId,
             departmentId: data.departmentId,
             localityId: data.localityId,
@@ -214,8 +224,8 @@ export async function updateListing(
             paymentMethods: data.paymentMethods,
             languages: data.languages,
             attributes: jsonOrClear(data.attributes),
-            metaTitle: data.metaTitle ?? null,
-            metaDescription: data.metaDescription ?? null,
+            metaTitleEs: data.metaTitle ?? null,
+            metaDescriptionEs: data.metaDescription ?? null,
             lastEditedById: user.id,
             ...(reverify
               ? {

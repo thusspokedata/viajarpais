@@ -60,7 +60,13 @@ export async function createListing(
 
   const locality = await prisma.locality.findUnique({
     where: { id: data.localityId },
-    select: { slug: true, departmentId: true, provinceId: true },
+    select: {
+      slug: true,
+      departmentId: true,
+      provinceId: true,
+      // Resolución de `regionId` para denormalización en Listing.
+      province: { select: { regionId: true } },
+    },
   });
   if (!locality) {
     return { ok: false, fieldErrors: { localityId: ["Localidad inválida."] } };
@@ -76,6 +82,7 @@ export async function createListing(
       ],
     };
   }
+  const regionId = locality.province.regionId;
 
   const validCategories = await prisma.category.findMany({
     where: { id: { in: data.categories.map((c) => c.categoryId) } },
@@ -114,7 +121,8 @@ export async function createListing(
       data: {
         name: data.name,
         slug,
-        description: data.description,
+        descriptionEs: data.description,
+        regionId,
         provinceId: data.provinceId,
         departmentId: data.departmentId,
         localityId: data.localityId,
@@ -134,8 +142,8 @@ export async function createListing(
         paymentMethods: data.paymentMethods,
         languages: data.languages,
         attributes: jsonOrClear(data.attributes),
-        metaTitle: data.metaTitle ?? null,
-        metaDescription: data.metaDescription ?? null,
+        metaTitleEs: data.metaTitle ?? null,
+        metaDescriptionEs: data.metaDescription ?? null,
         status: "DRAFT",
         tier: "FREE",
         paymentStatus: "NONE",

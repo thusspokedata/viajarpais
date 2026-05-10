@@ -170,13 +170,22 @@ type LocalitySnapshot = {
 
 async function seedGeo(): Promise<void> {
   // ── Regions ──
+  // Las traducciones EN/PT-BR de cada region viven en el commit
+  // siguiente (`feat(db): seed upsert traducciones regiones`). Aca el
+  // upsert solo asegura que las regiones existen con nameEs.
   console.log(`Seeding ${REGIONS.length} regions…`);
   const regionIdByCode = new Map<string, string>();
   for (const r of REGIONS) {
     const row = await prisma.region.upsert({
       where: { code: r.code },
-      create: { code: r.code, name: r.name, order: r.order },
-      update: { name: r.name, order: r.order },
+      create: {
+        code: r.code,
+        nameEs: r.name,
+        nameEn: r.name,
+        namePtBr: r.name,
+        order: r.order,
+      },
+      update: { nameEs: r.name, order: r.order },
     });
     regionIdByCode.set(row.code, row.id);
   }
