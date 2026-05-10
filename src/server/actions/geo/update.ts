@@ -35,14 +35,31 @@ export type UpdateGeoResult =
 
 type GeoLevel = "region" | "province" | "department" | "locality";
 
-const REVALIDATE_PATHS: Record<GeoLevel, (id: string) => string[]> = {
-  region: (id) => ["/admin/geo", "/admin/geo/regions", `/admin/geo/regions/${id}`],
-  province: (id) => ["/admin/geo/provinces", `/admin/geo/provinces/${id}`],
-  department: (id) => [
-    "/admin/geo/departments",
-    `/admin/geo/departments/${id}`,
+/*
+  Las paths de edición geo se rutean por `[code]` (Georef ID), NO por
+  `id` (cuid). El `revalidatePath` tiene que pasar `code` o el cache RSC
+  no matchea y queda staleado. La server action recibe `id` del caller
+  pero resuelve el `code` con `select` adicional en el `update` (sin
+  query extra — viene en la misma row del UPDATE).
+
+  `/admin/geo/regions` y similares NO son rutas (no hay
+  `/regions/page.tsx`, solo `/regions/[code]/page.tsx`), así que las
+  saco del array — el revalidate sería no-op.
+*/
+const REVALIDATE_PATHS: Record<GeoLevel, (code: string) => string[]> = {
+  region: (code) => ["/admin/geo", `/admin/geo/regions/${code}`],
+  province: (code) => [
+    "/admin/geo/provinces",
+    `/admin/geo/provinces/${code}`,
   ],
-  locality: (id) => ["/admin/geo/localities", `/admin/geo/localities/${id}`],
+  department: (code) => [
+    "/admin/geo/departments",
+    `/admin/geo/departments/${code}`,
+  ],
+  locality: (code) => [
+    "/admin/geo/localities",
+    `/admin/geo/localities/${code}`,
+  ],
 };
 
 function flattenErrors(parsed: ReturnType<typeof GeoEditorialContentSchema.safeParse>) {
@@ -108,9 +125,9 @@ export async function updateRegion(
         metaDescriptionEs: data.metaDescriptionEs ?? null,
         lastEditedById: user.id,
       },
-      select: { updatedAt: true },
+      select: { updatedAt: true, code: true },
     });
-    REVALIDATE_PATHS.region(id).forEach((p) => revalidatePath(p));
+    REVALIDATE_PATHS.region(updated.code).forEach((p) => revalidatePath(p));
     return { ok: true, updatedAt: updated.updatedAt.toISOString() };
   } catch (err) {
     return handleP2025orRethrow(err);
@@ -146,9 +163,9 @@ export async function updateProvince(
         metaDescriptionEs: data.metaDescriptionEs ?? null,
         lastEditedById: user.id,
       },
-      select: { updatedAt: true },
+      select: { updatedAt: true, code: true },
     });
-    REVALIDATE_PATHS.province(id).forEach((p) => revalidatePath(p));
+    REVALIDATE_PATHS.province(updated.code).forEach((p) => revalidatePath(p));
     return { ok: true, updatedAt: updated.updatedAt.toISOString() };
   } catch (err) {
     return handleP2025orRethrow(err);
@@ -184,9 +201,9 @@ export async function updateDepartment(
         metaDescriptionEs: data.metaDescriptionEs ?? null,
         lastEditedById: user.id,
       },
-      select: { updatedAt: true },
+      select: { updatedAt: true, code: true },
     });
-    REVALIDATE_PATHS.department(id).forEach((p) => revalidatePath(p));
+    REVALIDATE_PATHS.department(updated.code).forEach((p) => revalidatePath(p));
     return { ok: true, updatedAt: updated.updatedAt.toISOString() };
   } catch (err) {
     return handleP2025orRethrow(err);
@@ -222,9 +239,9 @@ export async function updateLocality(
         metaDescriptionEs: data.metaDescriptionEs ?? null,
         lastEditedById: user.id,
       },
-      select: { updatedAt: true },
+      select: { updatedAt: true, code: true },
     });
-    REVALIDATE_PATHS.locality(id).forEach((p) => revalidatePath(p));
+    REVALIDATE_PATHS.locality(updated.code).forEach((p) => revalidatePath(p));
     return { ok: true, updatedAt: updated.updatedAt.toISOString() };
   } catch (err) {
     return handleP2025orRethrow(err);

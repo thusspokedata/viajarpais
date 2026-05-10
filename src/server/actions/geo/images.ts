@@ -36,7 +36,13 @@ export async function deleteRegionImage(
 
   const img = await prisma.regionImage.findUnique({
     where: { id: imageId },
-    select: { id: true, regionId: true, cloudinaryPublicId: true },
+    select: {
+      id: true,
+      cloudinaryPublicId: true,
+      // `code` para revalidate (las paths son `/admin/geo/regions/[code]`,
+      // no `[id]`).
+      region: { select: { code: true } },
+    },
   });
   if (!img) {
     return { ok: false, message: "La imagen no existe o ya fue eliminada." };
@@ -67,7 +73,7 @@ export async function deleteRegionImage(
     throw err;
   }
 
-  revalidatePath(`/admin/geo/regions/${img.regionId}`);
+  revalidatePath(`/admin/geo/regions/${img.region.code}`);
   return { ok: true, alreadyDeletedFromCdn: cloud.alreadyDeleted };
 }
 
@@ -78,7 +84,11 @@ export async function deleteProvinceImage(
 
   const img = await prisma.provinceImage.findUnique({
     where: { id: imageId },
-    select: { id: true, provinceId: true, cloudinaryPublicId: true },
+    select: {
+      id: true,
+      cloudinaryPublicId: true,
+      province: { select: { code: true } },
+    },
   });
   if (!img) {
     return { ok: false, message: "La imagen no existe o ya fue eliminada." };
@@ -105,7 +115,7 @@ export async function deleteProvinceImage(
     throw err;
   }
 
-  revalidatePath(`/admin/geo/provinces/${img.provinceId}`);
+  revalidatePath(`/admin/geo/provinces/${img.province.code}`);
   return { ok: true, alreadyDeletedFromCdn: cloud.alreadyDeleted };
 }
 
@@ -116,7 +126,11 @@ export async function deleteDepartmentImage(
 
   const img = await prisma.departmentImage.findUnique({
     where: { id: imageId },
-    select: { id: true, departmentId: true, cloudinaryPublicId: true },
+    select: {
+      id: true,
+      cloudinaryPublicId: true,
+      department: { select: { code: true } },
+    },
   });
   if (!img) {
     return { ok: false, message: "La imagen no existe o ya fue eliminada." };
@@ -143,7 +157,7 @@ export async function deleteDepartmentImage(
     throw err;
   }
 
-  revalidatePath(`/admin/geo/departments/${img.departmentId}`);
+  revalidatePath(`/admin/geo/departments/${img.department.code}`);
   return { ok: true, alreadyDeletedFromCdn: cloud.alreadyDeleted };
 }
 
@@ -154,7 +168,11 @@ export async function deleteLocalityImage(
 
   const img = await prisma.localityImage.findUnique({
     where: { id: imageId },
-    select: { id: true, localityId: true, cloudinaryPublicId: true },
+    select: {
+      id: true,
+      cloudinaryPublicId: true,
+      locality: { select: { code: true } },
+    },
   });
   if (!img) {
     return { ok: false, message: "La imagen no existe o ya fue eliminada." };
@@ -181,6 +199,6 @@ export async function deleteLocalityImage(
     throw err;
   }
 
-  revalidatePath(`/admin/geo/localities/${img.localityId}`);
+  revalidatePath(`/admin/geo/localities/${img.locality.code}`);
   return { ok: true, alreadyDeletedFromCdn: cloud.alreadyDeleted };
 }
