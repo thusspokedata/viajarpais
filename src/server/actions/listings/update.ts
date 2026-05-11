@@ -18,7 +18,7 @@ import {
   runAutoTranslation,
   type TranslationStatus,
 } from "@/lib/translations/orchestrator";
-import type { TranslationState } from "@/lib/translations/dispatcher";
+import { mapListingToTranslationState } from "@/lib/translations/mappers";
 
 export type UpdateListingResult =
   | {
@@ -305,7 +305,14 @@ export async function updateListing(
     const translationStatus = await runAutoTranslation({
       type: "listing",
       id,
-      previousState: existing as unknown as TranslationState,
+      /*
+        Mapper explícito reemplaza el `as unknown as TranslationState`
+        cast (CodeRabbit feedback Major). Si el `findUnique` se
+        restringe en el futuro y pierde alguno de los 22 fields de
+        traducción, el typecheck del mapper rompe — el cast
+        silenciaba esa regresión.
+      */
+      previousState: mapListingToTranslationState(existing),
       nextValues: {
         taglineEs: existing.taglineEs,
         descriptionEs: data.description,
