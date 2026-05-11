@@ -310,6 +310,18 @@ el próximo:
   entre regiones del runtime, pero documentar en runbook admin para
   no sorprender cuando el reset aparece "antes de tiempo".
 
+- **Empty DeepL response treated as success** (CodeRabbit Minor
+  deferred en v0.3-geo-b): `src/lib/deepl.ts:184`. Si DeepL devolviera
+  un `TextResult` con `text=""` para un input no vacío, el código
+  actual aceptaría la traducción vacía como exitosa e incrementaría
+  cuota. Probabilidad real ~0 — DeepL no devuelve vacío para input
+  no vacío en uso documentado. Si se detecta caso en producción,
+  evaluar entre tres caminos antes de elegir: (a) retry con backoff
+  (riesgo de 13s de delays ante evento raro), (b) skip + marcar
+  pending (más conservador), (c) persistir con flag `requiresReview`
+  (visible para el editor). No optar por "4 líneas defensivas" sin
+  decidir la semántica.
+
 ## Cuando dudes, preguntá
 
 No asumas decisiones de producto. Si encontrás una ambigüedad o una contradicción
