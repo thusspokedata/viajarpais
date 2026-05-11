@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/authz";
@@ -14,9 +13,19 @@ import {
   ListingFormSchema,
   type ListingFormInput,
 } from "@/lib/listings/validation";
+import {
+  runAutoTranslation,
+  type TranslationStatus,
+} from "@/lib/translations/orchestrator";
+import { getTranslationState } from "@/lib/translations/dispatcher";
 
 export type CreateListingResult =
-  | { ok: true; id: string; slug: string }
+  | {
+      ok: true;
+      id: string;
+      slug: string;
+      translationStatus: TranslationStatus;
+    }
   | {
       ok: false;
       formErrors?: string[];
@@ -200,6 +209,48 @@ export async function createListing(
     throw err;
   }
 
+  /*
+    Auto-traducción post-create. En create el "previo" es un placeholder
+    sin texto — el `previousState` que armamos representa el row recién
+    creado con strings vacíos / NONE en los campos de traducción. Eso
+    fuerza al orchestrator a detectar diff y disparar DeepL para
+    `descriptionEs` (el form de listing no setea taglineEs todavía).
+
+    Si DeepL falla, las traducciones quedan en `*PendingRetry=true`; el
+    listing igual queda creado en DB.
+  */
+  const previousState = await getTranslationState("listing", created.id);
+  let translationStatus: TranslationStatus = { en: "skipped", ptBr: "skipped" };
+  if (previousState) {
+    translationStatus = await runAutoTranslation({
+      type: "listing",
+      id: created.id,
+      previousState: {
+        ...previousState,
+        // Fuerza diff: el orchestrator compara contra estos valores
+        // y, como el `descriptionEs` "previo" es vacío vs `data.description`
+        // no-vacío, dispara la traducción.
+        descriptionEs: "",
+        taglineEs: null,
+      },
+      nextValues: {
+        taglineEs: null,
+        descriptionEs: data.description,
+      },
+    });
+  }
+
   revalidatePath("/admin/listings");
-  redirect(`/admin/listings/${created.id}?created=1`);
+  /*
+    No usamos `redirect()` acá — Next 16 lo implementa como excepción y
+    cortaría el return value antes de que llegue al cliente. El form
+    cliente recibe `{ ok: true, id, translationStatus }`, muestra el
+    toast correspondiente y navega con `router.push()`.
+  */
+  return {
+    ok: true,
+    id: created.id,
+    slug: created.slug,
+    translationStatus,
+  };
 }

@@ -14,9 +14,19 @@ import {
   type ListingFormInput,
 } from "@/lib/listings/validation";
 import { findChangedCriticalFields } from "@/lib/listings/critical-fields";
+import {
+  runAutoTranslation,
+  type TranslationStatus,
+} from "@/lib/translations/orchestrator";
+import type { TranslationState } from "@/lib/translations/dispatcher";
 
 export type UpdateListingResult =
-  | { ok: true; updatedAt: string; reverified: boolean }
+  | {
+      ok: true;
+      updatedAt: string;
+      reverified: boolean;
+      translationStatus: TranslationStatus;
+    }
   | {
       ok: false;
       formErrors?: string[];
@@ -278,6 +288,24 @@ export async function updateListing(
       },
     );
 
+    /*
+      Auto-traducción post-UPDATE. La fuente del diff es el `existing`
+      que leímos antes del UPDATE — sus `*Es` son el "previo" y los
+      nuevos vienen del payload. Reusamos el shape para alimentar al
+      orchestrator sin un round-trip extra. Si DeepL falla o la cuota
+      está agotada, el save en español queda OK; el campo con falla
+      sale con `*PendingRetry=true` y el admin muestra banner naranja.
+    */
+    const translationStatus = await runAutoTranslation({
+      type: "listing",
+      id,
+      previousState: existing as unknown as TranslationState,
+      nextValues: {
+        taglineEs: existing.taglineEs,
+        descriptionEs: data.description,
+      },
+    });
+
     revalidatePath("/admin/listings");
     revalidatePath(`/admin/listings/${id}`);
 
@@ -285,6 +313,7 @@ export async function updateListing(
       ok: true,
       updatedAt: updated.updatedAt.toISOString(),
       reverified: reverify,
+      translationStatus,
     };
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
