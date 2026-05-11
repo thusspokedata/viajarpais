@@ -2,13 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "@/components/ui/icons";
 import { EditorialContentForm } from "@/components/admin/geo/EditorialContentForm";
-import { GeoImageList } from "@/components/admin/geo/GeoImageList";
-import { FormSection } from "@/components/admin/listing-form/FormSection";
+import { GalleryUploader } from "@/components/admin/gallery/GalleryUploader";
 import { TranslationsPanel } from "@/components/admin/TranslationsPanel";
 import { entityToTranslationsView } from "@/lib/translations/view";
+import { imagesToGalleryView } from "@/lib/images/view";
+import { IMAGE_LIMITS } from "@/lib/images/dispatcher";
 import { getRegionByCode } from "@/server/data/geo/regions";
 import { updateRegion } from "@/server/actions/geo/update";
-import { deleteRegionImage } from "@/server/actions/geo/images";
 
 type Props = {
   params: Promise<{ code: string }>;
@@ -73,12 +73,12 @@ export default async function EditRegionPage({ params }: Props) {
         translations={entityToTranslationsView(region)}
       />
 
-      <FormSection title="Imágenes" defaultOpen>
-        <GeoImageList
-          images={region.images}
-          deleteAction={deleteRegionImage}
-        />
-      </FormSection>
+      <GalleryUploader
+        entityType="region"
+        entityId={region.id}
+        images={imagesToGalleryView(region.images)}
+        maxImages={IMAGE_LIMITS.region}
+      />
     </div>
   );
 }

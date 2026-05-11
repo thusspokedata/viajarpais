@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { ChevronLeft } from "@/components/ui/icons";
 import { ListingFormShell } from "@/components/admin/listing-form/ListingFormShell";
 import { TranslationsPanel } from "@/components/admin/TranslationsPanel";
+import { GalleryUploader } from "@/components/admin/gallery/GalleryUploader";
 import { entityToTranslationsView } from "@/lib/translations/view";
+import { imagesToGalleryView } from "@/lib/images/view";
+import { IMAGE_LIMITS } from "@/lib/images/dispatcher";
 import { getListingForEdit } from "@/server/data/listings";
 import {
   listProvinces,
@@ -143,6 +146,13 @@ export default async function EditListingPage({ params, searchParams }: Props) {
         entityId={listing.id}
         revalidateIdentifier={listing.id}
         translations={entityToTranslationsView(listing)}
+      />
+
+      <GalleryUploader
+        entityType="listing"
+        entityId={listing.id}
+        images={imagesToGalleryView(listing.images)}
+        maxImages={IMAGE_LIMITS.listing}
       />
     </div>
   );
