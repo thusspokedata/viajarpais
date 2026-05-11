@@ -4,6 +4,8 @@ import { ChevronLeft } from "@/components/ui/icons";
 import { EditorialContentForm } from "@/components/admin/geo/EditorialContentForm";
 import { GeoImageList } from "@/components/admin/geo/GeoImageList";
 import { FormSection } from "@/components/admin/listing-form/FormSection";
+import { TranslationsPanel } from "@/components/admin/TranslationsPanel";
+import { entityToTranslationsView } from "@/lib/translations/view";
 import { getLocalityByCode } from "@/server/data/geo/localities";
 import { updateLocality } from "@/server/actions/geo/update";
 import { deleteLocalityImage } from "@/server/actions/geo/images";
@@ -62,6 +64,14 @@ export default async function EditLocalityPage({ params }: Props) {
             : null
         }
         updateAction={updateLocality}
+      />
+
+      <TranslationsPanel
+        entityType="locality"
+        entityId={locality.id}
+        revalidateIdentifier={locality.code}
+        parentUpdatedAt={locality.updatedAt.toISOString()}
+        translations={entityToTranslationsView(locality)}
       />
 
       <FormSection title="Imágenes" defaultOpen>

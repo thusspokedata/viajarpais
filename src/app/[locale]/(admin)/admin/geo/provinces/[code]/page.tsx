@@ -4,6 +4,8 @@ import { ChevronLeft } from "@/components/ui/icons";
 import { EditorialContentForm } from "@/components/admin/geo/EditorialContentForm";
 import { GeoImageList } from "@/components/admin/geo/GeoImageList";
 import { FormSection } from "@/components/admin/listing-form/FormSection";
+import { TranslationsPanel } from "@/components/admin/TranslationsPanel";
+import { entityToTranslationsView } from "@/lib/translations/view";
 import { getProvinceByCode } from "@/server/data/geo/provinces";
 import { updateProvince } from "@/server/actions/geo/update";
 import { deleteProvinceImage } from "@/server/actions/geo/images";
@@ -65,6 +67,14 @@ export default async function EditProvincePage({ params }: Props) {
             : null
         }
         updateAction={updateProvince}
+      />
+
+      <TranslationsPanel
+        entityType="province"
+        entityId={province.id}
+        revalidateIdentifier={province.code}
+        parentUpdatedAt={province.updatedAt.toISOString()}
+        translations={entityToTranslationsView(province)}
       />
 
       <FormSection title="Imágenes" defaultOpen>

@@ -4,6 +4,8 @@ import { ChevronLeft } from "@/components/ui/icons";
 import { EditorialContentForm } from "@/components/admin/geo/EditorialContentForm";
 import { GeoImageList } from "@/components/admin/geo/GeoImageList";
 import { FormSection } from "@/components/admin/listing-form/FormSection";
+import { TranslationsPanel } from "@/components/admin/TranslationsPanel";
+import { entityToTranslationsView } from "@/lib/translations/view";
 import { getRegionByCode } from "@/server/data/geo/regions";
 import { updateRegion } from "@/server/actions/geo/update";
 import { deleteRegionImage } from "@/server/actions/geo/images";
@@ -62,6 +64,14 @@ export default async function EditRegionPage({ params }: Props) {
             : null
         }
         updateAction={updateRegion}
+      />
+
+      <TranslationsPanel
+        entityType="region"
+        entityId={region.id}
+        revalidateIdentifier={region.code}
+        parentUpdatedAt={region.updatedAt.toISOString()}
+        translations={entityToTranslationsView(region)}
       />
 
       <FormSection title="Imágenes" defaultOpen>
