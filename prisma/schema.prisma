@@ -92,31 +92,45 @@ model Region {
   images    RegionImage[]
 
   // Contenido editorial (nullable; el editor los completa desde admin).
-  taglineEs               String?
-  taglineEn               String?
-  taglinePtBr             String?
-  taglineEnSource         TranslationSource @default(NONE)
-  taglinePtBrSource       TranslationSource @default(NONE)
-  taglineEnTranslatedAt   DateTime?
-  taglinePtBrTranslatedAt DateTime?
+  taglineEs                  String?
+  taglineEn                  String?
+  taglinePtBr                String?
+  taglineEnSource            TranslationSource @default(NONE)
+  taglinePtBrSource          TranslationSource @default(NONE)
+  taglineEnTranslatedAt      DateTime?
+  taglinePtBrTranslatedAt    DateTime?
   // `*PendingRetry` lo activa la server action de update cuando dispara
   // DeepL para este campo y la traducción falla (3 retries agotados o
   // cuota mensual excedida). El admin muestra banner + botón "Reintentar
   // ahora" mientras este flag esté en true. Se baja a false cuando la
   // traducción se completa o el editor edita la versión manualmente.
-  taglineEnPendingRetry   Boolean           @default(false)
-  taglinePtBrPendingRetry Boolean           @default(false)
+  taglineEnPendingRetry      Boolean           @default(false)
+  taglinePtBrPendingRetry    Boolean           @default(false)
+  // `*EsAtTranslation*` guardan un snapshot del `taglineEs` en el
+  // momento en que se persistió la traducción correspondiente. El
+  // panel admin compara `current.taglineEs` contra este snapshot para
+  // decidir si el texto base cambió desde la última revisión — el
+  // banner de drift anterior se basaba en timestamps (`translatedAt <
+  // updatedAt`) y disparaba falsos positivos al cambiar campos no
+  // traducibles (metaTitleEs, etc.) o incluso 1s después de marcar
+  // REVIEWED por colisión ms. Null = sin snapshot (rows pre-migración
+  // backfilleados solo si source era REVIEWED/HUMAN).
+  taglineEsAtTranslationEn   String?
+  taglineEsAtTranslationPtBr String?
 
-  descriptionEs               String?
-  descriptionEn               String?
-  descriptionPtBr             String?
-  descriptionEnSource         TranslationSource @default(NONE)
-  descriptionPtBrSource       TranslationSource @default(NONE)
-  descriptionEnTranslatedAt   DateTime?
-  descriptionPtBrTranslatedAt DateTime?
+  descriptionEs                  String?
+  descriptionEn                  String?
+  descriptionPtBr                String?
+  descriptionEnSource            TranslationSource @default(NONE)
+  descriptionPtBrSource          TranslationSource @default(NONE)
+  descriptionEnTranslatedAt      DateTime?
+  descriptionPtBrTranslatedAt    DateTime?
   // Ver `taglineEnPendingRetry` arriba — misma semántica.
-  descriptionEnPendingRetry   Boolean           @default(false)
-  descriptionPtBrPendingRetry Boolean           @default(false)
+  descriptionEnPendingRetry      Boolean           @default(false)
+  descriptionPtBrPendingRetry    Boolean           @default(false)
+  // Ver `taglineEsAtTranslationEn` arriba — misma semántica.
+  descriptionEsAtTranslationEn   String?
+  descriptionEsAtTranslationPtBr String?
 
   metaTitleEs         String?
   metaTitleEn         String?
@@ -148,31 +162,45 @@ model Province {
   images      ProvinceImage[]
 
   // Contenido editorial (nullable; el editor los completa desde admin).
-  taglineEs               String?
-  taglineEn               String?
-  taglinePtBr             String?
-  taglineEnSource         TranslationSource @default(NONE)
-  taglinePtBrSource       TranslationSource @default(NONE)
-  taglineEnTranslatedAt   DateTime?
-  taglinePtBrTranslatedAt DateTime?
+  taglineEs                  String?
+  taglineEn                  String?
+  taglinePtBr                String?
+  taglineEnSource            TranslationSource @default(NONE)
+  taglinePtBrSource          TranslationSource @default(NONE)
+  taglineEnTranslatedAt      DateTime?
+  taglinePtBrTranslatedAt    DateTime?
   // `*PendingRetry` lo activa la server action de update cuando dispara
   // DeepL para este campo y la traducción falla (3 retries agotados o
   // cuota mensual excedida). El admin muestra banner + botón "Reintentar
   // ahora" mientras este flag esté en true. Se baja a false cuando la
   // traducción se completa o el editor edita la versión manualmente.
-  taglineEnPendingRetry   Boolean           @default(false)
-  taglinePtBrPendingRetry Boolean           @default(false)
+  taglineEnPendingRetry      Boolean           @default(false)
+  taglinePtBrPendingRetry    Boolean           @default(false)
+  // `*EsAtTranslation*` guardan un snapshot del `taglineEs` en el
+  // momento en que se persistió la traducción correspondiente. El
+  // panel admin compara `current.taglineEs` contra este snapshot para
+  // decidir si el texto base cambió desde la última revisión — el
+  // banner de drift anterior se basaba en timestamps (`translatedAt <
+  // updatedAt`) y disparaba falsos positivos al cambiar campos no
+  // traducibles (metaTitleEs, etc.) o incluso 1s después de marcar
+  // REVIEWED por colisión ms. Null = sin snapshot (rows pre-migración
+  // backfilleados solo si source era REVIEWED/HUMAN).
+  taglineEsAtTranslationEn   String?
+  taglineEsAtTranslationPtBr String?
 
-  descriptionEs               String?
-  descriptionEn               String?
-  descriptionPtBr             String?
-  descriptionEnSource         TranslationSource @default(NONE)
-  descriptionPtBrSource       TranslationSource @default(NONE)
-  descriptionEnTranslatedAt   DateTime?
-  descriptionPtBrTranslatedAt DateTime?
+  descriptionEs                  String?
+  descriptionEn                  String?
+  descriptionPtBr                String?
+  descriptionEnSource            TranslationSource @default(NONE)
+  descriptionPtBrSource          TranslationSource @default(NONE)
+  descriptionEnTranslatedAt      DateTime?
+  descriptionPtBrTranslatedAt    DateTime?
   // Ver `taglineEnPendingRetry` arriba — misma semántica.
-  descriptionEnPendingRetry   Boolean           @default(false)
-  descriptionPtBrPendingRetry Boolean           @default(false)
+  descriptionEnPendingRetry      Boolean           @default(false)
+  descriptionPtBrPendingRetry    Boolean           @default(false)
+  // Ver `taglineEsAtTranslationEn` arriba — misma semántica.
+  descriptionEsAtTranslationEn   String?
+  descriptionEsAtTranslationPtBr String?
 
   metaTitleEs         String?
   metaTitleEn         String?
@@ -200,31 +228,45 @@ model Department {
   images     DepartmentImage[]
 
   // Contenido editorial (nullable; el editor los completa desde admin).
-  taglineEs               String?
-  taglineEn               String?
-  taglinePtBr             String?
-  taglineEnSource         TranslationSource @default(NONE)
-  taglinePtBrSource       TranslationSource @default(NONE)
-  taglineEnTranslatedAt   DateTime?
-  taglinePtBrTranslatedAt DateTime?
+  taglineEs                  String?
+  taglineEn                  String?
+  taglinePtBr                String?
+  taglineEnSource            TranslationSource @default(NONE)
+  taglinePtBrSource          TranslationSource @default(NONE)
+  taglineEnTranslatedAt      DateTime?
+  taglinePtBrTranslatedAt    DateTime?
   // `*PendingRetry` lo activa la server action de update cuando dispara
   // DeepL para este campo y la traducción falla (3 retries agotados o
   // cuota mensual excedida). El admin muestra banner + botón "Reintentar
   // ahora" mientras este flag esté en true. Se baja a false cuando la
   // traducción se completa o el editor edita la versión manualmente.
-  taglineEnPendingRetry   Boolean           @default(false)
-  taglinePtBrPendingRetry Boolean           @default(false)
+  taglineEnPendingRetry      Boolean           @default(false)
+  taglinePtBrPendingRetry    Boolean           @default(false)
+  // `*EsAtTranslation*` guardan un snapshot del `taglineEs` en el
+  // momento en que se persistió la traducción correspondiente. El
+  // panel admin compara `current.taglineEs` contra este snapshot para
+  // decidir si el texto base cambió desde la última revisión — el
+  // banner de drift anterior se basaba en timestamps (`translatedAt <
+  // updatedAt`) y disparaba falsos positivos al cambiar campos no
+  // traducibles (metaTitleEs, etc.) o incluso 1s después de marcar
+  // REVIEWED por colisión ms. Null = sin snapshot (rows pre-migración
+  // backfilleados solo si source era REVIEWED/HUMAN).
+  taglineEsAtTranslationEn   String?
+  taglineEsAtTranslationPtBr String?
 
-  descriptionEs               String?
-  descriptionEn               String?
-  descriptionPtBr             String?
-  descriptionEnSource         TranslationSource @default(NONE)
-  descriptionPtBrSource       TranslationSource @default(NONE)
-  descriptionEnTranslatedAt   DateTime?
-  descriptionPtBrTranslatedAt DateTime?
+  descriptionEs                  String?
+  descriptionEn                  String?
+  descriptionPtBr                String?
+  descriptionEnSource            TranslationSource @default(NONE)
+  descriptionPtBrSource          TranslationSource @default(NONE)
+  descriptionEnTranslatedAt      DateTime?
+  descriptionPtBrTranslatedAt    DateTime?
   // Ver `taglineEnPendingRetry` arriba — misma semántica.
-  descriptionEnPendingRetry   Boolean           @default(false)
-  descriptionPtBrPendingRetry Boolean           @default(false)
+  descriptionEnPendingRetry      Boolean           @default(false)
+  descriptionPtBrPendingRetry    Boolean           @default(false)
+  // Ver `taglineEsAtTranslationEn` arriba — misma semántica.
+  descriptionEsAtTranslationEn   String?
+  descriptionEsAtTranslationPtBr String?
 
   metaTitleEs         String?
   metaTitleEn         String?
@@ -256,31 +298,45 @@ model Locality {
   images       LocalityImage[]
 
   // Contenido editorial (nullable; el editor los completa desde admin).
-  taglineEs               String?
-  taglineEn               String?
-  taglinePtBr             String?
-  taglineEnSource         TranslationSource @default(NONE)
-  taglinePtBrSource       TranslationSource @default(NONE)
-  taglineEnTranslatedAt   DateTime?
-  taglinePtBrTranslatedAt DateTime?
+  taglineEs                  String?
+  taglineEn                  String?
+  taglinePtBr                String?
+  taglineEnSource            TranslationSource @default(NONE)
+  taglinePtBrSource          TranslationSource @default(NONE)
+  taglineEnTranslatedAt      DateTime?
+  taglinePtBrTranslatedAt    DateTime?
   // `*PendingRetry` lo activa la server action de update cuando dispara
   // DeepL para este campo y la traducción falla (3 retries agotados o
   // cuota mensual excedida). El admin muestra banner + botón "Reintentar
   // ahora" mientras este flag esté en true. Se baja a false cuando la
   // traducción se completa o el editor edita la versión manualmente.
-  taglineEnPendingRetry   Boolean           @default(false)
-  taglinePtBrPendingRetry Boolean           @default(false)
+  taglineEnPendingRetry      Boolean           @default(false)
+  taglinePtBrPendingRetry    Boolean           @default(false)
+  // `*EsAtTranslation*` guardan un snapshot del `taglineEs` en el
+  // momento en que se persistió la traducción correspondiente. El
+  // panel admin compara `current.taglineEs` contra este snapshot para
+  // decidir si el texto base cambió desde la última revisión — el
+  // banner de drift anterior se basaba en timestamps (`translatedAt <
+  // updatedAt`) y disparaba falsos positivos al cambiar campos no
+  // traducibles (metaTitleEs, etc.) o incluso 1s después de marcar
+  // REVIEWED por colisión ms. Null = sin snapshot (rows pre-migración
+  // backfilleados solo si source era REVIEWED/HUMAN).
+  taglineEsAtTranslationEn   String?
+  taglineEsAtTranslationPtBr String?
 
-  descriptionEs               String?
-  descriptionEn               String?
-  descriptionPtBr             String?
-  descriptionEnSource         TranslationSource @default(NONE)
-  descriptionPtBrSource       TranslationSource @default(NONE)
-  descriptionEnTranslatedAt   DateTime?
-  descriptionPtBrTranslatedAt DateTime?
+  descriptionEs                  String?
+  descriptionEn                  String?
+  descriptionPtBr                String?
+  descriptionEnSource            TranslationSource @default(NONE)
+  descriptionPtBrSource          TranslationSource @default(NONE)
+  descriptionEnTranslatedAt      DateTime?
+  descriptionPtBrTranslatedAt    DateTime?
   // Ver `taglineEnPendingRetry` arriba — misma semántica.
-  descriptionEnPendingRetry   Boolean           @default(false)
-  descriptionPtBrPendingRetry Boolean           @default(false)
+  descriptionEnPendingRetry      Boolean           @default(false)
+  descriptionPtBrPendingRetry    Boolean           @default(false)
+  // Ver `taglineEsAtTranslationEn` arriba — misma semántica.
+  descriptionEsAtTranslationEn   String?
+  descriptionEsAtTranslationPtBr String?
 
   metaTitleEs         String?
   metaTitleEn         String?
@@ -324,31 +380,45 @@ model Listing {
    * contenido en migracion). Tagline + i18n agregados para alinear con
    * el patron de los niveles geograficos (DeepL en v0.3-geo-b).
    */
-  taglineEs               String?
-  taglineEn               String?
-  taglinePtBr             String?
-  taglineEnSource         TranslationSource @default(NONE)
-  taglinePtBrSource       TranslationSource @default(NONE)
-  taglineEnTranslatedAt   DateTime?
-  taglinePtBrTranslatedAt DateTime?
+  taglineEs                  String?
+  taglineEn                  String?
+  taglinePtBr                String?
+  taglineEnSource            TranslationSource @default(NONE)
+  taglinePtBrSource          TranslationSource @default(NONE)
+  taglineEnTranslatedAt      DateTime?
+  taglinePtBrTranslatedAt    DateTime?
   // `*PendingRetry` lo activa la server action de update cuando dispara
   // DeepL para este campo y la traducción falla (3 retries agotados o
   // cuota mensual excedida). El admin muestra banner + botón "Reintentar
   // ahora" mientras este flag esté en true. Se baja a false cuando la
   // traducción se completa o el editor edita la versión manualmente.
-  taglineEnPendingRetry   Boolean           @default(false)
-  taglinePtBrPendingRetry Boolean           @default(false)
+  taglineEnPendingRetry      Boolean           @default(false)
+  taglinePtBrPendingRetry    Boolean           @default(false)
+  // `*EsAtTranslation*` guardan un snapshot del `taglineEs` en el
+  // momento en que se persistió la traducción correspondiente. El
+  // panel admin compara `current.taglineEs` contra este snapshot para
+  // decidir si el texto base cambió desde la última revisión — el
+  // banner de drift anterior se basaba en timestamps (`translatedAt <
+  // updatedAt`) y disparaba falsos positivos al cambiar campos no
+  // traducibles (metaTitleEs, etc.) o incluso 1s después de marcar
+  // REVIEWED por colisión ms. Null = sin snapshot (rows pre-migración
+  // backfilleados solo si source era REVIEWED/HUMAN).
+  taglineEsAtTranslationEn   String?
+  taglineEsAtTranslationPtBr String?
 
-  descriptionEs               String
-  descriptionEn               String?
-  descriptionPtBr             String?
-  descriptionEnSource         TranslationSource @default(NONE)
-  descriptionPtBrSource       TranslationSource @default(NONE)
-  descriptionEnTranslatedAt   DateTime?
-  descriptionPtBrTranslatedAt DateTime?
+  descriptionEs                  String
+  descriptionEn                  String?
+  descriptionPtBr                String?
+  descriptionEnSource            TranslationSource @default(NONE)
+  descriptionPtBrSource          TranslationSource @default(NONE)
+  descriptionEnTranslatedAt      DateTime?
+  descriptionPtBrTranslatedAt    DateTime?
   // Ver `taglineEnPendingRetry` arriba — misma semántica.
-  descriptionEnPendingRetry   Boolean           @default(false)
-  descriptionPtBrPendingRetry Boolean           @default(false)
+  descriptionEnPendingRetry      Boolean           @default(false)
+  descriptionPtBrPendingRetry    Boolean           @default(false)
+  // Ver `taglineEsAtTranslationEn` arriba — misma semántica.
+  descriptionEsAtTranslationEn   String?
+  descriptionEsAtTranslationPtBr String?
 
   /**
    * Geografia: `regionId` esta denormalizado para queries publicas de

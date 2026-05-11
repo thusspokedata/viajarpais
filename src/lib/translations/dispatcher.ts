@@ -49,6 +49,12 @@ export const TRANSLATION_FIELDS_SELECT = {
   descriptionPtBrSource: true,
   descriptionPtBrTranslatedAt: true,
   descriptionPtBrPendingRetry: true,
+  // Snapshot del `*Es` al momento de cada traducción — base para el
+  // drift detection del panel (ver schema y orchestrator).
+  taglineEsAtTranslationEn: true,
+  taglineEsAtTranslationPtBr: true,
+  descriptionEsAtTranslationEn: true,
+  descriptionEsAtTranslationPtBr: true,
 } as const;
 
 /**
@@ -78,12 +84,17 @@ export type TranslationState = {
   descriptionPtBrSource: TranslationSource;
   descriptionPtBrTranslatedAt: Date | null;
   descriptionPtBrPendingRetry: boolean;
+  taglineEsAtTranslationEn: string | null;
+  taglineEsAtTranslationPtBr: string | null;
+  descriptionEsAtTranslationEn: string | null;
+  descriptionEsAtTranslationPtBr: string | null;
 };
 
 /**
  * Subset de campos que la lógica de traducción puede escribir. NUNCA
  * incluye `*Es` (la fuente de verdad la maneja el update server action
- * principal, no el orchestrator de traducción).
+ * principal, no el orchestrator de traducción) salvo los snapshots
+ * `*EsAtTranslation*` que sí son responsabilidad del orchestrator.
  */
 export type TranslationUpdateData = {
   taglineEn?: string | null;
@@ -102,6 +113,10 @@ export type TranslationUpdateData = {
   descriptionPtBrSource?: TranslationSource;
   descriptionPtBrTranslatedAt?: Date | null;
   descriptionPtBrPendingRetry?: boolean;
+  taglineEsAtTranslationEn?: string | null;
+  taglineEsAtTranslationPtBr?: string | null;
+  descriptionEsAtTranslationEn?: string | null;
+  descriptionEsAtTranslationPtBr?: string | null;
 };
 
 /**

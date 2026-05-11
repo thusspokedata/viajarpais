@@ -73,7 +73,6 @@ export default async function EditDepartmentPage({ params }: Props) {
         entityType="department"
         entityId={department.id}
         revalidateIdentifier={department.code}
-        parentUpdatedAt={department.updatedAt.toISOString()}
         translations={entityToTranslationsView(department)}
       />
 

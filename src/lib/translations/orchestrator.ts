@@ -255,23 +255,17 @@ async function translateOne(args: {
   const { state, field, lang, respectSourceGuard, onlyIfPending, out } = args;
   const sourceText = field === "tagline" ? state.taglineEs : state.descriptionEs;
 
-  // Si no hay texto base, no hay nada que traducir. Limpiamos la
-  // versión vieja para evitar mantener un texto huérfano.
-  if (!sourceText || sourceText.trim() === "") {
-    setTranslationField(out, field, lang, {
-      text: null,
-      source: "NONE",
-      translatedAt: null,
-      pendingRetry: false,
-    });
-    return "skipped";
-  }
-
   const currentSource = readSource(state, field, lang);
   const currentPending = readPending(state, field, lang);
 
-  // Guard de source: si el editor revisó/escribió esta versión, no
-  // sobreescribir automáticamente.
+  /*
+    Guard de source — DEBE ir antes del check de empty text. Sin este
+    orden, si el editor revisó/escribió manualmente la traducción
+    (REVIEWED/HUMAN) y después limpia `descriptionEs` temporalmente,
+    el branch de empty text wipea la versión manual silenciosamente
+    (pérdida de trabajo humano). Misma regla que para los wipes "no
+    se descarta trabajo humano sin confirmación explícita".
+  */
   if (
     respectSourceGuard &&
     (currentSource === "REVIEWED" || currentSource === "HUMAN")
@@ -279,10 +273,30 @@ async function translateOne(args: {
     return "skipped";
   }
 
+  // Si no hay texto base, no hay nada que traducir. Limpiamos la
+  // versión vieja (MACHINE/NONE) para evitar mantener un texto
+  // huérfano. Para REVIEWED/HUMAN ya salimos arriba por el guard.
+  if (!sourceText || sourceText.trim() === "") {
+    setTranslationField(out, field, lang, {
+      text: null,
+      source: "NONE",
+      translatedAt: null,
+      pendingRetry: false,
+      // Snapshot también se limpia — sin `*Es`, no hay nada que
+      // comparar y `hasDrift` debe ser false trivialmente.
+      esSnapshot: null,
+    });
+    return "skipped";
+  }
+
   if (onlyIfPending && !currentPending) {
     return "skipped";
   }
 
+  // XSS: el texto que DeepL devuelve se persiste sin sanitizar. La
+  // sanitización es OBLIGATORIA en v0.4 cuando este campo se
+  // renderice como HTML público. Ver AGENTS.md → "Sanitización de
+  // Markdown del editor (deuda crítica hacia v0.4)".
   const result = await translateText(sourceText, lang);
   if (result.ok) {
     setTranslationField(out, field, lang, {
@@ -290,11 +304,17 @@ async function translateOne(args: {
       source: "MACHINE",
       translatedAt: new Date(),
       pendingRetry: false,
+      // Snapshot del `*Es` que se acaba de traducir — base para que
+      // el panel admin detecte drift cuando el editor edite el ES
+      // después y la traducción quede atrás.
+      esSnapshot: sourceText,
     });
     return "success";
   }
 
-  // Falló: marcar pendingRetry, no tocar el texto previo.
+  // Falló: marcar pendingRetry, no tocar el texto previo ni el
+  // snapshot (la traducción anterior, si existía, sigue alineada con
+  // su snapshot original).
   setTranslationField(out, field, lang, {
     pendingRetry: true,
   });
@@ -354,6 +374,10 @@ function setTranslationField(
     source?: "NONE" | "MACHINE" | "REVIEWED" | "HUMAN";
     translatedAt?: Date | null;
     pendingRetry?: boolean;
+    /** Snapshot del `*Es` al momento de esta traducción. Pasar
+     * `undefined` deja el snapshot anterior intacto (caso "solo
+     * marcamos pendingRetry, no tocamos el resto"). */
+    esSnapshot?: string | null;
   },
 ): void {
   const isEn = lang === "en-US";
@@ -374,6 +398,10 @@ function setTranslationField(
       if (isEn) out.taglineEnPendingRetry = values.pendingRetry;
       else out.taglinePtBrPendingRetry = values.pendingRetry;
     }
+    if (values.esSnapshot !== undefined) {
+      if (isEn) out.taglineEsAtTranslationEn = values.esSnapshot;
+      else out.taglineEsAtTranslationPtBr = values.esSnapshot;
+    }
     return;
   }
   // description
@@ -393,13 +421,23 @@ function setTranslationField(
     if (isEn) out.descriptionEnPendingRetry = values.pendingRetry;
     else out.descriptionPtBrPendingRetry = values.pendingRetry;
   }
+  if (values.esSnapshot !== undefined) {
+    if (isEn) out.descriptionEsAtTranslationEn = values.esSnapshot;
+    else out.descriptionEsAtTranslationPtBr = values.esSnapshot;
+  }
 }
 
 /**
  * Versión "editar manualmente" del panel: el editor pisó la traducción
  * a mano. Marca el source como REVIEWED + actualiza translatedAt +
- * baja pendingRetry. El call site valida los inputs (longitud, no
- * vacío) antes de llamar.
+ * baja pendingRetry + persiste el snapshot del `*Es` actual para que
+ * el drift detection del panel sepa contra qué comparar. El call site
+ * valida los inputs (longitud, no vacío) antes de llamar.
+ *
+ * XSS: `taglineText` y `descriptionText` vienen del cliente y se
+ * persisten sin sanitizar. Sanitización OBLIGATORIA en v0.4 cuando el
+ * contenido se renderice como HTML en `/[locale]/...` público. Ver
+ * AGENTS.md → "Sanitización de Markdown del editor".
  */
 export async function markTranslationAsReviewed(args: {
   type: EntityType;
@@ -410,6 +448,15 @@ export async function markTranslationAsReviewed(args: {
 }): Promise<void> {
   const { type, id, lang, taglineText, descriptionText } = args;
   const isEn = lang === "en-US";
+
+  /*
+    Leer el state actual para capturar el `*Es` que el editor revisó
+    como base de la traducción manual. Se persiste como snapshot —
+    `hasDrift` lo usa después como ancla: si el `*Es` cambia más
+    tarde, drift = true; si no cambia, drift = false (sin importar
+    cuántos saves de campos no traducibles hayan ocurrido).
+  */
+  const state = await getTranslationState(type, id);
   const data: TranslationUpdateData = {};
 
   if (taglineText !== undefined) {
@@ -418,11 +465,13 @@ export async function markTranslationAsReviewed(args: {
       data.taglineEnSource = "REVIEWED";
       data.taglineEnTranslatedAt = new Date();
       data.taglineEnPendingRetry = false;
+      data.taglineEsAtTranslationEn = state?.taglineEs ?? null;
     } else {
       data.taglinePtBr = taglineText;
       data.taglinePtBrSource = "REVIEWED";
       data.taglinePtBrTranslatedAt = new Date();
       data.taglinePtBrPendingRetry = false;
+      data.taglineEsAtTranslationPtBr = state?.taglineEs ?? null;
     }
   }
   if (descriptionText !== undefined) {
@@ -431,11 +480,13 @@ export async function markTranslationAsReviewed(args: {
       data.descriptionEnSource = "REVIEWED";
       data.descriptionEnTranslatedAt = new Date();
       data.descriptionEnPendingRetry = false;
+      data.descriptionEsAtTranslationEn = state?.descriptionEs ?? null;
     } else {
       data.descriptionPtBr = descriptionText;
       data.descriptionPtBrSource = "REVIEWED";
       data.descriptionPtBrTranslatedAt = new Date();
       data.descriptionPtBrPendingRetry = false;
+      data.descriptionEsAtTranslationPtBr = state?.descriptionEs ?? null;
     }
   }
 

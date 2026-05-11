@@ -70,7 +70,6 @@ export default async function EditRegionPage({ params }: Props) {
         entityType="region"
         entityId={region.id}
         revalidateIdentifier={region.code}
-        parentUpdatedAt={region.updatedAt.toISOString()}
         translations={entityToTranslationsView(region)}
       />
 

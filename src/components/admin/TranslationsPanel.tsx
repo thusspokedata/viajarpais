@@ -67,6 +67,16 @@ export type TranslationFieldsView = {
   descriptionPtBrSource: "NONE" | "MACHINE" | "REVIEWED" | "HUMAN";
   descriptionPtBrTranslatedAt: string | null;
   descriptionPtBrPendingRetry: boolean;
+
+  // Snapshot del `*Es` al momento de la traducción correspondiente.
+  // El panel los usa para `hasDrift` (compara contra el `*Es` actual)
+  // en vez del timestamp-based check anterior, que sufría falsos
+  // positivos. Null = sin snapshot (rows pre-migración con source
+  // NONE/MACHINE — el guard de source los ignora).
+  taglineEsAtTranslationEn: string | null;
+  taglineEsAtTranslationPtBr: string | null;
+  descriptionEsAtTranslationEn: string | null;
+  descriptionEsAtTranslationPtBr: string | null;
 };
 
 export type TranslationsPanelProps = {
@@ -78,13 +88,6 @@ export type TranslationsPanelProps = {
    * que el editor tendrá que recargar para ver el panel actualizado.
    */
   revalidateIdentifier?: string;
-  /**
-   * El `updatedAt` del registro padre (Region/Province/etc.). Se usa
-   * para detectar drift: si una traducción `REVIEWED` fue generada
-   * antes de `parentUpdatedAt`, mostramos banner "el texto base
-   * cambió".
-   */
-  parentUpdatedAt: string; // ISO
   translations: TranslationFieldsView;
 };
 
@@ -126,7 +129,7 @@ export function TranslationsPanel(props: TranslationsPanelProps) {
   const [open, setOpen] = React.useState(false);
   const [pending, startTransition] = React.useTransition();
 
-  const { translations: t, entityType, entityId, revalidateIdentifier, parentUpdatedAt } = props;
+  const { translations: t, entityType, entityId, revalidateIdentifier } = props;
 
   const hasPendingRetry =
     t.taglineEnPendingRetry ||
@@ -218,7 +221,6 @@ export function TranslationsPanel(props: TranslationsPanelProps) {
               entityType={entityType}
               entityId={entityId}
               revalidateIdentifier={revalidateIdentifier}
-              parentUpdatedAt={parentUpdatedAt}
               disabled={pending}
             />
             <TranslationColumn
@@ -227,7 +229,6 @@ export function TranslationsPanel(props: TranslationsPanelProps) {
               entityType={entityType}
               entityId={entityId}
               revalidateIdentifier={revalidateIdentifier}
-              parentUpdatedAt={parentUpdatedAt}
               disabled={pending}
             />
           </div>
@@ -249,7 +250,6 @@ function TranslationColumn({
   entityType,
   entityId,
   revalidateIdentifier,
-  parentUpdatedAt,
   disabled,
 }: ColumnProps) {
   const isEn = lang === "en-US";
@@ -272,17 +272,24 @@ function TranslationColumn({
     : t.descriptionPtBrPendingRetry;
 
   /*
-    Drift detection: el `*Es` cambió DESPUÉS del último `translatedAt`
-    de una versión REVIEWED/HUMAN. Comparamos `parentUpdatedAt` (que
-    refleja el último save del registro padre) contra el translatedAt
-    de cada campo. Si REVIEWED/HUMAN + translatedAt < parentUpdatedAt,
-    aparece banner — el editor decide si re-traducir.
+    Drift detection: el `*Es` ACTUAL difiere del snapshot que se
+    persistió al momento de la última traducción/revisión. La
+    comparación es por texto, no por timestamp — evita los falsos
+    positivos del approach anterior (que disparaba al cambiar
+    cualquier campo no traducible o incluso 1s después de marcar
+    REVIEWED por colisión ms entre `translatedAt` y `updatedAt`).
   */
-  const taglineDrift = hasDrift(taglineSource, taglineAt, parentUpdatedAt);
+  const taglineSnapshot = isEn
+    ? t.taglineEsAtTranslationEn
+    : t.taglineEsAtTranslationPtBr;
+  const descriptionSnapshot = isEn
+    ? t.descriptionEsAtTranslationEn
+    : t.descriptionEsAtTranslationPtBr;
+  const taglineDrift = hasDrift(taglineSource, t.taglineEs, taglineSnapshot);
   const descriptionDrift = hasDrift(
     descriptionSource,
-    descriptionAt,
-    parentUpdatedAt,
+    t.descriptionEs,
+    descriptionSnapshot,
   );
 
   const [editing, setEditing] = React.useState(false);
@@ -549,12 +556,16 @@ function Field({
 
 function hasDrift(
   source: "NONE" | "MACHINE" | "REVIEWED" | "HUMAN",
-  translatedAt: string | null,
-  parentUpdatedAt: string,
+  currentEs: string | null,
+  esSnapshot: string | null,
 ): boolean {
+  // Solo REVIEWED y HUMAN merecen banner — para MACHINE el orchestrator
+  // simplemente regenera al re-editar el ES, sin alertar al editor.
   if (source !== "REVIEWED" && source !== "HUMAN") return false;
-  if (!translatedAt) return false;
-  return new Date(translatedAt).getTime() < new Date(parentUpdatedAt).getTime();
+  // Sin snapshot no podemos decidir (rows pre-migración o casos
+  // donde el snapshot no se persistió). Conservador: no banner.
+  if (esSnapshot === null) return false;
+  return (currentEs ?? null) !== esSnapshot;
 }
 
 /**

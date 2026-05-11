@@ -70,7 +70,6 @@ export default async function EditLocalityPage({ params }: Props) {
         entityType="locality"
         entityId={locality.id}
         revalidateIdentifier={locality.code}
-        parentUpdatedAt={locality.updatedAt.toISOString()}
         translations={entityToTranslationsView(locality)}
       />
 

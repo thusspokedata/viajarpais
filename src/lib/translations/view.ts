@@ -36,6 +36,10 @@ export type EntityWithTranslationFields = {
   descriptionPtBrSource: TranslationSource;
   descriptionPtBrTranslatedAt: Date | null;
   descriptionPtBrPendingRetry: boolean;
+  taglineEsAtTranslationEn: string | null;
+  taglineEsAtTranslationPtBr: string | null;
+  descriptionEsAtTranslationEn: string | null;
+  descriptionEsAtTranslationPtBr: string | null;
 };
 
 export function entityToTranslationsView(
@@ -68,5 +72,9 @@ export function entityToTranslationsView(
       ? entity.descriptionPtBrTranslatedAt.toISOString()
       : null,
     descriptionPtBrPendingRetry: entity.descriptionPtBrPendingRetry,
+    taglineEsAtTranslationEn: entity.taglineEsAtTranslationEn,
+    taglineEsAtTranslationPtBr: entity.taglineEsAtTranslationPtBr,
+    descriptionEsAtTranslationEn: entity.descriptionEsAtTranslationEn,
+    descriptionEsAtTranslationPtBr: entity.descriptionEsAtTranslationPtBr,
   };
 }

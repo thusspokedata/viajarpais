@@ -73,7 +73,6 @@ export default async function EditProvincePage({ params }: Props) {
         entityType="province"
         entityId={province.id}
         revalidateIdentifier={province.code}
-        parentUpdatedAt={province.updatedAt.toISOString()}
         translations={entityToTranslationsView(province)}
       />
 

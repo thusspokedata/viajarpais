@@ -142,7 +142,6 @@ export default async function EditListingPage({ params, searchParams }: Props) {
         entityType="listing"
         entityId={listing.id}
         revalidateIdentifier={listing.id}
-        parentUpdatedAt={listing.updatedAt.toISOString()}
         translations={entityToTranslationsView(listing)}
       />
     </div>
