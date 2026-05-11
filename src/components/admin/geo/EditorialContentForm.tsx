@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
 import {
   Button,
   Input,
@@ -16,6 +17,7 @@ import {
 import { FormSection, FieldRow } from "@/components/admin/listing-form/FormSection";
 import { useAutosave } from "@/components/admin/listing-form/useAutosave";
 import { SavedIndicator } from "@/components/admin/listing-form/SavedIndicator";
+import type { TranslationStatus } from "@/lib/translations/orchestrator";
 
 /*
   EditorialContentForm — un único form compartido para los 4 niveles
@@ -50,7 +52,7 @@ export type EditorialUpdateAction = (
   data: GeoEditorialContentInput,
   expectedUpdatedAt?: string,
 ) => Promise<
-  | { ok: true; updatedAt: string }
+  | { ok: true; updatedAt: string; translationStatus: TranslationStatus }
   | {
       ok: false;
       formErrors?: string[];
@@ -148,7 +150,48 @@ export function EditorialContentForm(props: EditorialContentFormProps) {
       }
       initialUpdatedAtRef.current = res.updatedAt;
       form.reset(data);
+      showTranslationToast(res.translationStatus);
     });
+  }
+
+  /*
+    Toast diferenciado según el outcome agregado de DeepL para los 2
+    idiomas. La regla la baja `runAutoTranslation` que clasifica como
+    success/failed/quota/skipped por idioma — acá agregamos esa
+    información en un solo banner para no spamear al editor con dos
+    toasts.
+
+    - Si CUALQUIERA dio quota: amarillo, prioridad máxima.
+    - Si CUALQUIERA dio failed (sin quota): amarillo de "DeepL falló".
+    - Si ambos success o (success + skipped): verde "guardado y
+      traducido".
+    - Si ambos skipped: verde minimal "guardado" (no se tocó descripción
+      ni tagline — el editor solo cambió SEO, p. ej.).
+  */
+  function showTranslationToast(status: TranslationStatus) {
+    const { en, ptBr } = status;
+    const anyQuota = en === "quota" || ptBr === "quota";
+    const anyFailed = en === "failed" || ptBr === "failed";
+    const anySuccess = en === "success" || ptBr === "success";
+
+    if (anyQuota) {
+      toast.warning(
+        "Guardado en español. Cuota mensual de traducciones agotada — las nuevas traducciones quedarán pendientes hasta el próximo mes o reintento manual.",
+      );
+      return;
+    }
+    if (anyFailed) {
+      toast.warning(
+        "Guardado en español. Las traducciones automáticas fallaron, podés reintentar desde el panel de traducciones.",
+      );
+      return;
+    }
+    if (anySuccess) {
+      toast.success("Guardado y traducido a inglés y portugués.");
+      return;
+    }
+    // Ambos skipped — el editor solo cambió SEO, metadatos, etc.
+    toast.success("Guardado.");
   }
 
   // Contadores de chars
@@ -361,7 +404,7 @@ export function EditorialContentForm(props: EditorialContentFormProps) {
         <SavedIndicator state={autosave.state} />
         <div className="flex-1" />
         <Button type="submit" disabled={submitting}>
-          Guardar
+          {submitting ? "Guardando y generando traducciones…" : "Guardar"}
         </Button>
       </div>
     </form>
