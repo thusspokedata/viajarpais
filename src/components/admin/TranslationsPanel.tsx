@@ -319,15 +319,43 @@ function TranslationColumn({
   const [submitting, startTransition] = React.useTransition();
 
   const handleSaveReviewed = () => {
+    /*
+      Solo enviamos los campos que cambiaron vs el texto del server.
+      ANTES siempre mandábamos los dos drafts, lo que provocaba que
+      `markTranslationAsReviewed` flippeara el `*Source` de un campo
+      no tocado a REVIEWED — el guard del orchestrator después
+      bloqueaba auto-translates de ese campo PERMANENTEMENTE hasta
+      que el editor hiciera "Re-traducir desde español".
+
+      `undefined` = "no tocar este campo en DB". `null` = "limpiar el
+      contenido manual". El server action distingue ambos via los
+      type guards de zod (`.optional().nullable()`).
+    */
+    const taglineChanged = (taglineText ?? "") !== taglineDraft;
+    const descriptionChanged = (descriptionText ?? "") !== descriptionDraft;
+
+    if (!taglineChanged && !descriptionChanged) {
+      // Nada cambió: salir del modo edición sin tocar el server.
+      setEditing(false);
+      return;
+    }
+
     startTransition(async () => {
       const res = await markTranslationManuallyEdited({
         entityType,
         entityId,
         lang,
         revalidateIdentifier,
-        taglineText: taglineDraft.trim() === "" ? null : taglineDraft,
-        descriptionText:
-          descriptionDraft.trim() === "" ? null : descriptionDraft,
+        taglineText: taglineChanged
+          ? taglineDraft.trim() === ""
+            ? null
+            : taglineDraft
+          : undefined,
+        descriptionText: descriptionChanged
+          ? descriptionDraft.trim() === ""
+            ? null
+            : descriptionDraft
+          : undefined,
       });
       if (!res.ok) {
         toast.error(res.message);

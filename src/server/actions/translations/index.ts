@@ -183,14 +183,24 @@ export async function forceRetranslateField(
 const ReviewedPayloadSchema = BasePayloadSchema.extend({
   lang: z.enum(LANG_VALUES),
   // Strings; null para "borrar el contenido manual y dejar vacío".
-  // undefined para "no tocar".
+  // undefined para "no tocar este campo en DB" (caller del panel pasa
+  // undefined explícito cuando el textarea no cambió respecto al
+  // server side — sino, el server flippearía el `*Source` a REVIEWED
+  // aunque no se haya tocado ese campo).
   taglineText: z
     .string()
     .max(120)
     .nullable()
     .optional(),
   descriptionText: z.string().max(5000).nullable().optional(),
-});
+}).refine(
+  (data) => data.taglineText !== undefined || data.descriptionText !== undefined,
+  {
+    message:
+      "At least one of taglineText or descriptionText must be provided (defense in depth — el panel cliente ya filtra este caso).",
+    path: ["taglineText"],
+  },
+);
 
 /**
  * Guarda la edición manual de una traducción. El source pasa a
