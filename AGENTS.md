@@ -322,6 +322,130 @@ el próximo:
   (visible para el editor). No optar por "4 líneas defensivas" sin
   decidir la semántica.
 
+## Tenant scope check en server actions de imágenes (deuda activa)
+
+`updateImage`, `setImageAsPrimary` y `deleteImage` reciben `{imageId,
+entityType}` pero NO un `entityId`. `findImageById` solo verifica que
+la imagen exista en la tabla del `entityType`, no que pertenezca al
+entity específico que el editor está editando en su UI.
+
+Hoy es OK: el modelo de confianza es "EDITOR/ADMIN es full-trust
+sobre todo el contenido editorial". Sin embargo, si v0.5+ introduce
+ownership multi-tenant (e.g. rol MERCHANT con scope a su propia
+ficha, o "EDITOR de Cuyo" solo edita Cuyo), las 3 actions permiten
+bypass sin parche retroactivo.
+
+**Fix futuro**: agregar `entityId` al payload de las 3 actions y
+verificar `img.parentId === entityId` después del `findImageById`.
+`reorderImages` ya implementa exactamente esa verificación y sirve
+de referencia (líneas 415-433 de `src/server/actions/images/index.ts`).
+
+## Notas técnicas menores de imágenes
+
+- **`setImageAsPrimary` P2025 no mapeado a IMAGE_NOT_FOUND**:
+  `src/server/actions/images/index.ts` — si la imagen se borra entre
+  `findImageById` y la transacción, P2025 escapa al `throw err`
+  implícito (error 500). Fix chico: catch + return `IMAGE_NOT_FOUND`.
+  No urgente.
+
+- **`ListingImage.orderBy` sin tiebreaker `createdAt`**: las 4
+  entities geo usan `orderBy: [{ order: "asc" }, { createdAt: "asc" }]`,
+  Listing usa solo `{ order: "asc" }` en `getListingForEdit`. Si dos
+  rows empatan `order` (no debería pasar tras la transacción de
+  reorder, pero podría con seed/race), Listing no tiene orden
+  determinístico. Agregar el tiebreaker en `getListingForEdit` para
+  consistencia con geo.
+
+- **Helper Cloudinary `cloudName` en `cloudinaryUrl` vs
+  `getCloudName`**: ambos leen de `cloudinary.config()`. Si en el
+  futuro se sirve desde CDN custom (e.g. `cdn.viajarpais.com.ar`
+  con CNAME a Cloudinary), tocar ambas funciones simultáneamente.
+
+## Next.js security update (Mayo 2026) — PR INMEDIATO post v0.3-geo-c
+
+Vercel publicó 13 advisories de seguridad el 6 de mayo 2026. Versión
+patcheada Next 16: `16.2.5`. Afecta middleware/proxy bypass, SSRF,
+XSS, DoS. Defense in depth del proyecto (role gate en server actions,
+no solo en middleware) cubre el principal vector pero igual hay que
+aplicar el patch antes de v0.4 (UI pública con tráfico real).
+
+PR scope: `npm update next` + `npm update react` (revisar versión
+patcheada exacta al momento del PR — al 11 may 2026 es 19.1.7 o
+19.2.6) + revisión de breaking changes + smoke tests de áreas
+afectadas (auth, role gates, image optimization, server actions,
+middleware/proxy.ts).
+
+Este PR va INMEDIATAMENTE después del merge de v0.3-geo-c. Antes de
+cualquier otro PR de feature.
+
+Referencias: <https://vercel.com/changelog/next-js-may-2026-security-release>
+
+## Cleanup de orphans en Cloudinary (deuda de v0.3-geo-c)
+
+El flujo de upload directo del cliente tiene DOS puntos de falla
+que generan orphans:
+
+**Orphan tipo A — Upload OK, save metadata falla**: si el cliente
+sube exitosamente a Cloudinary (pasos 2-3 del flujo) pero el
+`saveImageMetadata` (paso 5) falla o el usuario cierra el browser
+antes, queda una foto en Cloudinary sin row de DB.
+
+**Orphan tipo B — Cloudinary OK, DB delete falla**: en `deleteImage`,
+borramos Cloudinary primero y DB después. Si la transacción DB falla
+con un error no-P2025 (deadlock, conexión perdida, etc.), el asset
+Cloudinary YA está borrado pero el row DB sobrevive apuntando a void.
+Resultado: imagen rota en el grid del admin (404 visual). El editor
+puede reintentar `deleteImage` — el segundo intento encuentra el row,
+llama `deleteAsset` (idempotente, devuelve "not found" OK), y borra
+el row exitosamente. Pero si la causa raíz del fallo es persistente
+(deadlock recurrente), el row sobrevive como "stale". Hay `console.error`
+estructurado con `imageId`, `cloudinaryPublicId`, `entityType`,
+`entityId` y mensaje del error para identificación manual.
+
+**Orphan tipo C — Cascade FK al borrar entity completa**: si en el
+futuro se agrega "borrar Region" o "borrar Province" desde admin
+(no existe hoy), la cascade FK en DB borra los `*Image` rows pero
+los assets Cloudinary sobreviven huérfanos. Mismo para Listing
+(documentado independientemente en sección "Cloudinary cleanup en
+hard-delete de Listing").
+
+Mitigación futura: job de cleanup periódico (cron daily) que:
+
+1. Liste todos los assets en Cloudinary con prefix `regions/`,
+   `provinces/`, `departments/`, `localities/`, `listings/`.
+2. Para cada uno, chequee si existe un row en la tabla
+   correspondiente con ese `cloudinaryPublicId`.
+3. Si no existe Y el asset tiene más de N horas de antigüedad
+   (e.g. 24h para dar margen a uploads en flight), borrarlo de
+   Cloudinary.
+4. Inverso para orphan tipo B: liste rows con `cloudinaryPublicId`
+   no encontrado en Cloudinary (`deleteAsset` devuelve "not found"
+   sin error) y márquelos para limpieza del admin.
+
+No se implementa en v0.3-geo-c porque (a) el riesgo es bajo con
+volumen actual del editor, (b) requiere el endpoint VPS-side cron
+ya documentado en el backlog de v0.3-geo-b. Se hace junto con ese
+endpoint.
+
+## Upload preset firmado para uploads directos del cliente
+
+`CLOUDINARY_UPLOAD_PRESET` es un nombre de preset configurado por
+cada developer en su cuenta Cloudinary (Settings → Upload presets).
+Modo: `Signing Mode = Signed`. Restricciones recomendadas del lado
+de Cloudinary (complementan la validación cliente en `<GalleryUploader />`):
+
+- Formats: `jpg, png, webp` (excluye `gif`, `mp4`, `pdf`).
+- Max bytes: `5_242_880` (5MB).
+- Folder: dejar vacío en el preset — el folder lo manda el cliente
+  via signature firmada por server (`regions/{code}`,
+  `provinces/{code}`, ..., `listings/{id}`).
+- Use filename: false (Cloudinary asigna public_id aleatorio).
+- Unique filename: true.
+
+Cada entorno (preview, staging, prod) puede tener su propio preset.
+En CI usamos un placeholder porque `next build` no invoca uploads
+reales.
+
 ## Cuando dudes, preguntá
 
 No asumas decisiones de producto. Si encontrás una ambigüedad o una contradicción
