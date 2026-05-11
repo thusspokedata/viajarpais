@@ -187,6 +187,51 @@ contacto, redes) NO se traducen — son topónimos o datos puros.
 Variables de entorno previstas (ya en `.env.example` con valor vacío):
 `DEEPL_API_KEY`, `RESEND_API_KEY`.
 
+## Backlog técnico de v0.3-geo-b (DeepL)
+
+Decisiones cerradas que NO entraron en este PR pero quedan listas para
+el próximo:
+
+- **Cron diario de retry de traducciones pendientes** (VPS-side):
+  endpoint protegido `/api/cron/retry-translations` con header
+  `Authorization: Bearer $CRON_SECRET`. Variable de entorno nueva
+  `CRON_SECRET` (`openssl rand -hex 32`). El cron de la VPS dispara
+  un `curl -X POST` cada 6am UTC y el endpoint itera todos los rows
+  con `*PendingRetry = true` invocando `runRetryPending` por entity
+  type. Tira logs estructurados para monitoreo. Se implementa cuando
+  llegue el deploy a VPS.
+
+- **Alertas por email al cruzar 80% de cuota DeepL**: el helper
+  `src/lib/deepl.ts` ya loguea `console.warn` cuando un incremento
+  cruza el threshold del 80%. Cuando esté la cuenta Resend con
+  dominio verificado (`RESEND_API_KEY` ya prevista en `.env.example`),
+  ese log se convierte en email al admin con el porcentaje exacto y
+  el mes en curso. La función `getQuotaStatus()` ya expone el
+  `isNearLimit` listo para usar.
+
+- **Banner global "Cuota agotada" en admin**: hoy la cuota agotada se
+  comunica solo via toast amarillo al editor que está guardando. El
+  próximo PR puede mostrar un banner persistente en `/admin` cuando
+  `getQuotaStatus().isExceeded === true`, con copy + link a docs y
+  fecha estimada del reset (primer día del mes siguiente).
+
+- **Regeneración masiva ante glossary/style change**: cuando exista
+  configuración de glossary DeepL (terminología custom de turismo
+  argentino), agregar acción "Re-traducir todo" en cada nivel que
+  invoque `runForceRetranslate` para todos los rows. Hoy es lo
+  suficientemente raro como para hacerse vía script ad-hoc.
+
+- **Disclaimer en UI pública (v0.4)**: cuando las páginas públicas
+  rendericen contenido en EN o PT-BR con `source = MACHINE`, mostrar
+  al pie del texto: "Translated automatically — original text in
+  Spanish" (o equivalente localizado). Si el source es `REVIEWED` o
+  `HUMAN`, NO mostrar disclaimer — el contenido pasó por un humano.
+
+- **Tagline en Listing**: el form de fichas todavía NO expone un
+  campo de tagline (solo descripción). Cuando se agregue, el
+  orchestrator ya está preparado — traduce `taglineEs` si cambia,
+  mismo guard de `MACHINE/NONE` vs `REVIEWED/HUMAN`.
+
 ## Cuando dudes, preguntá
 
 No asumas decisiones de producto. Si encontrás una ambigüedad o una contradicción

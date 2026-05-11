@@ -19,9 +19,13 @@ jobs:
       # seteada (política fail-fast, igual que `db.ts`/`auth.ts`). Build
       # solo valida formato del URL, no hace requests al servidor — un
       # placeholder sintácticamente válido alcanza.
-      # Cuando lleguen DEEPL_API_KEY/RESEND_API_KEY en v0.3-geo-b+, también
-      # van a necesitar placeholder acá.
       CLOUDINARY_URL: cloudinary://000000000000000:abcdefghijklmnopqrstuvwxyz0@viajarpais-ci
+      # DeepL: `src/lib/deepl.ts` hace throw eager si DEEPL_API_KEY no
+      # está. Build evalúa server modules para route discovery + RSC,
+      # así que sin placeholder el módulo explota. El sufijo `:fx` lo
+      # interpreta el SDK como cuenta Free (vs Pro sin sufijo). Build no
+      # hace requests al servidor de DeepL — solo construye el cliente.
+      DEEPL_API_KEY: 00000000-0000-0000-0000-000000000000:fx
     steps:
       - uses: actions/checkout@v4
 
