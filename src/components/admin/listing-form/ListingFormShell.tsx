@@ -4,6 +4,8 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { Controller, FormProvider, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+import type { TranslationStatus } from "@/lib/translations/orchestrator";
 import {
   Button,
   Input,
@@ -177,15 +179,56 @@ export function ListingFormShell(props: ListingFormShellProps) {
         initialUpdatedAtRef.current = res.updatedAt;
         form.reset(payload as ListingFormValues);
         router.refresh();
+        showTranslationToast(res.translationStatus);
       } else {
         const res = await createListing(payload);
-        // En éxito createListing redirige y este branch no se alcanza.
-        if (res && res.ok === false) {
+        if (!res.ok) {
           applyServerErrors(res.fieldErrors, res.formErrors);
           if (res.message) setServerError(res.message);
+          return;
         }
+        /*
+          v0.3-geo-b cambió `createListing`: ya no redirige internamente
+          (lo hacía con `redirect()` que lanza excepción y cortaba el
+          return value antes del cliente). Ahora retorna el id + status
+          de traducciones; el toast se muestra acá y después navegamos.
+        */
+        showTranslationToast(res.translationStatus);
+        router.push(`/admin/listings/${res.id}?created=1`);
       }
     });
+  }
+
+  /*
+    Toast diferenciado según el outcome agregado de DeepL — misma regla
+    que `EditorialContentForm.showTranslationToast`. Si CUALQUIERA dio
+    quota, prioridad máxima; si CUALQUIERA dio failed, amarillo; si
+    todo OK, verde; si todo skipped (raro en create — la descripción
+    siempre es nueva), verde minimal.
+  */
+  function showTranslationToast(status: TranslationStatus) {
+    const { en, ptBr } = status;
+    const anyQuota = en === "quota" || ptBr === "quota";
+    const anyFailed = en === "failed" || ptBr === "failed";
+    const anySuccess = en === "success" || ptBr === "success";
+
+    if (anyQuota) {
+      toast.warning(
+        "Guardado en español. Cuota mensual de traducciones agotada — las nuevas traducciones quedarán pendientes hasta el próximo mes o reintento manual.",
+      );
+      return;
+    }
+    if (anyFailed) {
+      toast.warning(
+        "Guardado en español. Las traducciones automáticas fallaron, podés reintentar desde el panel de traducciones.",
+      );
+      return;
+    }
+    if (anySuccess) {
+      toast.success("Guardado y traducido a inglés y portugués.");
+      return;
+    }
+    toast.success("Guardado.");
   }
 
   // Slug preview: construido a partir del nombre cuando el editor no
@@ -608,7 +651,11 @@ export function ListingFormShell(props: ListingFormShellProps) {
             {form.formState.isDirty ? "Descartar cambios" : "Cerrar"}
           </Button>
           <Button type="submit" disabled={submitting}>
-            {isEdit ? "Guardar" : "Guardar borrador"}
+            {submitting
+              ? "Guardando y generando traducciones…"
+              : isEdit
+                ? "Guardar"
+                : "Guardar borrador"}
           </Button>
         </div>
       </form>

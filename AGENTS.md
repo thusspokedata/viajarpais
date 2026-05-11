@@ -187,6 +187,141 @@ contacto, redes) NO se traducen — son topónimos o datos puros.
 Variables de entorno previstas (ya en `.env.example` con valor vacío):
 `DEEPL_API_KEY`, `RESEND_API_KEY`.
 
+## Sanitización de Markdown del editor (deuda crítica hacia v0.4)
+
+Los campos `descriptionEs/En/PtBr` y `taglineEs/En/PtBr` aceptan
+Markdown del editor (admin) y se persisten **sin sanitizar** en
+v0.3-geo-b. Zod solo valida longitud (max 5000 / 120). DeepL preserva
+HTML del input por defecto, así que las traducciones EN/PT-BR pueden
+contener cualquier cosa que el editor haya puesto en ES.
+
+**La sanitización es OBLIGATORIA en v0.4 cuando este contenido se
+renderice como HTML en `/[locale]/...` público.** Sin sanitización
+antes del render, cualquiera con rol EDITOR/ADMIN podría inyectar
+`<script>` o eventos JS y ejecutar XSS en cualquier visitante.
+
+**Libs recomendadas** (elegir una en v0.4):
+
+- `marked` (parse Markdown → HTML) + `isomorphic-dompurify` (sanitiza
+  HTML server-side con allowlist). Ventaja: API simple, dos pasos
+  claros, fácil de testear.
+- `react-markdown` + `rehype-sanitize` con el schema default (sin
+  `rehype-raw`). Ventaja: React-native, sin HTML intermedio.
+
+**NUNCA usar `rehype-raw` ni `dangerouslySetInnerHTML` sin un
+sanitizer interpuesto.** El repo hoy tiene 0 hits de
+`dangerouslySetInnerHTML` (grep confirmado); cualquier hit nuevo debe
+pasar por code review con foco en sanitización.
+
+**TODOs inline** marcados con `// XSS: ...` en los sitios donde el
+contenido se persiste sin sanitizar:
+
+- `src/server/actions/translations/index.ts` — `markTranslationManuallyEdited`.
+- `src/server/actions/geo/update.ts` — `performGeoUpdate` antes de
+  `runAutoTranslation`.
+- `src/server/actions/listings/update.ts` — antes de `runAutoTranslation`.
+- `src/server/actions/listings/create.ts` — antes de `runAutoTranslation`.
+- `src/lib/translations/orchestrator.ts` — `translateOne` antes de
+  persistir el output de DeepL.
+
+Si el contenido se renderea como HTML/Markdown en cualquier path
+antes de v0.4, **bloquear el PR** y agregar el pipeline de sanitización
+primero.
+
+## Backlog técnico de v0.3-geo-b (DeepL)
+
+Decisiones cerradas que NO entraron en este PR pero quedan listas para
+el próximo:
+
+- **Cron diario de retry de traducciones pendientes** (VPS-side):
+  endpoint protegido `/api/cron/retry-translations` con header
+  `Authorization: Bearer $CRON_SECRET`. Variable de entorno nueva
+  `CRON_SECRET` (`openssl rand -hex 32`). El cron de la VPS dispara
+  un `curl -X POST` cada 6am UTC y el endpoint itera todos los rows
+  con `*PendingRetry = true` invocando `runRetryPending` por entity
+  type. Tira logs estructurados para monitoreo. Se implementa cuando
+  llegue el deploy a VPS.
+
+- **Alertas por email al cruzar 80% de cuota DeepL**: el helper
+  `src/lib/deepl.ts` ya loguea `console.warn` cuando un incremento
+  cruza el threshold del 80%. Cuando esté la cuenta Resend con
+  dominio verificado (`RESEND_API_KEY` ya prevista en `.env.example`),
+  ese log se convierte en email al admin con el porcentaje exacto y
+  el mes en curso. La función `getQuotaStatus()` ya expone el
+  `isNearLimit` listo para usar.
+
+- **Banner global "Cuota agotada" en admin**: hoy la cuota agotada se
+  comunica solo via toast amarillo al editor que está guardando. El
+  próximo PR puede mostrar un banner persistente en `/admin` cuando
+  `getQuotaStatus().isExceeded === true`, con copy + link a docs y
+  fecha estimada del reset (primer día del mes siguiente).
+
+- **Regeneración masiva ante glossary/style change**: cuando exista
+  configuración de glossary DeepL (terminología custom de turismo
+  argentino), agregar acción "Re-traducir todo" en cada nivel que
+  invoque `runForceRetranslate` para todos los rows. Hoy es lo
+  suficientemente raro como para hacerse vía script ad-hoc.
+
+- **Disclaimer en UI pública (v0.4)**: cuando las páginas públicas
+  rendericen contenido en EN o PT-BR con `source = MACHINE`, mostrar
+  al pie del texto: "Translated automatically — original text in
+  Spanish" (o equivalente localizado). Si el source es `REVIEWED` o
+  `HUMAN`, NO mostrar disclaimer — el contenido pasó por un humano.
+
+- **Tagline en Listing**: el form de fichas todavía NO expone un
+  campo de tagline (solo descripción). Cuando se agregue, el
+  orchestrator ya está preparado — traduce `taglineEs` si cambia,
+  mismo guard de `MACHINE/NONE` vs `REVIEWED/HUMAN`.
+
+- **Sync de `initialUpdatedAtRef` post panel action** (M1 — data
+  integrity audit v0.3-geo-b): las server actions del panel
+  (`forceRetranslateField`, `markTranslationManuallyEdited`,
+  `retryPendingTranslations` en `src/server/actions/translations/index.ts`)
+  bumpean `updatedAt` del entity vía `applyTranslationUpdate`, pero
+  el main form (EditorialContentForm / ListingFormShell) mantiene su
+  `initialUpdatedAtRef` stale. Próximo submit/autosave del main form
+  falla CAS con P2025 → editor queda atascado hasta refrescar
+  manualmente. Fix: las server actions del panel devuelven el nuevo
+  `updatedAt`, el panel lo propaga al form via callback/context. O
+  alternativa: `router.refresh()` en el cliente post-acción.
+
+- **DeepL retry filtering ciego** (M2 — data integrity audit
+  v0.3-geo-b): `src/lib/deepl.ts:185-210` reintenta cualquier error
+  que no sea `QuotaExceededError`/`AuthorizationError`. Si DeepL
+  devuelve `InvalidInputError` (lang no soportado, payload
+  malformado), gasta 13s de delays sin razón. Fix: filtrar por
+  `TooManyRequestsError` / `ConnectionError` / 5xx / timeouts;
+  devolver `INVALID_INPUT` para el resto. ~10 líneas.
+
+- **Sequential DeepL calls bloquean UI ~3-8s** (M3 — data integrity
+  audit v0.3-geo-b): `runTranslationsForFields` itera (campo × idioma)
+  con `await` secuencial. Listing con tagline + description × EN +
+  PT-BR = 4 calls × 1-2s = 4-8s de wall time bloqueando al editor.
+  Fix: `Promise.all` por idioma manteniendo el `respectSourceGuard`
+  por par independiente. Alternativa: fire-and-forget post-response
+  (queue, edge function) para no bloquear UI.
+
+- **`getCurrentMonth` usa UTC, no Argentina time** (N6 — data
+  integrity audit v0.3-geo-b): `src/lib/deepl.ts:81-86` calcula el
+  mes con `getUTCMonth()`. En Argentina (UTC-3), un editor guardando
+  el 31 a las 22:00 ART está en UTC-3 → `getUTCMonth()` devuelve el
+  mes siguiente (01:00 UTC del día 1). La cuota "salta" 3h antes de
+  medianoche local. Es comportamiento deliberado para evitar drift
+  entre regiones del runtime, pero documentar en runbook admin para
+  no sorprender cuando el reset aparece "antes de tiempo".
+
+- **Empty DeepL response treated as success** (CodeRabbit Minor
+  deferred en v0.3-geo-b): `src/lib/deepl.ts:184`. Si DeepL devolviera
+  un `TextResult` con `text=""` para un input no vacío, el código
+  actual aceptaría la traducción vacía como exitosa e incrementaría
+  cuota. Probabilidad real ~0 — DeepL no devuelve vacío para input
+  no vacío en uso documentado. Si se detecta caso en producción,
+  evaluar entre tres caminos antes de elegir: (a) retry con backoff
+  (riesgo de 13s de delays ante evento raro), (b) skip + marcar
+  pending (más conservador), (c) persistir con flag `requiresReview`
+  (visible para el editor). No optar por "4 líneas defensivas" sin
+  decidir la semántica.
+
 ## Cuando dudes, preguntá
 
 No asumas decisiones de producto. Si encontrás una ambigüedad o una contradicción

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "@/components/ui/icons";
 import { ListingFormShell } from "@/components/admin/listing-form/ListingFormShell";
+import { TranslationsPanel } from "@/components/admin/TranslationsPanel";
+import { entityToTranslationsView } from "@/lib/translations/view";
 import { getListingForEdit } from "@/server/data/listings";
 import {
   listProvinces,
@@ -134,6 +136,13 @@ export default async function EditListingPage({ params, searchParams }: Props) {
         listingArchivedAt={listing.archivedAt?.toISOString() ?? null}
         needsReverify={needsReverify}
         justCreated={justCreated}
+      />
+
+      <TranslationsPanel
+        entityType="listing"
+        entityId={listing.id}
+        revalidateIdentifier={listing.id}
+        translations={entityToTranslationsView(listing)}
       />
     </div>
   );

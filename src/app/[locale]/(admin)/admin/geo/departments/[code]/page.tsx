@@ -4,6 +4,8 @@ import { ChevronLeft } from "@/components/ui/icons";
 import { EditorialContentForm } from "@/components/admin/geo/EditorialContentForm";
 import { GeoImageList } from "@/components/admin/geo/GeoImageList";
 import { FormSection } from "@/components/admin/listing-form/FormSection";
+import { TranslationsPanel } from "@/components/admin/TranslationsPanel";
+import { entityToTranslationsView } from "@/lib/translations/view";
 import { getDepartmentByCode } from "@/server/data/geo/departments";
 import { updateDepartment } from "@/server/actions/geo/update";
 import { deleteDepartmentImage } from "@/server/actions/geo/images";
@@ -65,6 +67,13 @@ export default async function EditDepartmentPage({ params }: Props) {
             : null
         }
         updateAction={updateDepartment}
+      />
+
+      <TranslationsPanel
+        entityType="department"
+        entityId={department.id}
+        revalidateIdentifier={department.code}
+        translations={entityToTranslationsView(department)}
       />
 
       <FormSection title="Imágenes" defaultOpen>

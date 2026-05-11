@@ -14,9 +14,19 @@ import {
   type ListingFormInput,
 } from "@/lib/listings/validation";
 import { findChangedCriticalFields } from "@/lib/listings/critical-fields";
+import {
+  runAutoTranslation,
+  type TranslationStatus,
+} from "@/lib/translations/orchestrator";
+import { mapListingToTranslationState } from "@/lib/translations/mappers";
 
 export type UpdateListingResult =
-  | { ok: true; updatedAt: string; reverified: boolean }
+  | {
+      ok: true;
+      updatedAt: string;
+      reverified: boolean;
+      translationStatus: TranslationStatus;
+    }
   | {
       ok: false;
       formErrors?: string[];
@@ -278,6 +288,37 @@ export async function updateListing(
       },
     );
 
+    /*
+      Auto-traducción post-UPDATE. La fuente del diff es el `existing`
+      que leímos antes del UPDATE — sus `*Es` son el "previo" y los
+      nuevos vienen del payload. Reusamos el shape para alimentar al
+      orchestrator sin un round-trip extra. Si DeepL falla o la cuota
+      está agotada, el save en español queda OK; el campo con falla
+      sale con `*PendingRetry=true` y el admin muestra banner naranja.
+
+      XSS: `data.description` (acabamos de persistir como
+      `descriptionEs`) y el output de DeepL que el orchestrator va a
+      guardar se almacenan SIN sanitizar. Sanitización OBLIGATORIA en
+      v0.4 antes de renderear como HTML público. Ver AGENTS.md →
+      "Sanitización de Markdown del editor".
+    */
+    const translationStatus = await runAutoTranslation({
+      type: "listing",
+      id,
+      /*
+        Mapper explícito reemplaza el `as unknown as TranslationState`
+        cast (CodeRabbit feedback Major). Si el `findUnique` se
+        restringe en el futuro y pierde alguno de los 22 fields de
+        traducción, el typecheck del mapper rompe — el cast
+        silenciaba esa regresión.
+      */
+      previousState: mapListingToTranslationState(existing),
+      nextValues: {
+        taglineEs: existing.taglineEs,
+        descriptionEs: data.description,
+      },
+    });
+
     revalidatePath("/admin/listings");
     revalidatePath(`/admin/listings/${id}`);
 
@@ -285,6 +326,7 @@ export async function updateListing(
       ok: true,
       updatedAt: updated.updatedAt.toISOString(),
       reverified: reverify,
+      translationStatus,
     };
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
