@@ -185,6 +185,12 @@ async function performGeoUpdate(args: {
     DeepL falla, el save en español ya está commiteado: el editor ve
     el toast amarillo + banner naranja para reintentar. No lanzamos
     error para no rollback el español.
+
+    XSS: tanto el input `data.descriptionEs`/`taglineEs` (ya
+    persistido) como el output de DeepL que `runAutoTranslation` va a
+    guardar se almacenan SIN sanitizar. Sanitización OBLIGATORIA en
+    v0.4 antes de renderear como HTML público. Ver AGENTS.md →
+    "Sanitización de Markdown del editor".
   */
   const translationStatus = await runAutoTranslation({
     type: entityType,

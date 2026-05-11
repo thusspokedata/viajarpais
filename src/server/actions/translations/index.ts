@@ -223,6 +223,10 @@ export async function markTranslationManuallyEdited(
   }
 
   try {
+    // XSS: `taglineText` y `descriptionText` se persisten sin
+    // sanitizar. La sanitización es OBLIGATORIA en v0.4 cuando estos
+    // campos se rendericen como HTML/Markdown público. Ver AGENTS.md
+    // → "Sanitización de Markdown del editor".
     await markTranslationAsReviewed({
       type: entityType,
       id: entityId,

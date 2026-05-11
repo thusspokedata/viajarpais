@@ -218,6 +218,12 @@ export async function createListing(
 
     Si DeepL falla, las traducciones quedan en `*PendingRetry=true`; el
     listing igual queda creado en DB.
+
+    XSS: `data.description` (persistido como `descriptionEs` en el
+    create) y el output de DeepL que el orchestrator va a guardar se
+    almacenan SIN sanitizar. Sanitización OBLIGATORIA en v0.4 antes
+    de renderear como HTML público. Ver AGENTS.md → "Sanitización de
+    Markdown del editor".
   */
   const previousState = await getTranslationState("listing", created.id);
   let translationStatus: TranslationStatus = { en: "skipped", ptBr: "skipped" };

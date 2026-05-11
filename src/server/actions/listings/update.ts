@@ -295,6 +295,12 @@ export async function updateListing(
       orchestrator sin un round-trip extra. Si DeepL falla o la cuota
       está agotada, el save en español queda OK; el campo con falla
       sale con `*PendingRetry=true` y el admin muestra banner naranja.
+
+      XSS: `data.description` (acabamos de persistir como
+      `descriptionEs`) y el output de DeepL que el orchestrator va a
+      guardar se almacenan SIN sanitizar. Sanitización OBLIGATORIA en
+      v0.4 antes de renderear como HTML público. Ver AGENTS.md →
+      "Sanitización de Markdown del editor".
     */
     const translationStatus = await runAutoTranslation({
       type: "listing",
