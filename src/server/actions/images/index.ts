@@ -279,7 +279,7 @@ export type SaveImageMetadataResult = ImagesActionResult<ImageRow>;
 export async function saveImageMetadata(
   raw: z.infer<typeof SaveMetadataPayloadSchema>,
 ): Promise<SaveImageMetadataResult> {
-  await requireRole(["ADMIN", "EDITOR"]);
+  const { user } = await requireRole(["ADMIN", "EDITOR"]);
 
   const parsed = SaveMetadataPayloadSchema.safeParse(raw);
   if (!parsed.success) {
@@ -409,6 +409,13 @@ export async function saveImageMetadata(
     buildAdminPaths(data.entityType, identifier).forEach((p) =>
       revalidatePath(p),
     );
+    logImageAction({
+      action: "saveImageMetadata",
+      actorId: user.id,
+      imageId: created.id,
+      entityType: data.entityType,
+      entityId: data.entityId,
+    });
     return { ok: true, data: created };
   } catch (err) {
     if (err instanceof MaxImagesReachedError) {
@@ -463,7 +470,7 @@ const UpdateImagePayloadSchema = z.object({
 export async function updateImage(
   raw: z.infer<typeof UpdateImagePayloadSchema>,
 ): Promise<ImagesActionResult> {
-  await requireRole(["ADMIN", "EDITOR"]);
+  const { user } = await requireRole(["ADMIN", "EDITOR"]);
 
   const parsed = UpdateImagePayloadSchema.safeParse(raw);
   if (!parsed.success) {
@@ -496,6 +503,13 @@ export async function updateImage(
   buildAdminPaths(entityType, img.parentIdentifier).forEach((p) =>
     revalidatePath(p),
   );
+  logImageAction({
+    action: "updateImage",
+    actorId: user.id,
+    imageId,
+    entityType,
+    entityId: img.parentId,
+  });
   return { ok: true };
 }
 
@@ -523,7 +537,7 @@ const SetPrimaryPayloadSchema = z.object({
 export async function setImageAsPrimary(
   raw: z.infer<typeof SetPrimaryPayloadSchema>,
 ): Promise<ImagesActionResult> {
-  await requireRole(["ADMIN", "EDITOR"]);
+  const { user } = await requireRole(["ADMIN", "EDITOR"]);
 
   const parsed = SetPrimaryPayloadSchema.safeParse(raw);
   if (!parsed.success) {
@@ -597,6 +611,13 @@ export async function setImageAsPrimary(
   buildAdminPaths(entityType, img.parentIdentifier).forEach((p) =>
     revalidatePath(p),
   );
+  logImageAction({
+    action: "setImageAsPrimary",
+    actorId: user.id,
+    imageId,
+    entityType,
+    entityId: img.parentId,
+  });
   return { ok: true };
 }
 
@@ -621,7 +642,7 @@ const ReorderPayloadSchema = z.object({
 export async function reorderImages(
   raw: z.infer<typeof ReorderPayloadSchema>,
 ): Promise<ImagesActionResult> {
-  await requireRole(["ADMIN", "EDITOR"]);
+  const { user } = await requireRole(["ADMIN", "EDITOR"]);
 
   const parsed = ReorderPayloadSchema.safeParse(raw);
   if (!parsed.success) {
@@ -729,6 +750,14 @@ export async function reorderImages(
   }
 
   buildAdminPaths(entityType, identifier).forEach((p) => revalidatePath(p));
+  logImageAction({
+    action: "reorderImages",
+    actorId: user.id,
+    imageId: null,
+    entityType,
+    entityId,
+    extra: { count: orderedImageIds.length },
+  });
   return { ok: true };
 }
 
@@ -771,7 +800,7 @@ const DeleteImagePayloadSchema = z.object({
 export async function deleteImage(
   raw: z.infer<typeof DeleteImagePayloadSchema>,
 ): Promise<ImagesActionResult> {
-  await requireRole(["ADMIN", "EDITOR"]);
+  const { user } = await requireRole(["ADMIN", "EDITOR"]);
 
   const parsed = DeleteImagePayloadSchema.safeParse(raw);
   if (!parsed.success) {
@@ -846,6 +875,14 @@ export async function deleteImage(
   buildAdminPaths(entityType, img.parentIdentifier).forEach((p) =>
     revalidatePath(p),
   );
+  logImageAction({
+    action: "deleteImage",
+    actorId: user.id,
+    imageId,
+    entityType,
+    entityId: img.parentId,
+    extra: { wasPrimary: img.isPrimary },
+  });
   return { ok: true };
 }
 
@@ -940,4 +977,51 @@ async function promoteNextPrimary(
       return;
     }
   }
+}
+
+/**
+ * Log estructurado para auditoría de mutaciones de imágenes — closure
+ * de la deuda L-1 documentada en AGENTS.md hasta este PR.
+ *
+ * Diseño:
+ * - Mismo shape en las 5 server actions mutadoras (`saveImageMetadata`,
+ *   `updateImage`, `setImageAsPrimary`, `reorderImages`, `deleteImage`)
+ *   para que el log sea parseable con `grep` o herramientas estilo
+ *   logfmt/JSON.
+ * - Prefijo `[image-action]` único para filtrar en Vercel logs.
+ * - `imageId` es `null` cuando la acción aplica a un set (reorder).
+ * - `extra` opcional para metadata específica por acción (e.g.
+ *   `wasPrimary` en delete, `count` en reorder).
+ * - `result: "success"` fijo — los failure paths ya logean su propio
+ *   error context con `console.error` en los catches; este helper
+ *   solo cubre el success path para trazabilidad operacional.
+ *
+ * En el plan Free de Vercel los logs persisten 30 días. Long-term
+ * (cuando >1 editor en simultáneo justifique investigaciones de
+ * incidentes), agregar tabla `AuditLog` consultable desde admin —
+ * documentado en AGENTS.md como deuda futura aparte.
+ */
+function logImageAction(args: {
+  action:
+    | "saveImageMetadata"
+    | "updateImage"
+    | "setImageAsPrimary"
+    | "reorderImages"
+    | "deleteImage";
+  actorId: string;
+  imageId: string | null;
+  entityType: EntityType;
+  entityId: string;
+  extra?: Record<string, unknown>;
+}): void {
+  console.info("[image-action]", {
+    action: args.action,
+    actor: args.actorId,
+    imageId: args.imageId,
+    entityType: args.entityType,
+    entityId: args.entityId,
+    result: "success",
+    timestamp: new Date().toISOString(),
+    ...args.extra,
+  });
 }
