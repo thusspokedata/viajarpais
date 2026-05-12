@@ -8,6 +8,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -121,6 +122,23 @@ export function SortableImageGrid({
       // un drag — el editor debe poder cliquear botones de la card.
       activationConstraint: { distance: 4 },
     }),
+    /*
+      MAJ-3 fix: `TouchSensor` específico para mobile/tablet.
+      `PointerSensor` solo funciona con touch en algunos browsers
+      pero con `distance: 4` interfiere con scroll vertical (cualquier
+      swipe de 4px arriba del handle dispara drag, rompiendo el scroll
+      natural). El patrón canónico mobile es long-press con `delay:
+      200ms` antes de empezar drag — el editor scrollea normal con
+      tap rápido y solo entra a drag si mantiene el dedo presionado.
+      `tolerance: 5` permite que el dedo se mueva 5px durante el
+      delay sin cancelar el drag (humanos no son perfectamente
+      estables).
+      `@dnd-kit` selecciona el sensor activo automáticamente según
+      `PointerEvent.pointerType` (mouse → Pointer, touch → Touch).
+    */
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 5 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -132,6 +150,14 @@ export function SortableImageGrid({
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
+    /*
+      MIN-3 + MAJ-3 follow-up: si el editor está esperando que otra
+      mutación termine (`pending`), ignoramos drags adicionales. Sin
+      esta defensa, un rapid-fire de drags puede dejar el server con
+      un order distinto al que el cliente cree y los `router.refresh()`
+      pueden llegar fuera de orden.
+    */
+    if (pending) return;
 
     const oldIndex = localOrder.indexOf(String(active.id));
     const newIndex = localOrder.indexOf(String(over.id));
@@ -153,24 +179,36 @@ export function SortableImageGrid({
         router.refresh();
         return;
       }
-      // Éxito: refrescar para que el server traiga el nuevo orden
-      // canónico. El optimistic se vuelve consistente con server.
+      /*
+        CR#4 + MIN-4 fix: limpiar `optimisticOrder` también en éxito.
+        Antes el override quedaba seteado para siempre y pisaba al
+        server cuando llegaban nuevas imágenes (vía upload paralelo o
+        cualquier mutación externa) — la lista de IDs en
+        `optimisticOrder` no incluía las nuevas y el `filter(Boolean)`
+        las hacía invisibles. Limpiar acá garantiza que el siguiente
+        render use el `serverOrder` autoritativo.
+      */
+      setOptimisticOrder(null);
       router.refresh();
     });
   }
 
   function handleSetPrimary(imageId: string) {
+    if (pending) return;
     startTransition(async () => {
       const res = await setImageAsPrimary({ imageId, entityType });
       if (!res.ok) {
         toast.error(res.message);
         return;
       }
+      // CR#4 + MIN-4: ver explicación en handleDragEnd.
+      setOptimisticOrder(null);
       router.refresh();
     });
   }
 
   function handleDelete(imageId: string) {
+    if (pending) return;
     const ok = window.confirm(
       "¿Eliminar esta imagen? También se borra de Cloudinary.",
     );
@@ -182,6 +220,8 @@ export function SortableImageGrid({
         return;
       }
       toast.success("Imagen eliminada.");
+      // CR#4 + MIN-4: ver explicación en handleDragEnd.
+      setOptimisticOrder(null);
       router.refresh();
     });
   }
