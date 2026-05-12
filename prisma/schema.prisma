@@ -697,3 +697,40 @@ model TranslationUsage {
 
   @@unique([month, provider])
 }
+
+/**
+ * Single-use nonces para signatures de upload a Cloudinary.
+ * Sin esta tabla, la signature que `getUploadSignature` devuelve es
+ * válida por ~1h y NO firma el file/filename — un EDITOR con DevTools
+ * podía cachear una signature legítima y reusarla para subir N
+ * archivos arbitrarios al folder firmado (drain del Free plan 25GB).
+ * Flujo:
+ * 1. `getUploadSignature` crea un nonce nuevo (`crypto.randomUUID()`)
+ * con `usedAt = null`, lo firma como parte del payload Cloudinary
+ * `{ timestamp, folder, upload_preset, nonce }`, y lo retorna al
+ * cliente.
+ * 2. Cliente envía el nonce a Cloudinary (FormData) — Cloudinary lo
+ * verifica con la signature (mismatch → 401).
+ * 3. Cliente recibe `cloudinaryPublicId` y llama `saveImageMetadata`
+ * pasando el nonce.
+ * 4. `saveImageMetadata` marca `usedAt = now()` con un update
+ * condicional `WHERE usedAt IS NULL` — si dos requests llegan con
+ * el mismo nonce, solo uno gana.
+ * Garantía: una signature solo puede registrar UN row en DB. Para
+ * subir N veces, el cliente necesita pedir N signatures (cada una
+ * con su propio nonce). El editor puede igual subir archivos a
+ * Cloudinary durante la ventana de la signature, pero solo registra
+ * 1 en DB → no drena el plan.
+ * Cleanup: cron daily futuro borra rows con `createdAt > 24h` para
+ * no acumular basura. Documentado en AGENTS.md.
+ */
+model UploadSignatureNonce {
+  nonce      String    @id
+  createdAt  DateTime  @default(now())
+  usedAt     DateTime?
+  entityType String
+  entityId   String
+
+  @@index([usedAt])
+  @@index([createdAt])
+}
