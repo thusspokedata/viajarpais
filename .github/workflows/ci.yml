@@ -20,6 +20,12 @@ jobs:
       # solo valida formato del URL, no hace requests al servidor — un
       # placeholder sintácticamente válido alcanza.
       CLOUDINARY_URL: cloudinary://000000000000000:abcdefghijklmnopqrstuvwxyz0@viajarpais-ci
+      # Upload preset firmado para uploads directos del cliente. Build
+      # solo lee el env var via `getUploadSignature`, no se invoca en
+      # tiempo de build — un placeholder alcanza. En producción cada
+      # entorno (preview, staging, prod) debe configurar su propio
+      # preset en el dashboard de Cloudinary con `Signing Mode = Signed`.
+      CLOUDINARY_UPLOAD_PRESET: viajarpais_ci_placeholder
       # DeepL: `src/lib/deepl.ts` hace throw eager si DEEPL_API_KEY no
       # está. Build evalúa server modules para route discovery + RSC,
       # así que sin placeholder el módulo explota. El sufijo `:fx` lo

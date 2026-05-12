@@ -2,13 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronLeft } from "@/components/ui/icons";
 import { EditorialContentForm } from "@/components/admin/geo/EditorialContentForm";
-import { GeoImageList } from "@/components/admin/geo/GeoImageList";
-import { FormSection } from "@/components/admin/listing-form/FormSection";
+import { GalleryUploader } from "@/components/admin/gallery/GalleryUploader";
 import { TranslationsPanel } from "@/components/admin/TranslationsPanel";
 import { entityToTranslationsView } from "@/lib/translations/view";
+import { imagesToGalleryView } from "@/lib/images/view";
+import { IMAGE_LIMITS } from "@/lib/images/dispatcher";
 import { getDepartmentByCode } from "@/server/data/geo/departments";
 import { updateDepartment } from "@/server/actions/geo/update";
-import { deleteDepartmentImage } from "@/server/actions/geo/images";
 
 type Props = {
   params: Promise<{ code: string }>;
@@ -76,12 +76,12 @@ export default async function EditDepartmentPage({ params }: Props) {
         translations={entityToTranslationsView(department)}
       />
 
-      <FormSection title="Imágenes" defaultOpen>
-        <GeoImageList
-          images={department.images}
-          deleteAction={deleteDepartmentImage}
-        />
-      </FormSection>
+      <GalleryUploader
+        entityType="department"
+        entityId={department.id}
+        images={imagesToGalleryView(department.images)}
+        maxImages={IMAGE_LIMITS.department}
+      />
     </div>
   );
 }
