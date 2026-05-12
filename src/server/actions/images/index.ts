@@ -254,15 +254,21 @@ export type SaveImageMetadataResult = ImagesActionResult<ImageRow>;
  *    (incluyendo dominios externos del atacante). Vector de URL
  *    injection cerrado.
  *
- * 3. Chequear `IMAGE_LIMITS` por nivel. Si excede, retornar
+ * 3. Consumir el nonce single-use DENTRO de la tx. Antes lo
+ *    quemábamos fuera; si `createImage` fallaba después, el editor
+ *    recibía `INVALID_NONCE` al reintentar y la imagen quedaba como
+ *    orphan en Cloudinary. Ahora el rollback de la tx también revierte
+ *    `usedAt`, permitiendo reintentar con el mismo nonce.
+ *
+ * 4. Chequear `IMAGE_LIMITS` por nivel. Si excede, retornar
  *    `MAX_IMAGES_REACHED` sin crear el row (la imagen queda en
  *    Cloudinary como orphan — el cleanup job futuro la barrerá).
  *
- * 4. La PRIMERA imagen del entity se marca automáticamente como
+ * 5. La PRIMERA imagen del entity se marca automáticamente como
  *    `isPrimary = true`. El order arranca en 0 (max + 1, donde max
  *    inicial = -1). El resto va con `isPrimary = false`.
  *
- * 5. La transacción usa `isolationLevel: Serializable` para que el
+ * 6. La transacción usa `isolationLevel: Serializable` para que el
  *    chequeo de `currentCount` + `getMaxOrder` + `createImage` sea
  *    atómico. Dos uploads concurrentes en un entity vacío no pueden
  *    ambos pasar `currentCount === 0` — Postgres serializa y uno
@@ -307,33 +313,6 @@ export async function saveImageMetadata(
     };
   }
 
-  /*
-    1.5. Consumir nonce single-use (H-1 fix). Update condicional
-    `WHERE usedAt IS NULL` con check del entityType+entityId. Si dos
-    requests llegan con el mismo nonce, solo uno gana — el otro recibe
-    `count === 0` y devolvemos `INVALID_NONCE`. Cubre también:
-    - Nonce inexistente (típico de cliente manipulado).
-    - Nonce de otra entity (replay attack cross-entity).
-    - Nonce ya usado (replay attack a la misma entity).
-  */
-  const claim = await prisma.uploadSignatureNonce.updateMany({
-    where: {
-      nonce: data.nonce,
-      usedAt: null,
-      entityType: data.entityType,
-      entityId: data.entityId,
-    },
-    data: { usedAt: new Date() },
-  });
-  if (claim.count === 0) {
-    return {
-      ok: false,
-      code: "INVALID_NONCE",
-      message:
-        "El nonce de upload es inválido o ya fue usado. Reintentá la subida.",
-    };
-  }
-
   // 2. Re-derivar URL server-side. NO confiamos en el cliente.
   const cloudName = getCloudName();
   const url = `https://res.cloudinary.com/${cloudName}/image/upload/${data.cloudinaryPublicId}`;
@@ -367,10 +346,48 @@ export async function saveImageMetadata(
     };
   }
 
-  // 3-5. Limite + auto-primary dentro de transacción Serializable.
+  /*
+    3-5. Claim del nonce + limite + auto-primary dentro de transacción
+    Serializable.
+
+    El nonce se reclama DENTRO de la tx (P4 fix). Antes lo
+    consumíamos fuera con un updateMany previo, pero si `createImage`
+    fallaba (P2002 partial unique, P2034 serialization, conexión muerta
+    post-claim) el nonce quedaba quemado y el editor recibía
+    INVALID_NONCE al reintentar — orphan en Cloudinary + UX rota. Ahora
+    el rollback de la tx automáticamente revierte el `usedAt` y el
+    reintento puede usar el mismo nonce.
+
+    Uso `updateMany` con filtro compuesto (`nonce + usedAt: null +
+    entityType + entityId`) en lugar de `update` por dos motivos:
+
+      1. `update` exige un `where` con campo único — `nonce` es @unique
+         a nivel schema pero el filtro `usedAt: null` no es parte del
+         único, así que `update` sólo aceptaría `where: { nonce }` y
+         haría el chequeo `usedAt` en memoria → race.
+      2. `updateMany` con `count === 0` cubre tres casos de una sola
+         consulta atómica: nonce inexistente, nonce de otra entity
+         (replay cross-entity) y nonce ya usado (replay mismo entity).
+
+    Si `count === 0`, tiramos `InvalidNonceError` para que el catch
+    externo mapee a `INVALID_NONCE` sin quemar la tx con un throw genérico.
+  */
   try {
     const created = await prisma.$transaction(
       async (tx) => {
+        const claim = await tx.uploadSignatureNonce.updateMany({
+          where: {
+            nonce: data.nonce,
+            usedAt: null,
+            entityType: data.entityType,
+            entityId: data.entityId,
+          },
+          data: { usedAt: new Date() },
+        });
+        if (claim.count === 0) {
+          throw new InvalidNonceError();
+        }
+
         const currentCount = await countImages(
           data.entityType,
           data.entityId,
@@ -418,6 +435,14 @@ export async function saveImageMetadata(
     });
     return { ok: true, data: created };
   } catch (err) {
+    if (err instanceof InvalidNonceError) {
+      return {
+        ok: false,
+        code: "INVALID_NONCE",
+        message:
+          "El nonce de upload es inválido o ya fue usado. Reintentá la subida.",
+      };
+    }
     if (err instanceof MaxImagesReachedError) {
       return {
         ok: false,
@@ -453,6 +478,19 @@ export async function saveImageMetadata(
 class MaxImagesReachedError extends Error {
   constructor(public readonly max: number) {
     super(`MAX_IMAGES_REACHED:${max}`);
+  }
+}
+
+/**
+ * Sentinela para abortar la tx de `saveImageMetadata` cuando el nonce
+ * no se pudo reclamar (nonce inexistente, de otra entity, o ya usado).
+ * El catch externo lo mapea a `INVALID_NONCE`. Usar una clase propia
+ * — en lugar de re-throw de un Prisma error genérico — evita falsos
+ * positivos con P2025/P2034 que tienen semántica distinta.
+ */
+class InvalidNonceError extends Error {
+  constructor() {
+    super("INVALID_NONCE");
   }
 }
 
