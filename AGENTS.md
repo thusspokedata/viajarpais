@@ -351,23 +351,35 @@ post-CodeRabbit + audit interno v0.3-geo-c: los campos `caption` y
 `DepartmentImage`, `LocalityImage`, `ListingImage`) también requieren
 sanitización antes del render público en v0.4.
 
-Hoy zod valida solo `.max(200)`. Acepta:
-- Control chars `\x00-\x1F\x7F`.
-- HTML tags arbitrarios (`<script>`, `<img onerror>`, etc.).
-- Bidi unicode (`U+202D`, `U+202E`) → spoofing visual.
-- Null bytes.
+**Defense in depth aplicada en v0.3-geo-c** (CodeRabbit Pro P3):
+`SaveMetadataPayloadSchema` y `UpdateImagePayloadSchema` ya rechazan
+en el zod refinement:
 
-**Riesgo XSS en v0.4** si el frontend público renderea estos campos
-con `dangerouslySetInnerHTML`, en atributos `<meta>` de Open Graph,
-JSON-LD para SEO, o en `<title>` interpolation.
+- Control chars `\x00-\x1F\x7F` (newline injection en logs, ruptura
+  de headers HTTP si se reflejan, JSON malformado en tooltips admin).
+- Bidi unicode `\u202A-\u202E\u2066-\u2069` (Trojan Source: texto que
+  se ve inocuo en admin pero se renderea distinto público).
 
-Fix sugerido en v0.4 (mismo PR que el render público):
+Schema reusable `sanitizedShortText` en
+`src/server/actions/images/index.ts`. Datos sucios NUNCA entran al
+store — el catch es upfront en el server action, no esperamos al
+render para escapar.
+
+**Lo que TODAVÍA falta para v0.4** (render público):
+- HTML tags arbitrarios (`<script>`, `<img onerror>`, etc.) siguen
+  siendo aceptables hoy en la longitud disponible (200 chars).
+- Markdown/HTML embebido en `description*` y `tagline*` (cubierto por
+  la sección anterior, mismo `DOMPurify` server-side).
+
+**Riesgo XSS persistente en v0.4** si el frontend público renderea
+estos campos con `dangerouslySetInnerHTML`, en atributos `<meta>` de
+Open Graph, JSON-LD para SEO, o en `<title>` interpolation. Plan:
+
 - Sanitización con `isomorphic-dompurify` antes del render HTML.
-- Alternativa más restrictiva: zod regex de whitelist
-  `[\p{L}\p{N}\p{P}\p{Z}]+` que rechaza control chars y bidi.
-- En el admin (donde se persiste): mantener `.max(200)` + agregar
-  `.trim()` + rechazar `\x00-\x1F\x7F‭‮` para defense in
-  depth.
+- Para `<title>`/atributos: aplicar `escapeHtml` simple — no se
+  permite Markdown en esos contextos de todas formas.
+- Considerar whitelist más restrictiva con `\p{L}\p{N}\p{P}\p{Z}` si
+  el equipo decide que `<` y `>` no son legítimos para captions.
 
 ## Rate limiting en server actions de imágenes (backlog)
 

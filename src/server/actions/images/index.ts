@@ -59,6 +59,33 @@ const ENTITY_TYPE_VALUES = [
 
 const EntityTypeEnum = z.enum(ENTITY_TYPE_VALUES);
 
+/*
+  Schema reusable para los campos editoriales libres (caption, altText).
+  Defense in depth liviana ANTES de cualquier render público — rechaza
+  inputs con control chars o bidi unicode que podrían:
+
+  - Control chars (U+0000–U+001F + U+007F): romper logs estructurados
+    (newline injection en console.info que hace pivots), cabeceras
+    HTTP si alguna vez se reflejan, o renders de admin tooltips/JSON.
+  - Bidi unicode (U+202A–U+202E, U+2066–U+2069): "Trojan Source" — un
+    editor malicioso puede hacer que el texto se vea inocuo en el
+    admin pero leer distinto en la página pública o en logs.
+
+  No reemplaza al sanitizer Markdown/HTML completo de v0.4 (DOMPurify
+  sobre descripciones y taglines cuando se renderice contenido público),
+  pero garantiza que datos sucios no entren al store. Mejor rechazar al
+  borde que confiar en escapers downstream que pueden quedar fuera.
+*/
+const sanitizedShortText = z
+  .string()
+  .max(200)
+  .refine((s) => !/[\x00-\x1F\x7F]/.test(s), {
+    message: "Caracteres de control no permitidos.",
+  })
+  .refine((s) => !/[\u202A-\u202E\u2066-\u2069]/.test(s), {
+    message: "Caracteres bidireccionales no permitidos.",
+  });
+
 /**
  * Construye las paths admin a revalidate después de cualquier mutación
  * de imágenes. Cada entity tiene su propia ruta de edición.
@@ -230,8 +257,8 @@ const SaveMetadataPayloadSchema = z.object({
    * uploads con el plan Free (drain de 25GB).
    */
   nonce: z.string().uuid(),
-  caption: z.string().max(200).optional(),
-  altText: z.string().max(200).optional(),
+  caption: sanitizedShortText.optional(),
+  altText: sanitizedShortText.optional(),
 });
 
 export type SaveImageMetadataResult = ImagesActionResult<ImageRow>;
@@ -501,8 +528,8 @@ class InvalidNonceError extends Error {
 const UpdateImagePayloadSchema = z.object({
   imageId: z.string().min(1),
   entityType: EntityTypeEnum,
-  caption: z.string().max(200).nullable().optional(),
-  altText: z.string().max(200).nullable().optional(),
+  caption: sanitizedShortText.nullable().optional(),
+  altText: sanitizedShortText.nullable().optional(),
 });
 
 export async function updateImage(
