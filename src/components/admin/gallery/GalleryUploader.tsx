@@ -18,21 +18,29 @@ import { SortableImageGrid, type GalleryImage } from "./SortableImageGrid";
   del admin. Single source of truth para subir, listar, reordenar,
   marcar primary, editar metadata y borrar imágenes de un entity.
 
-  Flujo del upload:
+  Flujo del upload (defensas post-audit interno + CodeRabbit aplicadas):
   1. Editor arrastra archivos a la dropzone (o click → file picker).
   2. Validación cliente: MIME en {jpeg,png,webp}, tamaño <= 5MB, no
-     exceder `maxImages`.
-  3. Por cada archivo válido, pool de 3 paralelos:
-     a. `getUploadSignature(entityType, entityId)` server action.
+     exceder `maxImages` contando IN-FLIGHT (CR#2).
+  3. Por cada archivo válido, pool de 3 paralelos con
+     `mapWithConcurrency` que NUNCA propaga rejection (M-C).
+  4. Por upload:
+     a. `getUploadSignature(...)` → server genera nonce single-use,
+        lo persiste en DB, lo firma con la signature Cloudinary (H-1).
      b. POST a `https://api.cloudinary.com/v1_1/{cloud}/upload` con
-        signature + file + preset.
-     c. `saveImageMetadata(...)` server action persiste el row.
-  4. Si Cloudinary OK pero saveMetadata falla → orphan en Cloudinary
-     (documentado en AGENTS.md, cleanup job futuro).
+        signature + file + nonce + preset, con `AbortController`
+        timeout 60s (MAJ-1).
+     c. `saveImageMetadata({..., nonce})` → server marca nonce como
+        usado atómicamente + verifica que el asset realmente existe
+        en Cloudinary (M-3).
   5. router.refresh() para que el grid muestre la nueva imagen.
 
-  El grid (drag, primary, captions, delete) es responsabilidad de
-  `<SortableImageGrid />`.
+  Tab close protection:
+  - `beforeunload` listener activo mientras hay uploads en flight
+    (MAJ-2). El editor ve diálogo del navegador antes de cerrar.
+
+  Try/catch global en `runSingleUpload` (CR#3) — cualquier excepción
+  no manejada cae en el catch externo y emite toast + error state.
 */
 
 export type GalleryUploaderProps = {
@@ -49,8 +57,13 @@ const ACCEPTED_MIME = {
 };
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
-
 const UPLOAD_CONCURRENCY = 3;
+
+/** Timeout para el fetch a Cloudinary. 60s cubre uploads ≤5MB hasta
+ *  con conexiones lentas; conexiones más lentas que eso son edge case
+ *  donde el editor probablemente prefiere un error claro a esperar
+ *  indefinidamente. (MAJ-1) */
+const UPLOAD_TIMEOUT_MS = 60_000;
 
 type PendingStatus = "queued" | "uploading" | "saving" | "done" | "error";
 
@@ -70,15 +83,40 @@ export function GalleryUploader({
   const router = useRouter();
   const [pending, setPending] = React.useState<PendingUpload[]>([]);
 
-  const slotsAvailable = Math.max(0, maxImages - images.length);
+  /*
+    CR#2: in-flight uploads cuentan contra `maxImages`. Antes el
+    cliente solo restaba `images.length` y over-admitía cuando el
+    editor arrastraba más archivos mientras los previos seguían
+    subiendo — el server rechazaba en `saveImageMetadata` pero el
+    archivo ya estaba en Cloudinary como orphan.
+
+    "In-flight" = todo lo que NO es `done` ni `error`. `done` ya está
+    contado en `images.length` (post-refresh), `error` libera slot.
+  */
+  const inFlightCount = pending.filter(
+    (p) => p.status !== "done" && p.status !== "error",
+  ).length;
+  const slotsAvailable = Math.max(
+    0,
+    maxImages - images.length - inFlightCount,
+  );
   const limitReached = slotsAvailable === 0;
 
   /*
-    Helpers de upload declarados ANTES del `onDrop` para que la
-    referencia desde el callback no sea "access-before-declared". TS
-    hoistea pero el linter de React 19 quiere orden topográfico
-    explícito.
+    MAJ-2: warning del browser cuando el editor intenta cerrar tab o
+    navegar mientras hay uploads en flight. El `event.preventDefault()`
+    + `returnValue = ""` activa el diálogo "¿Querés salir de esta
+    página?" que es la convención de Gmail/Docs/WP.
   */
+  React.useEffect(() => {
+    if (inFlightCount === 0) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [inFlightCount]);
 
   function updatePending(id: string, status: PendingStatus, errorMessage?: string) {
     setPending((prev) =>
@@ -90,80 +128,117 @@ export function GalleryUploader({
   }
 
   async function runSingleUpload(file: File, p: PendingUpload) {
-    updatePending(p.id, "uploading");
-
-    // 1. Pedir signature al server.
-    const sig = await getUploadSignature({ entityType, entityId });
-    if (!sig.ok) {
-      updatePending(p.id, "error", sig.message);
-      toast.error(`"${p.filename}": ${sig.message}`);
-      return;
-    }
-
-    // 2. Subir a Cloudinary directamente. Si falla, NO persistimos
-    //    nada en DB.
-    const form = new FormData();
-    form.append("file", file);
-    form.append("signature", sig.data.signature);
-    form.append("timestamp", String(sig.data.timestamp));
-    form.append("api_key", sig.data.apiKey);
-    form.append("upload_preset", sig.data.uploadPreset);
-    form.append("folder", sig.data.folder);
-
-    let cloudinaryResult: { public_id: string };
+    /*
+      CR#3 fix: try/catch global captura excepciones inesperadas en
+      cualquier punto del flujo (server action que tira, JSON.parse,
+      bug interno). Sin esto, una rejection no manejada propagaba al
+      pool y abortaba el batch — `mapWithConcurrency` también está
+      defendido (M-C) pero esta capa es la primera línea.
+    */
     try {
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${sig.data.cloudName}/upload`,
-        { method: "POST", body: form },
-      );
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
+      updatePending(p.id, "uploading");
+
+      // 1. Pedir signature al server. Server crea nonce + lo persiste.
+      const sig = await getUploadSignature({ entityType, entityId });
+      if (!sig.ok) {
+        updatePending(p.id, "error", sig.message);
+        toast.error(`"${p.filename}": ${sig.message}`);
+        return;
       }
-      cloudinaryResult = (await res.json()) as { public_id: string };
+
+      // 2. Subir a Cloudinary directamente.
+      const form = new FormData();
+      form.append("file", file);
+      form.append("signature", sig.data.signature);
+      form.append("timestamp", String(sig.data.timestamp));
+      form.append("api_key", sig.data.apiKey);
+      form.append("upload_preset", sig.data.uploadPreset);
+      form.append("folder", sig.data.folder);
+      // H-1: el nonce viaja como param firmado. Cloudinary lo verifica
+      // con la signature server-side y rechaza si está manipulado.
+      form.append("nonce", sig.data.nonce);
+
+      /*
+        MAJ-1: AbortController con timeout. Sin esto, una conexión
+        TCP colgada bloquea el slot del pool indefinidamente — los
+        archivos en queue quedan en "queued" forever y `router.refresh`
+        nunca corre. 60s es generoso para 5MB con WiFi débil; lo más
+        rápido posible para conexión muerta de verdad.
+      */
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        UPLOAD_TIMEOUT_MS,
+      );
+
+      let cloudinaryResult: { public_id: string };
+      try {
+        const res = await fetch(
+          `https://api.cloudinary.com/v1_1/${sig.data.cloudName}/upload`,
+          { method: "POST", body: form, signal: controller.signal },
+        );
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`HTTP ${res.status}: ${text.slice(0, 200)}`);
+        }
+        cloudinaryResult = (await res.json()) as { public_id: string };
+      } catch (err) {
+        if (err instanceof Error && err.name === "AbortError") {
+          const message = "Timeout — la conexión es muy lenta. Reintentá.";
+          updatePending(p.id, "error", message);
+          toast.error(`"${p.filename}": ${message}`);
+          return;
+        }
+        const message =
+          err instanceof Error ? err.message : "Error subiendo a Cloudinary";
+        updatePending(p.id, "error", message);
+        toast.error(`"${p.filename}": ${message}`);
+        return;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      /*
+        3. Persistir el row en DB. NO mandamos `url` — la server
+        action la re-deriva server-side desde `cloudinaryPublicId`
+        (security audit C1). Mandamos el `nonce` para que el server
+        lo marque como usado atómicamente (H-1) + valide que el asset
+        realmente existe en Cloudinary via `cloudinary.api.resource`
+        (M-3).
+      */
+      updatePending(p.id, "saving");
+      const saved = await saveImageMetadata({
+        entityType,
+        entityId,
+        cloudinaryPublicId: cloudinaryResult.public_id,
+        nonce: sig.data.nonce,
+      });
+      if (!saved.ok) {
+        updatePending(p.id, "error", saved.message);
+        toast.error(`"${p.filename}": ${saved.message}`);
+        return;
+      }
+
+      updatePending(p.id, "done");
+      setTimeout(() => removePending(p.id), 800);
     } catch (err) {
+      // Catch global de defense in depth — si un await dentro tira
+      // algo no contemplado (e.g. fetch interno, parser), no rompemos
+      // el pool. Solo el item actual queda en "error".
       const message =
-        err instanceof Error ? err.message : "Error subiendo a Cloudinary";
+        err instanceof Error
+          ? err.message
+          : "Error inesperado durante la subida.";
       updatePending(p.id, "error", message);
       toast.error(`"${p.filename}": ${message}`);
-      return;
     }
-
-    /*
-      3. Persistir el row en DB. NO mandamos `url` — la server action
-      la re-deriva server-side desde `cloudinaryPublicId` para
-      defenderse contra URL injection (CodeRabbit/security audit
-      cerró este vector en C1 de v0.3-geo-c).
-    */
-    updatePending(p.id, "saving");
-    const saved = await saveImageMetadata({
-      entityType,
-      entityId,
-      cloudinaryPublicId: cloudinaryResult.public_id,
-    });
-    if (!saved.ok) {
-      updatePending(p.id, "error", saved.message);
-      toast.error(`"${p.filename}": ${saved.message}`);
-      // Orphan: la imagen ya está en Cloudinary pero no en DB. Cleanup
-      // job futuro la barrerá — documentado en AGENTS.md.
-      return;
-    }
-
-    updatePending(p.id, "done");
-    // Remover del array de pendientes después de un breve delay para
-    // que el editor vea el "Listo" antes de que desaparezca.
-    setTimeout(() => removePending(p.id), 800);
   }
 
   async function uploadAll(files: File[], queued: PendingUpload[]) {
     /*
       Pool de concurrencia simple — corremos como mucho
-      `UPLOAD_CONCURRENCY` uploads en paralelo. Sin librería: cada
-      upload arranca al consumir un slot del pool y libera cuando
-      termina. Para 3-15 archivos típicos del editor alcanza.
-
-      Parámetro local renombrado `queued` para no shadow el state
-      `pending` del componente.
+      `UPLOAD_CONCURRENCY` uploads en paralelo. `mapWithConcurrency`
+      garantiza que rejections individuales NO aborten el pool (M-C).
     */
     await mapWithConcurrency(files, UPLOAD_CONCURRENCY, async (file, idx) => {
       const p = queued[idx];
@@ -175,12 +250,6 @@ export function GalleryUploader({
 
   const onDrop = React.useCallback(
     (accepted: File[], rejected: ReadonlyArray<{ file: File; errors: ReadonlyArray<{ code: string; message: string }> }>) => {
-      /*
-        `rejected` viene de `react-dropzone` cuando un archivo no
-        matchea el `accept` o excede `maxSize`. Mostramos un toast por
-        cada rechazo con la razón específica — el editor sabe qué
-        archivo falló y por qué (en vez de un mensaje genérico).
-      */
       for (const r of rejected) {
         const reason = r.errors[0]?.code;
         let message: string;
@@ -199,8 +268,6 @@ export function GalleryUploader({
 
       if (accepted.length === 0) return;
 
-      // Trim al disponible. Si el editor arrastró más de los slots
-      // libres, le decimos cuántos no van.
       let filesToUpload = accepted;
       if (accepted.length > slotsAvailable) {
         const dropped = accepted.length - slotsAvailable;
@@ -362,27 +429,40 @@ function cryptoRandomId(): string {
 
 /**
  * Pool de concurrencia. Corre como mucho `concurrency` promesas en
- * paralelo; cuando una termina, arranca la siguiente. Mantiene el
- * orden de resultados via índices, pero acá no usamos el return value.
+ * paralelo; cuando una termina, arranca la siguiente.
  *
- * Para 3-15 uploads concurrentes típicos del editor:
- * - concurrency=3 satura el bandwidth típico sin overhead.
- * - concurrency>3 no mejora throughput (limitado por el upload del
- *   usuario, no por Cloudinary).
+ * M-C fix (CodeRabbit extiende CR#3): la promesa interna NUNCA
+ * rechaza. Si la función `fn` provista rejecta, se atrapa con
+ * `.catch` y se almacena el error en el slot — el pool sigue
+ * procesando los items restantes. Sin esta defensa, una rejection
+ * llegaba a `Promise.race(executing)` y abortaba el for loop, dejando
+ * archivos sin procesar.
+ *
+ * El caller no inspecciona el return value en el uso actual (los
+ * resultados se reflejan via `setPending` adentro de `fn`). El tipo
+ * de return incluye `{error}` para que future callers puedan
+ * inspeccionar si lo necesitan.
  */
 async function mapWithConcurrency<T, R>(
   items: T[],
   concurrency: number,
   fn: (item: T, idx: number) => Promise<R>,
-): Promise<R[]> {
-  const results: R[] = new Array(items.length);
+): Promise<Array<R | { error: unknown }>> {
+  const results: Array<R | { error: unknown }> = new Array(items.length);
   const executing = new Set<Promise<unknown>>();
 
   for (let i = 0; i < items.length; i++) {
     const idx = i;
-    const p = fn(items[idx], idx).then((r) => {
-      results[idx] = r;
-    });
+    const p = fn(items[idx], idx)
+      .then((r) => {
+        results[idx] = r;
+      })
+      .catch((err: unknown) => {
+        // Nunca propagamos rejection al pool. El error queda
+        // visible en el slot del array para que el caller pueda
+        // inspeccionarlo si lo necesita.
+        results[idx] = { error: err };
+      });
     executing.add(p);
     void p.finally(() => executing.delete(p));
 
