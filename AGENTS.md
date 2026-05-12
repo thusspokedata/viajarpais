@@ -322,6 +322,100 @@ el próximo:
   (visible para el editor). No optar por "4 líneas defensivas" sin
   decidir la semántica.
 
+## Cleanup periódico de `UploadSignatureNonce` (deuda activa)
+
+La tabla `UploadSignatureNonce` se llena con un row por cada call a
+`getUploadSignature`. Rows con `usedAt != null` ya cumplieron su
+función (single-use) y rows con `usedAt = null` y `createdAt > 24h`
+son signatures que el cliente nunca consumió (típico: editor cierra
+la tab post-getSignature). Sin cleanup, la tabla crece sin techo.
+
+Mitigación futura: cron daily que ejecuta:
+
+```sql
+DELETE FROM "UploadSignatureNonce"
+WHERE "createdAt" < NOW() - INTERVAL '24 hours';
+```
+
+No se implementa ahora porque (a) el cron VPS-side todavía no existe
+(ver backlog v0.3-geo-b), (b) volumen actual es despreciable. Se hace
+junto con el cleanup de orphans Cloudinary y el cron de retry de
+DeepL.
+
+## Sanitización de caption/altText de imágenes (extensión de Markdown)
+
+La sección "Sanitización de Markdown del editor (deuda crítica hacia
+v0.4)" cubre `descriptionEs/En/PtBr` y `taglineEs/En/PtBr`. EXTENSIÓN
+post-CodeRabbit + audit interno v0.3-geo-c: los campos `caption` y
+`altText` de las 5 image models (`RegionImage`, `ProvinceImage`,
+`DepartmentImage`, `LocalityImage`, `ListingImage`) también requieren
+sanitización antes del render público en v0.4.
+
+Hoy zod valida solo `.max(200)`. Acepta:
+- Control chars `\x00-\x1F\x7F`.
+- HTML tags arbitrarios (`<script>`, `<img onerror>`, etc.).
+- Bidi unicode (`U+202D`, `U+202E`) → spoofing visual.
+- Null bytes.
+
+**Riesgo XSS en v0.4** si el frontend público renderea estos campos
+con `dangerouslySetInnerHTML`, en atributos `<meta>` de Open Graph,
+JSON-LD para SEO, o en `<title>` interpolation.
+
+Fix sugerido en v0.4 (mismo PR que el render público):
+- Sanitización con `isomorphic-dompurify` antes del render HTML.
+- Alternativa más restrictiva: zod regex de whitelist
+  `[\p{L}\p{N}\p{P}\p{Z}]+` que rechaza control chars y bidi.
+- En el admin (donde se persiste): mantener `.max(200)` + agregar
+  `.trim()` + rechazar `\x00-\x1F\x7F‭‮` para defense in
+  depth.
+
+## Rate limiting en server actions de imágenes (backlog)
+
+Las 6 server actions de imágenes (`getUploadSignature`,
+`saveImageMetadata`, `updateImage`, `setImageAsPrimary`,
+`reorderImages`, `deleteImage`) no tienen rate limit. Un EDITOR
+malicioso podría:
+- Drenar la cuota Cloudinary con N `getUploadSignature` + uploads
+  rápidos. Mitigado parcialmente por nonce single-use + bajada de
+  `timestamp_validity` del preset Cloudinary a 120s, pero un loop
+  agresivo todavía puede hacer daño.
+- Cuando llegue Resend integration, drenar la cuota DeepL.
+
+Fix futuro: middleware o wrapper `withRateLimit(userId, action,
+{ limit, window })` con `@upstash/ratelimit` (compatible con Vercel
+serverless single-region). ~30 invocaciones/min por usuario por
+action es razonable para uso editorial real.
+
+## Revalidación pública de imágenes (v0.4)
+
+`buildAdminPaths` en `src/server/actions/images/index.ts` revalida
+solo paths admin. Cuando v0.4 cablee rutas públicas
+(`/{locale}/cuyo/...`, `/{locale}/cuyo/mendoza/{slug}`, etc.), hay
+que extender el helper para revalidate por locale + por nivel
+afectado. Sin esto, las galerías públicas mostrarán imágenes stale
+hasta el próximo ISR cycle.
+
+Pattern sugerido: `buildAllPaths(entityType, identifier)` que devuelve
+admin + público × 3 locales. Las 6 server actions de imágenes lo
+usan en lugar de `buildAdminPaths`.
+
+## Audit trail por imagen (backlog)
+
+Las server actions de imágenes no escriben `userId + action +
+imageId + timestamp` en ningún log estructurado. Si un editor borra
+contenido erróneo (o malicioso) no hay trazabilidad. `lastEditedById`
+solo aplica al entity padre, no a imágenes individuales.
+
+Quick win sin schema: `console.log` estructurado en cada action
+mutadora (`saveImageMetadata`, `updateImage`, `setImageAsPrimary`,
+`reorderImages`, `deleteImage`) con `{ actor: user.id, action,
+imageId, entityType, entityId, ts }`. Queda en Vercel logs por 30 días
+con plan Free.
+
+Long-term: tabla `AuditLog(id, actorId, action, target, payload,
+createdAt)` consultable desde admin para incidentes. No prioritario
+hasta que haya más editores en simultáneo.
+
 ## Tenant scope check en server actions de imágenes (deuda activa)
 
 `updateImage`, `setImageAsPrimary` y `deleteImage` reciben `{imageId,
