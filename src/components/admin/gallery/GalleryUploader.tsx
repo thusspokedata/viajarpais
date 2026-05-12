@@ -84,18 +84,30 @@ export function GalleryUploader({
   const [pending, setPending] = React.useState<PendingUpload[]>([]);
 
   /*
-    CR#2: in-flight uploads cuentan contra `maxImages`. Antes el
-    cliente solo restaba `images.length` y over-admitía cuando el
-    editor arrastraba más archivos mientras los previos seguían
-    subiendo — el server rechazaba en `saveImageMetadata` pero el
-    archivo ya estaba en Cloudinary como orphan.
+    CR#2 + N3: in-flight uploads cuentan contra `maxImages`.
 
-    "In-flight" = todo lo que NO es `done` ni `error`. `done` ya está
-    contado en `images.length` (post-refresh), `error` libera slot.
+    Versión inicial (CR#2): `pending.filter(p => p.status !== "done"
+    && p.status !== "error")`. Esto dejaba una ventana de race: un
+    upload pasaba a `"done"` y "libera" su slot ANTES de que el
+    `router.refresh()` post-batch repropague `images` con el nuevo
+    row. Durante esa ventana (puede ser varios segundos si quedan
+    uploads grandes en el batch), `slotsAvailable` sobre-estima y un
+    drop concurrente del editor sobre-admite → orphan en Cloudinary.
+
+    Fix N3 (CodeRabbit 3a pasada): contar `done` también como
+    in-flight. El row sigue ocupando slot hasta que el
+    `setTimeout(removePending, 800)` (línea ~215) lo saca. Como
+    `router.refresh()` es sub-segundo cuando Vercel anda bien,
+    típicamente el refresh con `images` actualizado llega ANTES que
+    el timeout — el slot se libera con el server reflejando ya el
+    nuevo row.
+
+    Trade-off aceptado: ~800ms post-batch exitoso de "no available
+    slots" momentáneo, vs el path del orphan que sería peor (uploads
+    rebotando en server con cuota Cloudinary drenada). Sub-estimar
+    slots es safe; sobre-estimar no.
   */
-  const inFlightCount = pending.filter(
-    (p) => p.status !== "done" && p.status !== "error",
-  ).length;
+  const inFlightCount = pending.filter((p) => p.status !== "error").length;
   const slotsAvailable = Math.max(
     0,
     maxImages - images.length - inFlightCount,
