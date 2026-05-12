@@ -153,6 +153,15 @@ export type UploadSignatureResult = {
   cloudName: string;
   uploadPreset: string;
   folder: string;
+  /**
+   * Nonce único single-use generado server-side. El cliente debe
+   * incluirlo en el FormData del upload a Cloudinary (queda firmado
+   * dentro de la signature) y enviarlo a `saveImageMetadata` para
+   * que el server lo marque como usado. Sin esto, un atacante con
+   * la signature cacheada puede subir N archivos al folder firmado
+   * durante la ventana de validez (1h).
+   */
+  nonce: string;
 };
 
 /**
@@ -188,6 +197,7 @@ export type UploadSignatureResult = {
  */
 export async function getUploadSignature(
   folder: string,
+  nonce: string,
 ): Promise<UploadSignatureResult> {
   const uploadPreset = process.env.CLOUDINARY_UPLOAD_PRESET;
   if (!uploadPreset) {
@@ -206,14 +216,25 @@ export async function getUploadSignature(
   }
 
   // Cloudinary recomienda timestamps en segundos. Una signature solo
-  // es válida por ~1 hora desde su timestamp.
+  // es válida por ~1 hora desde su timestamp (el usuario también
+  // baja `timestamp_validity` del preset a 120s en el dashboard).
   const timestamp = Math.floor(Date.now() / 1000);
 
+  /*
+    Firmamos `nonce` como parámetro custom. Cloudinary verifica que
+    todos los parámetros del FormData del cliente coinciden con la
+    signature. Esto sirve dos propósitos:
+    - Cliente no puede manipular el nonce que envía a Cloudinary sin
+      invalidar la signature.
+    - El nonce queda asociado server-side al upload Cloudinary que
+      `saveImageMetadata` después va a validar.
+  */
   const signature = cloudinary.utils.api_sign_request(
     {
       timestamp,
       folder,
       upload_preset: uploadPreset,
+      nonce,
     },
     apiSecret,
   );
@@ -225,6 +246,7 @@ export async function getUploadSignature(
     cloudName,
     uploadPreset,
     folder,
+    nonce,
   };
 }
 

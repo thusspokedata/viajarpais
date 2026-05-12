@@ -5,6 +5,7 @@ import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/authz";
+import { v2 as cloudinaryApi } from "cloudinary";
 import {
   deleteAsset,
   getCloudName,
@@ -83,11 +84,15 @@ export type ImagesActionResult<T = void> =
       ok: false;
       code:
         | "INVALID_INPUT"
+        | "INVALID_NONCE"
+        | "ASSET_NOT_FOUND"
         | "ENTITY_NOT_FOUND"
         | "IMAGE_NOT_FOUND"
         | "MAX_IMAGES_REACHED"
         | "CLOUDINARY_FAILED"
         | "UPLOAD_CONFIG_MISSING"
+        | "PRIMARY_CONFLICT"
+        | "CONFLICT_RETRY"
         | "UNKNOWN";
       message: string;
     };
@@ -106,11 +111,21 @@ export type GetUploadSignatureResult = ImagesActionResult<UploadSignatureResult>
 /**
  * El cliente solicita esto ANTES de hacer upload a Cloudinary. Resuelve
  * el identifier estable del entity para construir el folder
- * (regions/{code}, listings/{id}, etc.) y firma la signature
- * server-side. La signature solo es válida ~1h desde su timestamp.
+ * (regions/{code}, listings/{id}, etc.) + genera un nonce single-use
+ * que persiste en `UploadSignatureNonce` y firma como parte del
+ * payload Cloudinary. La signature solo es válida ~1h desde su
+ * timestamp (el preset Cloudinary también enforce `timestamp_validity
+ * = 120s` server-side de su lado).
  *
- * Si el entity no existe, devolvemos error temprano antes de pegar
- * a Cloudinary (evita firmar para folders fantasma).
+ * H-1 fix (CodeRabbit + audit interno): sin nonce, una signature
+ * cacheada permite N uploads al folder firmado durante la ventana de
+ * validez → drain del Free plan 25GB. Con nonce, cada signature solo
+ * puede registrar UN row en `saveImageMetadata`. Para subir N veces
+ * el cliente tiene que pedir N signatures distintas (cada una con
+ * su propio nonce + entry en DB).
+ *
+ * Si el entity no existe, devolvemos error temprano antes de generar
+ * el nonce (evita basura en DB para folders fantasma).
  */
 export async function getUploadSignature(
   raw: z.infer<typeof SignaturePayloadSchema>,
@@ -134,8 +149,25 @@ export async function getUploadSignature(
 
   const folder = `${entityFolderPrefix(entityType)}/${identifier}`;
 
+  // Generar y persistir el nonce ANTES de firmar. Si la creación
+  // falla (e.g. DB unavailable), abortamos sin retornar signature
+  // — mejor que firmar y no poder validar después.
+  const nonce = crypto.randomUUID();
   try {
-    const signature = await getCloudinarySignature(folder);
+    await prisma.uploadSignatureNonce.create({
+      data: { nonce, entityType, entityId },
+    });
+  } catch (err) {
+    console.error("[images.getUploadSignature] nonce persist failed", err);
+    return {
+      ok: false,
+      code: "UNKNOWN",
+      message: "No se pudo preparar el upload. Probá de nuevo.",
+    };
+  }
+
+  try {
+    const signature = await getCloudinarySignature(folder, nonce);
     return { ok: true, data: signature };
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown";
@@ -191,6 +223,13 @@ const SaveMetadataPayloadSchema = z.object({
   entityType: EntityTypeEnum,
   entityId: z.string().min(1),
   cloudinaryPublicId: z.string().min(1),
+  /**
+   * Nonce single-use que el cliente recibió de `getUploadSignature`.
+   * El server lo marca como `usedAt = now()` atómicamente para
+   * impedir reuso. Sin esto, una signature cacheada permitía N
+   * uploads con el plan Free (drain de 25GB).
+   */
+  nonce: z.string().uuid(),
   caption: z.string().max(200).optional(),
   altText: z.string().max(200).optional(),
 });
@@ -268,9 +307,65 @@ export async function saveImageMetadata(
     };
   }
 
+  /*
+    1.5. Consumir nonce single-use (H-1 fix). Update condicional
+    `WHERE usedAt IS NULL` con check del entityType+entityId. Si dos
+    requests llegan con el mismo nonce, solo uno gana — el otro recibe
+    `count === 0` y devolvemos `INVALID_NONCE`. Cubre también:
+    - Nonce inexistente (típico de cliente manipulado).
+    - Nonce de otra entity (replay attack cross-entity).
+    - Nonce ya usado (replay attack a la misma entity).
+  */
+  const claim = await prisma.uploadSignatureNonce.updateMany({
+    where: {
+      nonce: data.nonce,
+      usedAt: null,
+      entityType: data.entityType,
+      entityId: data.entityId,
+    },
+    data: { usedAt: new Date() },
+  });
+  if (claim.count === 0) {
+    return {
+      ok: false,
+      code: "INVALID_NONCE",
+      message:
+        "El nonce de upload es inválido o ya fue usado. Reintentá la subida.",
+    };
+  }
+
   // 2. Re-derivar URL server-side. NO confiamos en el cliente.
   const cloudName = getCloudName();
   const url = `https://res.cloudinary.com/${cloudName}/image/upload/${data.cloudinaryPublicId}`;
+
+  /*
+    2.5. M-3 fix: verificar que el asset realmente exista en
+    Cloudinary. Sin esto, un cliente malicioso podía registrar
+    `cloudinaryPublicId="regions/cuyo/voidasset123"` sin haber subido
+    nada — el row quedaba con URL apuntando a 404. Llamamos
+    `cloudinary.api.resource()` que devuelve metadata real si existe;
+    si no, lanza error que mapeamos a `ASSET_NOT_FOUND`.
+
+    No persistimos el `width/height/bytes/format` retornados porque
+    el schema actual no los tiene — podría ser un follow-up útil
+    (para validar tamaños o pre-construir `next/image` con
+    dimensions exactas), documentado en backlog si vale.
+  */
+  try {
+    await cloudinaryApi.api.resource(data.cloudinaryPublicId, {
+      resource_type: "image",
+    });
+  } catch (err) {
+    console.error("[saveImageMetadata] Cloudinary asset not found", {
+      publicId: data.cloudinaryPublicId,
+      err: err instanceof Error ? err.message : String(err),
+    });
+    return {
+      ok: false,
+      code: "ASSET_NOT_FOUND",
+      message: "La imagen no existe en Cloudinary. Reintentá la subida.",
+    };
+  }
 
   // 3-5. Limite + auto-primary dentro de transacción Serializable.
   try {
@@ -445,29 +540,59 @@ export async function setImageAsPrimary(
     };
   }
 
-  await runImageTransaction(entityType, async (_tx, delegate) => {
-    /*
-      `updateMany` con un WHERE del FK del padre — el tipo del where
-      es distinto por delegate, pero la operación es semánticamente
-      idéntica. Usamos el shape `{ [fkField]: parentId }` que TS
-      acepta como Prisma input por compatibilidad estructural.
-    */
-    const where = { [FK_FIELD[entityType]]: img.parentId };
-    // @ts-expect-error — `delegate.updateMany` acepta el `where` con
-    // el FK correspondiente; el union de delegates no es lo
-    // suficientemente preciso para que TS infiera el tipo exacto del
-    // where, pero en runtime todos los delegates aceptan el mismo
-    // shape `{ [fk]: string }`.
-    await delegate.updateMany({
-      where,
-      data: { isPrimary: false },
+  /*
+    CR#6 + M-A fix: catch Prisma errors específicos que pueden surgir
+    de la transacción cuando hay concurrencia con otros editores:
+    - P2025 (record not found): la imagen se borró entre `findImageById`
+      y el update dentro de la tx → race con `deleteImage`.
+    - P2002 (unique constraint): otra request ganó la carrera del
+      partial unique `WHERE isPrimary = true` → otro editor marcó
+      otra imagen como primary en paralelo.
+    - P2034 (serialization failure): isolation conflict bajo
+      Serializable → reintento esperado del cliente.
+  */
+  try {
+    await runImageTransaction(entityType, async (_tx, delegate) => {
+      const where = { [FK_FIELD[entityType]]: img.parentId };
+      // @ts-expect-error — el union de delegates no permite inferir
+      // el tipo exacto del where; runtime acepta `{ [fk]: string }`.
+      await delegate.updateMany({
+        where,
+        data: { isPrimary: false },
+      });
+      // @ts-expect-error — mismo motivo que arriba.
+      await delegate.update({
+        where: { id: imageId },
+        data: { isPrimary: true },
+      });
     });
-    // @ts-expect-error — mismo motivo que arriba.
-    await delegate.update({
-      where: { id: imageId },
-      data: { isPrimary: true },
-    });
-  });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2025") {
+        return {
+          ok: false,
+          code: "IMAGE_NOT_FOUND",
+          message: "La imagen ya no existe.",
+        };
+      }
+      if (err.code === "P2002") {
+        return {
+          ok: false,
+          code: "PRIMARY_CONFLICT",
+          message:
+            "Otra imagen ya fue marcada como principal. Refrescá e intentá de nuevo.",
+        };
+      }
+      if (err.code === "P2034") {
+        return {
+          ok: false,
+          code: "CONFLICT_RETRY",
+          message: "Conflicto temporal. Intentá de nuevo.",
+        };
+      }
+    }
+    throw err;
+  }
 
   buildAdminPaths(entityType, img.parentIdentifier).forEach((p) =>
     revalidatePath(p),
@@ -576,6 +701,29 @@ export async function reorderImages(
   } catch (err) {
     if (err instanceof InvalidReorderError) {
       return { ok: false, code: "INVALID_INPUT", message: err.message };
+    }
+    /*
+      CR#6 + M-A: misma defensa de P2025/P2034 en `reorderImages` que
+      en `setImageAsPrimary`. Race con `deleteImage` puede tirar
+      P2025 si una imagen del set se borró durante la tx; P2034 si
+      el isolation level escala el conflict.
+    */
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2025") {
+        return {
+          ok: false,
+          code: "IMAGE_NOT_FOUND",
+          message:
+            "Una imagen del set ya no existe. Refrescá la galería.",
+        };
+      }
+      if (err.code === "P2034") {
+        return {
+          ok: false,
+          code: "CONFLICT_RETRY",
+          message: "Conflicto temporal. Intentá de nuevo.",
+        };
+      }
     }
     throw err;
   }
