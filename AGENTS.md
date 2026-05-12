@@ -399,22 +399,53 @@ Pattern sugerido: `buildAllPaths(entityType, identifier)` que devuelve
 admin + público × 3 locales. Las 6 server actions de imágenes lo
 usan en lugar de `buildAdminPaths`.
 
-## Audit trail por imagen (backlog)
+## Audit trail por imagen (resuelto en v0.3-geo-c follow-up)
 
-Las server actions de imágenes no escriben `userId + action +
-imageId + timestamp` en ningún log estructurado. Si un editor borra
-contenido erróneo (o malicioso) no hay trazabilidad. `lastEditedById`
-solo aplica al entity padre, no a imágenes individuales.
+Las 5 server actions mutadoras de imágenes (`saveImageMetadata`,
+`updateImage`, `setImageAsPrimary`, `reorderImages`, `deleteImage`)
+emiten `console.info("[image-action]", { action, actor, imageId,
+entityType, entityId, result: "success", timestamp, ...extra })` en
+el success path via helper local `logImageAction`. Mismo shape en
+las 5 actions para grep/parseo consistente.
 
-Quick win sin schema: `console.log` estructurado en cada action
-mutadora (`saveImageMetadata`, `updateImage`, `setImageAsPrimary`,
-`reorderImages`, `deleteImage`) con `{ actor: user.id, action,
-imageId, entityType, entityId, ts }`. Queda en Vercel logs por 30 días
-con plan Free.
+Los logs quedan en Vercel por 30 días en plan Free. Buscar con
+`grep "\\[image-action\\]"` o filtros estructurados. Suficiente para
+trazabilidad operacional con volumen actual (1-3 editores).
 
-Long-term: tabla `AuditLog(id, actorId, action, target, payload,
-createdAt)` consultable desde admin para incidentes. No prioritario
-hasta que haya más editores en simultáneo.
+Long-term (cuando >1 editor justifique investigaciones formales de
+incidentes con búsqueda/diff retroactivo): tabla `AuditLog(id,
+actorId, action, target, payload, createdAt)` consultable desde
+admin. No prioritario hasta entonces.
+
+## Restore-de-backup operacional (caso edge de migraciones de imágenes)
+
+Si en algún momento se restaura un backup de producción a un nuevo
+ambiente y se aplican las migraciones en orden, la migración
+`20260511150000_add_partial_unique_constraints_for_image_primary`
+puede fallar si el backup contiene duplicates de `isPrimary=true`
+en alguna de las 5 image tables. CodeRabbit lo señaló como Major
+Heavy lift; reproducirlo requiere ese caso operacional específico.
+
+En ese caso:
+
+1. Antes de aplicar `20260511150000_*`, ejecutar manualmente el
+   contenido SQL de
+   `20260512100000_defensive_backfill_image_primaries/migration.sql`
+   contra la DB para demote duplicates.
+2. `prisma migrate resolve --applied
+   20260512100000_defensive_backfill_image_primaries` para que
+   Prisma lo registre como aplicado sin re-ejecutarlo.
+3. `prisma migrate deploy` para aplicar las migraciones restantes
+   en orden normal.
+
+No es problema en deploys normales:
+- Entornos nuevos (preview, staging) se crean sin datos → no hay
+  duplicates al aplicar `20260511150000`.
+- Entornos activos (main DB) ya tienen ambas migraciones aplicadas
+  successfully.
+- Reorganizar el orden de timestamps generaría drift entre la
+  branch y los ambientes con migraciones ya aplicadas — más riesgo
+  que el caso edge que evita.
 
 ## Tenant scope check en server actions de imágenes (deuda activa)
 
