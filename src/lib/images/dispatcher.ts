@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import type { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
+import type { PrismaClient } from "@/generated/prisma/client";
 
 /*
   Las queries pueden recibir un cliente Prisma opcional para correr
@@ -341,6 +342,14 @@ export async function deleteImageRow(
  *
  * Mantiene el call site limpio: en vez de un switch repetido en cada
  * acción transaccional, se centraliza el dispatch.
+ *
+ * Isolation: Serializable. Los callers (`setImageAsPrimary`,
+ * `reorderImages`) tienen catches de `P2034` (serialization failure)
+ * que sólo se disparan si la tx corre bajo Serializable. Con la default
+ * de Postgres (ReadCommitted) ese catch es código muerto y dos editores
+ * concurrentes pueden pisar el partial unique de `isPrimary` o calcular
+ * `order` sobre snapshots inconsistentes. `maxWait`/`timeout` acotan el
+ * blast radius si hay contención sostenida.
  */
 export async function runImageTransaction<T>(
   type: EntityType,
@@ -349,10 +358,17 @@ export async function runImageTransaction<T>(
     delegate: ImageDelegate,
   ) => Promise<T>,
 ): Promise<T> {
-  return prisma.$transaction(async (tx) => {
-    const delegate = getDelegate(type, tx);
-    return fn(tx, delegate);
-  });
+  return prisma.$transaction(
+    async (tx) => {
+      const delegate = getDelegate(type, tx);
+      return fn(tx, delegate);
+    },
+    {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      maxWait: 3_000,
+      timeout: 5_000,
+    },
+  );
 }
 
 /*
