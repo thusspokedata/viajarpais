@@ -13,3 +13,8 @@ export {
   type EditorialContentProps,
 } from "./EditorialContent";
 export { GeoHero, type GeoHeroProps } from "./GeoHero";
+export {
+  TranslationDisclaimer,
+  type TranslationDisclaimerProps,
+  type TranslationSource,
+} from "./TranslationDisclaimer";

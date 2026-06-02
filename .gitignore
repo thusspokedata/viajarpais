@@ -46,3 +46,6 @@ next-env.d.ts
 
 # auth secret artifacts
 /.husky/_
+
+# claude code workspace (worktrees, agents, transcripts)
+/.claude/
