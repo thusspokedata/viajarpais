@@ -12,3 +12,4 @@ export {
   editorialSanitizeSchema,
   type EditorialContentProps,
 } from "./EditorialContent";
+export { GeoHero, type GeoHeroProps } from "./GeoHero";
