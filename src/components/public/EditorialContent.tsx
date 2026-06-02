@@ -176,12 +176,17 @@ export function EditorialContent({
 
           Spacing entre bloques: `[&>*+*]:mt-[var(--space-5)]`
           (sibling combinator).
+
+          line-height: el handoff §3 dice `--leading-relaxed (1.7)`
+          pero el DS ya tiene `--leading-loose: 1.75` — diferencia
+          0.05 invisible a ojo. Reusamos en vez de crear un token
+          duplicado.
         */
         <div
           className={cn(
-            // Cuerpo Inter, text-base, line-height relaxed.
+            // Cuerpo Inter, text-base, line-height loose.
             "text-[length:var(--text-base)]",
-            "leading-[var(--leading-relaxed)]",
+            "leading-[var(--leading-loose)]",
             "text-[var(--text-primary)]",
             // Espaciado entre bloques top-level.
             "[&>*+*]:mt-[var(--space-5)]",

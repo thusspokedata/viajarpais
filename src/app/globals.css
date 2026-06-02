@@ -385,10 +385,18 @@ a:focus-visible,
   70%  { box-shadow: 0 0 0 8px transparent; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
+/* vp-rise: hero caption + tagline al hacer enter — translateY 16→0,
+   distinto a vp-fade-in (4px) que es feedback de UI corto. Usado
+   por GeoHero en v0.4-a (handoff §1 motion). */
+@keyframes vp-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 .vp-fade-in    { animation: vp-fade-in    var(--duration-base) var(--ease-decelerate) both; }
 .vp-scale-in   { animation: vp-scale-in   var(--duration-base) var(--ease-emphasized) both; }
 .vp-reveal     { animation: vp-reveal-down var(--duration-fast) var(--ease-decelerate) both; }
+.vp-rise       { animation: vp-rise       var(--duration-base) var(--ease-decelerate) both; }
 
 .vp-shimmer {
   background: linear-gradient(
