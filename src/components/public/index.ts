@@ -22,3 +22,9 @@ export {
   PublicEmptyState,
   type PublicEmptyStateProps,
 } from "./PublicEmptyState";
+export {
+  PlaceCard,
+  PlaceSection,
+  type PlaceCardProps,
+  type PlaceSectionProps,
+} from "./PlaceCard";
