@@ -28,3 +28,11 @@ export {
   type PlaceCardProps,
   type PlaceSectionProps,
 } from "./PlaceCard";
+export {
+  PhotoGallery,
+  GalleryTrigger,
+  useGallery,
+  type GalleryImage,
+  type PhotoGalleryProps,
+  type GalleryTriggerProps,
+} from "./PhotoGallery";
