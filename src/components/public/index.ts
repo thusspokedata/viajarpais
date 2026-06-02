@@ -7,3 +7,8 @@ export { PublicHeader, type PublicHeaderProps } from "./PublicHeader";
 export { PublicFooter } from "./PublicFooter";
 export { ListingsLayout, type ListingsLayoutProps } from "./ListingsLayout";
 export { Breadcrumbs, type Crumb, type BreadcrumbsProps } from "./Breadcrumbs";
+export {
+  EditorialContent,
+  editorialSanitizeSchema,
+  type EditorialContentProps,
+} from "./EditorialContent";
