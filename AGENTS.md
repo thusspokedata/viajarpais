@@ -597,6 +597,94 @@ Cada entorno (preview, staging, prod) puede tener su propio preset.
 En CI usamos un placeholder porque `next build` no invoca uploads
 reales.
 
+## Backlog v0.4-b — follow-ups del audit de v0.4-a
+
+Items detectados por las 3 auditorías internas del PR v0.4-a
+(security review + data integrity + product correctness) que
+quedaron deferred con justificación. Se aplican en v0.4-b o un
+PR específico cuando llegue el momento.
+
+### Cloudinary 404 fallback en imágenes públicas (HIGH H5 deferred)
+
+Cuando Cloudinary devuelve 404 para una imagen (asset borrado
+manualmente, race con cleanup, CDN cache issue), `GeoHero` y
+`PlaceCard` muestran el ícono de imagen rota de next/image en
+lugar del fallback tipográfico/placeholder documentado en el
+handoff §"Casos edge".
+
+Solución: client wrapper con `onError` sobre next/image que
+re-renderea la variante sin foto (placeholder/tipográfico) al
+detectar fallo de carga. Aplicable a `HeroPhotoImage` y al
+`<Image>` del `PlaceCard`.
+
+Defer porque (a) requiere Cloudinary respondiendo 404, raro en
+operación normal mientras el editor no borre assets manualmente,
+(b) se hace junto con el "cleanup de orphans Cloudinary"
+(documentado en este mismo archivo) — ambos comparten el patrón
+de detectar/manejar inconsistencias DB ↔ CDN.
+
+### Optimizaciones de performance pública (MAJOR M2-M4 deferred)
+
+Tres optimizaciones sin impacto correctness inmediato pero con
+mejora medible cuando el volumen crezca:
+
+**M2 — Cache tags no incluyen locale.** El `unstable_cache` parts
+incluye locale (correcto — cada locale cachea separado), pero el
+tag por nivel es uniforme (ej. `region:cuyo` sin locale). Combinado
+con `expandLocalePaths` en `buildAllPaths` se hace doble trabajo:
+el tag invalida las 3 versiones del locale + los 3 paths
+expandidos también. Considerar simplificar `buildAllPaths` para
+emitir solo admin paths + tags, dejando la invalidación de las 3
+versiones públicas vía tag exclusivamente.
+
+**M3 — `take 30 → slice 24` rompe promesa "FEATURED arriba" con
+>30 PUBLISHED.** `loadListingsForLevel` toma 30 con orderBy
+`updatedAt desc`, luego sort en memoria por tier+verified+
+updatedAt y slice 24. Si una provincia tiene 10 FEATURED viejos
++ 25 PAID + 100 FREE recientes, los FREE recientes ocupan los
+primeros 30 y desplazan FEATUREDs del ranking final.
+
+Fix: 2 queries (`tier IN ('FEATURED','PAID')` con take 24 + FREE
+para rellenar si quedan slots), o `$queryRaw` con `CASE WHEN
+tier=...`. Trivial hoy (entidades chicas), no urgente.
+
+**M4 — Province query usa `findFirst` con relation filter.**
+`loadProvinceNode` usa `findFirst({ where: { slug, region: { code } } })`
+que genera JOIN. `Province.slug` es @unique global — más eficiente
+`findUnique({ where: { slug } })` + validar `province.region.code
+=== regionCode` en código. ~10ms más rápido por request.
+
+### Validación Zod de empty string → null en form admin (follow-up M5)
+
+`pickLocalizedField` en geoLoader usa `??` (nullish) para distinguir
+"no traducido" (null) de "vacío intencional" (`""`). El form admin
+de v0.3 devuelve `null` para vacíos en la práctica, pero no hay
+validación Zod explícita que enforce eso. Si cambia el form en
+v0.5+ (e.g. tag input que devuelve `""` al limpiar), el operador
+nullish empezaría a confundir los dos casos.
+
+Fix: agregar `.transform((s) => (s === "" ? null : s))` en el
+schema Zod de campos editoriales del form admin, o equivalente en
+`GeoEditorialContentSchema`.
+
+### DeepL fallback edge case — decisión pendiente del PM
+
+Locality con `descriptionEs` cargado pero `descriptionEn = null` y
+`descriptionEnSource = NONE` (DeepL no procesó todavía o falló).
+En `/en/...` se muestra el español como fallback SIN
+`TranslationDisclaimer` (porque source es NONE, no MACHINE).
+
+Opciones para v0.4-b o cuando el PM decida:
+- **A (actual):** muestra ES sin disclaimer. Visitante ve texto
+  en idioma "incorrecto" sin saber por qué.
+- **B:** muestra ES con disclaimer adaptado "Original in Spanish
+  — translation pending" / "Original em espanhol — tradução
+  pendente". Más honesto, pero requiere extender
+  TranslationDisclaimer con variant "pending" (~10 líneas).
+
+NO se aplicó en v0.4-a porque la decisión es de producto, no
+técnica.
+
 ## Cuando dudes, preguntá
 
 No asumas decisiones de producto. Si encontrás una ambigüedad o una contradicción
