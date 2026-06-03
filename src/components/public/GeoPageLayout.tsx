@@ -197,10 +197,16 @@ export function GeoPageLayout({
             />
           </div>
         ) : node.hasEditorial ? (
-          <EditorialContent
-            tagline={node.tagline}
-            markdown={node.description}
-          >
+          /*
+            tagline NO se pasa a EditorialContent porque GeoHero ya lo
+            renderiza (en la banda brand-50 abajo del hero con foto, o
+            adentro del bloque tipografico sin foto). El handoff sample
+            mostraba el tagline en ambos lugares pero fue error de
+            redaccion del propio handoff — habia tagline duplicado en
+            las paginas con foto + tagline + description.
+            EditorialContent renderiza solo el markdown body.
+          */
+          <EditorialContent markdown={node.description}>
             <TranslationDisclaimer
               locale={locale}
               descriptionSource={node.descriptionSource}

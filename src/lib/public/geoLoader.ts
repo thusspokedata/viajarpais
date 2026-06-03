@@ -475,7 +475,12 @@ async function loadRegionNode(
     };
   });
 
-  const hasEditorial = Boolean(tagline) || Boolean(description) || images.length > 0;
+  // hasEditorial: solo cuenta tagline o description. La galeria NO
+  // es contenido editorial — ya se muestra en hero/lightbox; si
+  // contara aca, GeoPageLayout monta <EditorialContent> con TranslationDisclaimer
+  // como unico hijo (truthy) y produce un section vacio con padding
+  // debajo del hero (H6 finding).
+  const hasEditorial = Boolean(tagline) || Boolean(description);
 
   return {
     level: "region",
@@ -626,7 +631,12 @@ async function loadProvinceNode(
     };
   });
 
-  const hasEditorial = Boolean(tagline) || Boolean(description) || images.length > 0;
+  // hasEditorial: solo cuenta tagline o description. La galeria NO
+  // es contenido editorial — ya se muestra en hero/lightbox; si
+  // contara aca, GeoPageLayout monta <EditorialContent> con TranslationDisclaimer
+  // como unico hijo (truthy) y produce un section vacio con padding
+  // debajo del hero (H6 finding).
+  const hasEditorial = Boolean(tagline) || Boolean(description);
 
   return {
     level: "province",
@@ -796,7 +806,12 @@ async function loadDepartmentNode(
     };
   });
 
-  const hasEditorial = Boolean(tagline) || Boolean(description) || images.length > 0;
+  // hasEditorial: solo cuenta tagline o description. La galeria NO
+  // es contenido editorial — ya se muestra en hero/lightbox; si
+  // contara aca, GeoPageLayout monta <EditorialContent> con TranslationDisclaimer
+  // como unico hijo (truthy) y produce un section vacio con padding
+  // debajo del hero (H6 finding).
+  const hasEditorial = Boolean(tagline) || Boolean(description);
 
   return {
     level: "department",
@@ -969,7 +984,12 @@ async function loadLocalityNode(
     locale,
   );
 
-  const hasEditorial = Boolean(tagline) || Boolean(description) || images.length > 0;
+  // hasEditorial: solo cuenta tagline o description. La galeria NO
+  // es contenido editorial — ya se muestra en hero/lightbox; si
+  // contara aca, GeoPageLayout monta <EditorialContent> con TranslationDisclaimer
+  // como unico hijo (truthy) y produce un section vacio con padding
+  // debajo del hero (H6 finding).
+  const hasEditorial = Boolean(tagline) || Boolean(description);
 
   return {
     level: "locality",
