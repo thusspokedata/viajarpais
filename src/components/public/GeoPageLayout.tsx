@@ -163,7 +163,14 @@ export function GeoPageLayout({
         }
       />
 
-      <main>
+      {/*
+        Wrapper de contenido — antes era <main> pero (public)/layout.tsx
+        ya envuelve {children} con su propio <main>. Tener dos main
+        anidados rompe la HTML spec (un solo main landmark por
+        documento) y confunde screen readers. Usamos <div> aca y
+        dejamos que el layout maneje el landmark.
+      */}
+      <div>
         {isFullyEmpty ? (
           <div className="mx-auto w-full max-w-[1120px] px-[var(--space-8)] py-[var(--space-10)]">
             <PublicEmptyState
@@ -229,7 +236,7 @@ export function GeoPageLayout({
             total={node.totalListings}
           />
         )}
-      </main>
+      </div>
     </PhotoGallery>
   );
 }
