@@ -36,3 +36,8 @@ export {
   type PhotoGalleryProps,
   type GalleryTriggerProps,
 } from "./PhotoGallery";
+export {
+  GeoPageLayout,
+  type GeoPageLayoutProps,
+  type GeoPageLayoutI18n,
+} from "./GeoPageLayout";
