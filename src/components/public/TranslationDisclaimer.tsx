@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Languages } from "@/components/ui/icons";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui";
 import { cn } from "@/components/ui";
@@ -72,53 +73,23 @@ export interface TranslationDisclaimerProps {
   className?: string;
 }
 
-/*
-  Strings hardcodeadas por locale. Migracion a `messages/{locale}.json`
-  namespace Public.translationDisclaimer en commit 16 — mantener esta
-  estructura para que el swap sea search/replace sin tocar layout.
-
-  Mensajes auditados por PM (handoff §5).
-*/
-const STRINGS = {
-  en: {
-    leadStrong: "Translated automatically",
-    leadMuted: " — original text in Spanish",
-    tooltipQuestion: "More info about this translation",
-    tooltipBody:
-      "This translation was generated automatically with DeepL. Our editorial team reviews translations for main regions and provinces.",
-  },
-  "pt-BR": {
-    leadStrong: "Traduzido automaticamente",
-    leadMuted: " — texto original em espanhol",
-    tooltipQuestion: "Mais informações sobre esta tradução",
-    tooltipBody:
-      "Esta tradução foi gerada automaticamente com DeepL. Nossa equipe editorial revisa as traduções das principais regiões e províncias.",
-  },
-} as const satisfies Record<
-  "en" | "pt-BR",
-  {
-    leadStrong: string;
-    leadMuted: string;
-    tooltipQuestion: string;
-    tooltipBody: string;
-  }
->;
-
 export function TranslationDisclaimer({
   locale,
   descriptionSource,
   taglineSource,
   className,
 }: TranslationDisclaimerProps) {
-  // Decision de visibilidad en el componente: cleaner que en el
-  // loader porque consolida la regla en un solo lugar y es facil
-  // de testear.
+  // Hooks SIEMPRE primero — React no acepta llamadas condicionales.
+  // useTranslations en locale es no rompe (el hook funciona), solo
+  // no emitimos UI porque el guard returns null.
+  const t = useTranslations("Public.translationDisclaimer");
+
+  // Visibility en el componente: cleaner que en el loader porque
+  // consolida la regla en un solo lugar y es facil de testear.
   if (locale === "es") return null;
   const anyMachine =
     descriptionSource === "MACHINE" || taglineSource === "MACHINE";
   if (!anyMachine) return null;
-
-  const t = STRINGS[locale];
 
   return (
     <div
@@ -142,15 +113,15 @@ export function TranslationDisclaimer({
       />
       <span>
         <span className="font-semibold text-[var(--text-primary)]">
-          {t.leadStrong}
+          {t("leadStrong")}
         </span>
-        <span className="text-[var(--text-muted)]">{t.leadMuted}</span>
+        <span className="text-[var(--text-muted)]">{t("leadMuted")}</span>
       </span>
       <Tooltip>
         <TooltipTrigger asChild>
           <button
             type="button"
-            aria-label={t.tooltipQuestion}
+            aria-label={t("tooltipQuestion")}
             className={cn(
               "inline-flex items-center justify-center",
               "h-[18px] w-[18px] rounded-full",
@@ -172,7 +143,7 @@ export function TranslationDisclaimer({
           align="center"
           className="max-w-[280px] leading-[var(--leading-normal)]"
         >
-          {t.tooltipBody}
+          {t("tooltipBody")}
         </TooltipContent>
       </Tooltip>
     </div>

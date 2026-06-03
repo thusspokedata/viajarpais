@@ -71,5 +71,46 @@
     "regionsCount": "Regions",
     "usersCount": "Users",
     "currentLocale": "Current locale"
+  },
+  "Public": {
+    "breadcrumbsLabel": "Breadcrumbs",
+    "galleryAriaLabel": "Photo gallery",
+    "galleryClose": "Close gallery",
+    "galleryPrev": "Previous photo",
+    "galleryNext": "Next photo",
+    "galleryThumbPrefix": "Photo",
+    "viewGallery": "View gallery · {count}",
+    "eyebrow": {
+      "region": "REGION",
+      "province": "PROVINCE",
+      "department": "DEPARTMENT",
+      "locality": "LOCALITY"
+    },
+    "childrenTitle": {
+      "provinces": "Provinces within",
+      "departments": "Departments within",
+      "localities": "Localities within"
+    },
+    "levelSingular": {
+      "region": "region",
+      "province": "province",
+      "department": "department",
+      "locality": "locality"
+    },
+    "emptyTitle": "We're still building this page",
+    "emptyDescription": "We haven't loaded information or photos for {name} yet. We're adding {level}s steadily, with vetted material.",
+    "emptyBackTo": "Back to {name}",
+    "emptyExplore": "Explore {name}",
+    "listingsCount": "{count, plural, one {# listing} other {# listings}}",
+    "localitiesCount": "{count, plural, one {# locality} other {# localities}}",
+    "noListingsYet": "No listings yet",
+    "noPhotoLabel": "no photo yet",
+    "fallbackMetaDescription": "Discover {name} on ViajarPaís — the national directory of Argentine tourism, with editorially vetted information.",
+    "translationDisclaimer": {
+      "leadStrong": "Translated automatically",
+      "leadMuted": " — original text in Spanish",
+      "tooltipQuestion": "More info about this translation",
+      "tooltipBody": "This translation was generated automatically with DeepL. Our editorial team reviews translations for main regions and provinces."
+    }
   }
 }

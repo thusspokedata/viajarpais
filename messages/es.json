@@ -71,5 +71,46 @@
     "regionsCount": "Regiones",
     "usersCount": "Usuarios",
     "currentLocale": "Idioma actual"
+  },
+  "Public": {
+    "breadcrumbsLabel": "Migas de pan",
+    "galleryAriaLabel": "Galería de fotos",
+    "galleryClose": "Cerrar galería",
+    "galleryPrev": "Foto anterior",
+    "galleryNext": "Foto siguiente",
+    "galleryThumbPrefix": "Foto",
+    "viewGallery": "Ver galería · {count}",
+    "eyebrow": {
+      "region": "REGIÓN",
+      "province": "PROVINCIA",
+      "department": "DEPARTAMENTO",
+      "locality": "LOCALIDAD"
+    },
+    "childrenTitle": {
+      "provinces": "Provincias adentro",
+      "departments": "Departamentos adentro",
+      "localities": "Localidades adentro"
+    },
+    "levelSingular": {
+      "region": "región",
+      "province": "provincia",
+      "department": "departamento",
+      "locality": "localidad"
+    },
+    "emptyTitle": "Todavía estamos construyendo esta página",
+    "emptyDescription": "Aún no cargamos información ni fotos de {name}. Estamos sumando cada {level} de a poco, con material verificado.",
+    "emptyBackTo": "Volver a {name}",
+    "emptyExplore": "Explorar {name}",
+    "listingsCount": "{count, plural, one {# ficha} other {# fichas}}",
+    "localitiesCount": "{count, plural, one {# localidad} other {# localidades}}",
+    "noListingsYet": "Aún sin fichas",
+    "noPhotoLabel": "sin foto aún",
+    "fallbackMetaDescription": "Descubrí {name} en ViajarPaís — directorio nacional de turismo argentino con información verificada.",
+    "translationDisclaimer": {
+      "leadStrong": "Traducido automáticamente",
+      "leadMuted": " — texto original en español",
+      "tooltipQuestion": "Más información sobre esta traducción",
+      "tooltipBody": "Esta traducción se generó automáticamente con DeepL. Nuestro equipo editorial revisa las traducciones de las regiones y provincias principales."
+    }
   }
 }
