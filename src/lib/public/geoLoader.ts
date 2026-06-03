@@ -388,7 +388,14 @@ async function loadRegionNode(
         orderBy: { name: "asc" },
         include: {
           _count: {
-            select: { listings: true, localities: true },
+            // Solo listings PUBLISHED — DRAFTs y ARCHIVEDs no se
+            // muestran en el publico, asi que tampoco se cuentan.
+            // Antes el count incluia todo, mostrando "12 fichas" en
+            // PlaceCard pero al entrar habian solo 3 visibles.
+            select: {
+              listings: { where: { status: "PUBLISHED" } },
+              localities: true,
+            },
           },
           images: {
             where: { isPrimary: true },
@@ -535,7 +542,11 @@ async function loadProvinceNode(
         orderBy: { name: "asc" },
         include: {
           _count: {
-            select: { listings: true, localities: true },
+            // Solo listings PUBLISHED — ver loadRegionNode.
+            select: {
+              listings: { where: { status: "PUBLISHED" } },
+              localities: true,
+            },
           },
           images: {
             where: { isPrimary: true },
@@ -702,7 +713,11 @@ async function loadDepartmentNode(
       localities: {
         orderBy: { name: "asc" },
         include: {
-          _count: { select: { listings: true } },
+          _count: {
+            // Solo listings PUBLISHED — ver loadRegionNode. Locality
+            // no tiene sub-niveles, asi que solo cuenta fichas directas.
+            select: { listings: { where: { status: "PUBLISHED" } } },
+          },
           images: {
             where: { isPrimary: true },
             take: 1,
