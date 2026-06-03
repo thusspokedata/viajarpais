@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeSanitize, { defaultSchema } from "rehype-sanitize";
 import { cn } from "@/components/ui";
+import { GEO_HERO_H1_ID } from "./GeoHero";
 
 /*
   <EditorialContent /> — pattern v0.4-a §3 del handoff.
@@ -137,6 +138,10 @@ export function EditorialContent({
 
   return (
     <section
+      // aria-labelledby apunta al h1 del GeoHero — sin esto el
+      // <section> no es un landmark para AT (sin label). Minor A
+      // del audit.
+      aria-labelledby={GEO_HERO_H1_ID}
       className={cn(
         "mx-auto w-full max-w-[68ch]",
         "px-[var(--space-8)] py-[var(--space-10)]",

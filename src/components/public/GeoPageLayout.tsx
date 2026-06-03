@@ -139,7 +139,13 @@ export function GeoPageLayout({
       labels={i18n.galleryLabels}
     >
       <JsonLd data={jsonLd} />
-      {!hasPhoto && (
+      {/*
+        Breadcrumbs canvas (encima del hero) cuando NO hay foto.
+        Minor B: omitir cuando hay solo 1 item (caso region — el h1
+        del hero ya muestra el nombre, breadcrumb de 1 item es
+        redundante).
+      */}
+      {!hasPhoto && node.breadcrumbs.length > 1 && (
         <Breadcrumbs
           items={node.breadcrumbs}
           variant="canvas"

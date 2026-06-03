@@ -115,6 +115,14 @@ export interface GeoHeroProps {
   className?: string;
 }
 
+/**
+ * ID estable del <h1> del GeoHero. Lo exportamos para que otros
+ * componentes (EditorialContent section) puedan referenciarlo via
+ * aria-labelledby — minor A finding del audit. Como el GeoHero se
+ * monta exactamente una vez por pagina geo, el id estatico es seguro.
+ */
+export const GEO_HERO_H1_ID = "geo-hero-name";
+
 const HERO_HEIGHTS: Record<
   GeoHeroProps["level"],
   { desktop: string; mobile: string; maxHeight?: string }
@@ -216,7 +224,13 @@ function GeoHeroWithPhoto({
         {/* Capa de contenido sobre la imagen + scrim. */}
         <div className="relative z-10 flex h-full w-full flex-col">
           {/* Top: breadcrumbs adentro */}
-          {breadcrumbs.length > 0 && (
+          {/*
+            Breadcrumbs adentro del hero (variant photo). Minor B
+            del audit: omitir cuando hay solo 1 item (region) — el h1
+            del hero ya muestra el nombre, breadcrumb de 1 item es
+            redundante y agrega ruido visual sobre la foto.
+          */}
+          {breadcrumbs.length > 1 && (
             <Breadcrumbs
               items={breadcrumbs}
               variant="photo"
@@ -253,6 +267,7 @@ function GeoHeroWithPhoto({
                 {eyebrow}
               </p>
               <h1
+                id={GEO_HERO_H1_ID}
                 className={cn(
                   "font-display font-semibold",
                   "[letter-spacing:var(--tracking-tight)]",
