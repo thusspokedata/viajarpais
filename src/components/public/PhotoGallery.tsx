@@ -381,6 +381,15 @@ function GalleryLightbox({
             "data-[state=open]:animate-[vp-scale-in_var(--duration-base)_var(--ease-emphasized)]",
           )}
         >
+          {/*
+            Radix Dialog requiere un Dialog.Title para a11y (screen
+            readers anuncian el modal con el title). El visual ya
+            tiene un aria-label en Content + counter top-left, asi
+            que el title puro es redundante visualmente — lo ponemos
+            sr-only. Mismo texto que el ariaLabel para coherencia.
+          */}
+          <Dialog.Title className="sr-only">{ariaLabel}</Dialog.Title>
+
           {/* Top bar — counter + close */}
           <div
             className={cn(
