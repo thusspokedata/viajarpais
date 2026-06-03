@@ -1,7 +1,7 @@
 import * as React from "react";
-import Image from "next/image";
 import { cn } from "@/components/ui";
 import { Breadcrumbs, type Crumb } from "./Breadcrumbs";
+import { HeroPhotoImage } from "./HeroPhotoImage";
 
 /*
   <GeoHero /> — pattern v0.4-a §1 del handoff.
@@ -194,15 +194,14 @@ function GeoHeroWithPhoto({
           } as React.CSSProperties
         }
       >
-        {/* Imagen full-bleed. priority + fetchPriority="high" para LCP. */}
-        <Image
-          src={imageUrl!}
-          alt={computedAlt}
-          fill
-          priority
-          sizes="(max-width: 640px) 100vw, (max-width: 1120px) 100vw, 1120px"
-          className="object-cover"
-        />
+        {/*
+          Imagen full-bleed. priority + fetchPriority="high" para LCP.
+          HeroPhotoImage es un wrapper client que, cuando hay
+          PhotoGallery provider arriba con > 1 imagenes, hace toda la
+          imagen clickeable para abrir el lightbox (M7 fix). Cuando no
+          hay galeria, renderea Image simple sin handler.
+        */}
+        <HeroPhotoImage src={imageUrl!} alt={computedAlt} />
 
         {/* Scrim degradado. oklch oscuro con stops del handoff. */}
         <div

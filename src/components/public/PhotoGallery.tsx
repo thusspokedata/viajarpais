@@ -133,6 +133,16 @@ export function useGallery(): GalleryContextValue {
   return ctx;
 }
 
+/**
+ * Variante no-throwing del hook — devuelve null si no hay provider.
+ * Util para componentes que opcionalmente abren la galeria pero
+ * que tambien deben renderear cuando el padre no es PhotoGallery
+ * (ej. HeroPhotoImage en una pagina sin >1 fotos).
+ */
+export function useGalleryOptional(): GalleryContextValue | null {
+  return React.useContext(GalleryContext);
+}
+
 export function PhotoGallery({
   images,
   initialIndex = 0,

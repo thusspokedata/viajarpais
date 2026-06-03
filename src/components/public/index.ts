@@ -32,10 +32,15 @@ export {
   PhotoGallery,
   GalleryTrigger,
   useGallery,
+  useGalleryOptional,
   type GalleryImage,
   type PhotoGalleryProps,
   type GalleryTriggerProps,
 } from "./PhotoGallery";
+export {
+  HeroPhotoImage,
+  type HeroPhotoImageProps,
+} from "./HeroPhotoImage";
 export {
   GeoPageLayout,
   type GeoPageLayoutProps,
