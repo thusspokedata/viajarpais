@@ -41,3 +41,4 @@ export {
   type GeoPageLayoutProps,
   type GeoPageLayoutI18n,
 } from "./GeoPageLayout";
+export { JsonLd, type JsonLdProps } from "./JsonLd";

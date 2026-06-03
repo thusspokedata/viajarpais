@@ -7,6 +7,11 @@ import { TranslationDisclaimer } from "./TranslationDisclaimer";
 import { PublicEmptyState } from "./PublicEmptyState";
 import { PlaceCard, PlaceSection } from "./PlaceCard";
 import { PhotoGallery, GalleryTrigger } from "./PhotoGallery";
+import { JsonLd } from "./JsonLd";
+import {
+  buildGeoJsonLd,
+  buildBreadcrumbJsonLd,
+} from "@/lib/public/seo";
 import type { GeoNode, SupportedLocale } from "@/lib/public/geoLoader";
 
 /*
@@ -119,12 +124,21 @@ export function GeoPageLayout({
       ? node.parents[node.parents.length - 2]
       : undefined;
 
+  // JSON-LD estructurado: schema del nivel + BreadcrumbList. Se
+  // emite como array de scripts. La sanitization de `</script>`
+  // injection vive en <JsonLd /> (escape <).
+  const jsonLd = [
+    buildGeoJsonLd(node, locale),
+    buildBreadcrumbJsonLd(node, locale),
+  ];
+
   return (
     <PhotoGallery
       images={node.images}
       ariaLabel={i18n.galleryAriaLabel}
       labels={i18n.galleryLabels}
     >
+      <JsonLd data={jsonLd} />
       {!hasPhoto && (
         <Breadcrumbs
           items={node.breadcrumbs}

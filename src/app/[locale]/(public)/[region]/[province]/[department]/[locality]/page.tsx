@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { GeoPageLayout } from "@/components/public";
@@ -7,6 +8,7 @@ import {
   type SupportedLocale,
 } from "@/lib/public/geoLoader";
 import { buildGeoPageI18n } from "@/lib/public/geoPageI18n";
+import { buildGeoMetadata } from "@/lib/public/seo";
 import { routing } from "@/i18n/routing";
 
 /*
@@ -53,6 +55,23 @@ export async function generateStaticParams() {
       locality: l.locality,
     })),
   );
+}
+
+export async function generateMetadata({
+  params,
+}: Props): Promise<Metadata> {
+  const { locale, region, province, department, locality } = await params;
+  if (!isSupportedLocale(locale)) return {};
+  setRequestLocale(locale);
+  const node = await getLocalityNode(
+    region,
+    province,
+    department,
+    locality,
+    locale,
+  );
+  if (!node) return {};
+  return buildGeoMetadata(node, locale);
 }
 
 export default async function LocalityPage({ params }: Props) {
