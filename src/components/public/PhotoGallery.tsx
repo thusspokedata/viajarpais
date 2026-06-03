@@ -307,6 +307,44 @@ function GalleryLightbox({
     });
   }, [index, isOpen]);
 
+  /*
+    Browser back-button cierra el lightbox (no navega afuera).
+
+    Handoff §"Casos edge": "Lightbox abierto + back del browser →
+    Cerrar lightbox en popstate, no navegar fuera". Especialmente en
+    mobile (Android Chrome/iOS Safari) el gesto back es la forma
+    estandar de cerrar modals.
+
+    Pattern:
+    1. Al abrir, pushState({lightbox: true}) — empuja una entrada de
+       history nuestra. Marker en `state.lightbox` para distinguirla.
+    2. Listener popstate: cuando el browser fire popstate (el usuario
+       hizo back), la siguiente state es la previa SIN nuestro
+       marker. Cerramos el lightbox.
+    3. Cleanup: cuando el lightbox cierra por Esc/X (no por popstate),
+       hacemos history.back() para popear nuestro marker — sino la
+       URL del usuario queda contaminada con una entrada extra.
+       Distinguimos los dos paths chequeando state.lightbox: si es
+       true, la cleanup viene de un close manual y debemos popear;
+       si es false, el browser ya nos sacó del state via popstate y
+       no debemos popear de nuevo (que iria un paso atras del que
+       el usuario queria).
+  */
+  React.useEffect(() => {
+    if (!isOpen || typeof window === "undefined") return;
+
+    window.history.pushState({ lightbox: true }, "");
+    const handler = () => close();
+    window.addEventListener("popstate", handler);
+
+    return () => {
+      window.removeEventListener("popstate", handler);
+      if (window.history.state?.lightbox === true) {
+        window.history.back();
+      }
+    };
+  }, [isOpen, close]);
+
   // Swipe mobile: pointer events directos. delta > 40 = cambio.
   const swipeRef = React.useRef<{ startX: number } | null>(null);
   const onPointerDown = (e: React.PointerEvent) => {
