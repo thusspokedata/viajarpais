@@ -64,8 +64,12 @@ export async function buildAllPaths(
     case "region": {
       // identifier = region.code (per findEntityIdentifier).
       // Public URL: `/{code}`. Tag: region:{code}.
+      // No existe `/admin/geo/regions` como lista standalone
+      // (solo el `/admin/geo` index agregado); el detail se cubre
+      // con `/admin/geo/regions/${code}`.
       return {
         paths: [
+          "/admin/geo",
           `/admin/geo/regions/${identifier}`,
           ...expandLocalePaths(`/${identifier}`),
         ],
@@ -83,16 +87,29 @@ export async function buildAllPaths(
           region: { select: { code: true } },
         },
       });
-      const adminPath = `/admin/geo/provinces/${identifier}`;
+      const adminListPath = "/admin/geo/provinces";
+      const adminDetailPath = `/admin/geo/provinces/${identifier}`;
       if (!province) {
-        // Fallback: sin lookup no tenemos slug -> tag con code como
-        // best-effort. El loader nunca matcheara este tag, pero el
-        // admin recibe su revalidate.
-        return { paths: [adminPath], tags: [`province:${identifier}`] };
+        // Fail-loud: el lookup deberia siempre encontrar la entity
+        // que se acaba de mutar — si no, hay un bug upstream (race
+        // con delete, o identifier mal). Emitimos console.error con
+        // contexto y devolvemos tags vacio (el tag por code no
+        // matchea con el formato slug del loader, asi que es peor
+        // ensuciar el cache de tags con basura).
+        console.error("[buildAllPaths] Province lookup failed", {
+          entityType: "province",
+          identifier,
+          impact: "public revalidate skipped (no slug to build tag/URL)",
+        });
+        return {
+          paths: [adminListPath, adminDetailPath],
+          tags: [],
+        };
       }
       return {
         paths: [
-          adminPath,
+          adminListPath,
+          adminDetailPath,
           ...expandLocalePaths(
             `/${province.region.code}/${province.slug}`,
           ),
@@ -117,16 +134,23 @@ export async function buildAllPaths(
           },
         },
       });
-      const adminPath = `/admin/geo/departments/${identifier}`;
+      const adminListPath = "/admin/geo/departments";
+      const adminDetailPath = `/admin/geo/departments/${identifier}`;
       if (!department) {
+        console.error("[buildAllPaths] Department lookup failed", {
+          entityType: "department",
+          identifier,
+          impact: "public revalidate skipped (no slug to build tag/URL)",
+        });
         return {
-          paths: [adminPath],
-          tags: [`department:${identifier}`],
+          paths: [adminListPath, adminDetailPath],
+          tags: [],
         };
       }
       return {
         paths: [
-          adminPath,
+          adminListPath,
+          adminDetailPath,
           ...expandLocalePaths(
             `/${department.province.region.code}/${department.province.slug}/${department.slug}`,
           ),
@@ -156,13 +180,23 @@ export async function buildAllPaths(
           },
         },
       });
-      const adminPath = `/admin/geo/localities/${identifier}`;
+      const adminListPath = "/admin/geo/localities";
+      const adminDetailPath = `/admin/geo/localities/${identifier}`;
       if (!locality) {
-        return { paths: [adminPath], tags: [`locality:${identifier}`] };
+        console.error("[buildAllPaths] Locality lookup failed", {
+          entityType: "locality",
+          identifier,
+          impact: "public revalidate skipped (no slug to build tag/URL)",
+        });
+        return {
+          paths: [adminListPath, adminDetailPath],
+          tags: [],
+        };
       }
       return {
         paths: [
-          adminPath,
+          adminListPath,
+          adminDetailPath,
           ...expandLocalePaths(
             `/${locality.department.province.region.code}/${locality.department.province.slug}/${locality.department.slug}/${locality.slug}`,
           ),
@@ -174,11 +208,52 @@ export async function buildAllPaths(
 
     case "listing": {
       // identifier = listing.id. Sin pagina publica detail en
-      // v0.4-a — solo admin path + tag de consistencia (no usado
-      // hoy por ningun loader).
+      // v0.4-a, pero los listings PUBLISHED aparecen en las paginas
+      // de los 4 niveles geo a los que pertenecen (via
+      // `loadListingsForLevel` + counts en PlaceCard). Cuando una
+      // listing cambia (tier, verified, status, contenido editorial,
+      // imagen) los caches geo de los 4 niveles deben revalidarse
+      // para que el order/count/preview reflejen el cambio.
+      //
+      // Lookup de los 4 FKs denormalizados (`regionId`, `provinceId`,
+      // `departmentId`, `localityId`) — Prisma resuelve en 1 query.
+      // Si el listing no existe (deleted entre mutation y revalidate),
+      // fail-loud + skip tags.
+      const listing = await prisma.listing.findUnique({
+        where: { id: identifier },
+        select: {
+          region: { select: { code: true } },
+          province: { select: { slug: true } },
+          department: { select: { slug: true } },
+          locality: { select: { slug: true } },
+        },
+      });
+      const adminListPath = "/admin/listings";
+      const adminDetailPath = `/admin/listings/${identifier}`;
+      if (!listing) {
+        console.error("[buildAllPaths] Listing lookup failed", {
+          entityType: "listing",
+          identifier,
+          impact: "public revalidate skipped (no geo FKs to tag)",
+        });
+        return {
+          paths: [adminListPath, adminDetailPath],
+          tags: [],
+        };
+      }
       return {
-        paths: [`/admin/listings/${identifier}`],
-        tags: [`listing:${identifier}`],
+        paths: [adminListPath, adminDetailPath],
+        // Tags de los 4 niveles geo — invalidan los caches publicos
+        // del region/province/department/locality que contienen
+        // esta ficha. Cuando se promueve a FEATURED o se publica,
+        // estos tags hacen que el order top-featured y los counts
+        // se refresquen sin esperar el revalidate de 24h.
+        tags: [
+          `region:${listing.region.code}`,
+          `province:${listing.province.slug}`,
+          `department:${listing.department.slug}`,
+          `locality:${listing.locality.slug}`,
+        ],
       };
     }
   }
