@@ -12,11 +12,15 @@ import type { ListingCardProps, ListingTier } from "@/components/public";
   publicas (region/province/department/locality). Cada nivel tiene
   su propio loader cacheado con unstable_cache + tags granulares.
 
-  Tags:
-  - region:{code}
+  Tags (consistente con buildAllPaths para wire de revalidacion):
+  - region:{code}        (region: code == slug, no hay slug field)
   - province:{slug}
-  - department:{code}      (code es unico globalmente)
-  - locality:{code}        (code es unico globalmente)
+  - department:{slug}
+  - locality:{slug}
+  Para 3 niveles deeper, usamos slug porque es el unico dato
+  disponible en el call site (la pagina llega con slug desde la
+  URL). buildAllPaths, llamado desde admin con identifier=code,
+  resuelve el slug via Prisma lookup y emite el mismo tag.
 
   Revalidation:
   - revalidate: 86400 (24h) por defecto en cada cache.

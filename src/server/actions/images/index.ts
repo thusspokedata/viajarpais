@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
+import { buildAllPaths } from "@/lib/public/buildAllPaths";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
@@ -87,22 +88,25 @@ const sanitizedShortText = z
   });
 
 /**
- * Construye las paths admin a revalidate después de cualquier mutación
- * de imágenes. Cada entity tiene su propia ruta de edición.
+ * Helper para revalidar paths + tags despues de cualquier mutacion
+ * de imagenes. Delega a buildAllPaths (compartido con translations
+ * actions) que resuelve admin paths + 3 publicos (es/en/pt-BR) +
+ * tags level:slug para el data cache de geoLoader.
+ *
+ * Pre-v0.4-a este helper era `buildAdminPaths` local que solo
+ * revalidaba paths admin. Cerrar deuda M-4 (revalidacion publica)
+ * del backlog tecnico.
  */
-function buildAdminPaths(type: EntityType, identifier: string): string[] {
-  switch (type) {
-    case "region":
-      return [`/admin/geo/regions/${identifier}`];
-    case "province":
-      return [`/admin/geo/provinces/${identifier}`];
-    case "department":
-      return [`/admin/geo/departments/${identifier}`];
-    case "locality":
-      return [`/admin/geo/localities/${identifier}`];
-    case "listing":
-      return [`/admin/listings/${identifier}`];
-  }
+async function revalidateForEntity(
+  type: EntityType,
+  identifier: string,
+): Promise<void> {
+  const { paths, tags } = await buildAllPaths(type, identifier);
+  paths.forEach((p) => revalidatePath(p));
+  // updateTag (Next 16): variante simple para read-your-own-writes
+  // desde un Server Action. Es el reemplazo del legacy revalidateTag
+  // que ahora requiere `profile: CacheLifeConfig` explicito.
+  tags.forEach((t) => updateTag(t));
 }
 
 export type ImagesActionResult<T = void> =
@@ -450,9 +454,7 @@ export async function saveImageMetadata(
       },
     );
 
-    buildAdminPaths(data.entityType, identifier).forEach((p) =>
-      revalidatePath(p),
-    );
+    await revalidateForEntity(data.entityType, identifier);
     logImageAction({
       action: "saveImageMetadata",
       actorId: user.id,
@@ -565,9 +567,7 @@ export async function updateImage(
     ...(altText !== undefined ? { altText } : {}),
   });
 
-  buildAdminPaths(entityType, img.parentIdentifier).forEach((p) =>
-    revalidatePath(p),
-  );
+  await revalidateForEntity(entityType, img.parentIdentifier);
   logImageAction({
     action: "updateImage",
     actorId: user.id,
@@ -673,9 +673,7 @@ export async function setImageAsPrimary(
     throw err;
   }
 
-  buildAdminPaths(entityType, img.parentIdentifier).forEach((p) =>
-    revalidatePath(p),
-  );
+  await revalidateForEntity(entityType, img.parentIdentifier);
   logImageAction({
     action: "setImageAsPrimary",
     actorId: user.id,
@@ -814,7 +812,7 @@ export async function reorderImages(
     throw err;
   }
 
-  buildAdminPaths(entityType, identifier).forEach((p) => revalidatePath(p));
+  await revalidateForEntity(entityType, identifier);
   logImageAction({
     action: "reorderImages",
     actorId: user.id,
@@ -937,9 +935,7 @@ export async function deleteImage(
     }
   }
 
-  buildAdminPaths(entityType, img.parentIdentifier).forEach((p) =>
-    revalidatePath(p),
-  );
+  await revalidateForEntity(entityType, img.parentIdentifier);
   logImageAction({
     action: "deleteImage",
     actorId: user.id,
