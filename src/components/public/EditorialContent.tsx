@@ -220,11 +220,18 @@ type AnchorProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
 };
 
 function ExternalSafeAnchor({ href, children, ...rest }: AnchorProps) {
-  // Links externos: protocolo absoluto detectado (http/https). Los
-  // mailto: no llevan target=_blank (mailto abre el cliente por
-  // default, no una nueva pestana).
+  // Links externos: protocolo absoluto detectado (http/https) o
+  // protocol-relative (`//evil.com`). Los mailto: no llevan target=_blank
+  // (mailto abre el cliente por default, no una nueva pestana).
+  //
+  // M1 fix: agregar `href.startsWith("//")` al check. Antes, un editor
+  // que escribiera `[texto](//evil.com)` producia <a href="//evil.com">
+  // SIN target=_blank y SIN rel="nofollow noopener noreferrer" —
+  // navegacion same-tab al dominio externo + Referer header leakeado.
+  // rehype-sanitize tampoco lo filtra (URL relativa al protocol = allowed).
   const isExternal =
-    typeof href === "string" && /^https?:\/\//i.test(href);
+    typeof href === "string" &&
+    (/^https?:\/\//i.test(href) || href.startsWith("//"));
   return (
     <a
       href={href}

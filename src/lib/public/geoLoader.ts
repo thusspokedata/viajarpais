@@ -162,8 +162,20 @@ export interface PlaceChildData {
    ================================================================ */
 
 /**
- * Selecciona el campo i18n correcto. Si el target esta vacio,
+ * Selecciona el campo i18n correcto. Si el target es null/undefined,
  * fallback a Es (siempre presente).
+ *
+ * M5 fix: usa `??` (nullish) en lugar de `||` (truthy). Si en algun
+ * momento el form admin permite vaciar explicitamente un campo
+ * (`descriptionEn = ""`), el operador `||` lo confundia con falsy y
+ * caia al fallback ES — perdiendose la decision editorial de "este
+ * campo no aplica en este idioma". `??` distingue null/undefined de
+ * empty string.
+ *
+ * Follow-up (fuera de scope del PR): el form admin deberia validar en
+ * Zod que `""` se persiste como `null` para que la decision quede
+ * canonica en DB. Sin esa validacion, hoy es teorico — el admin form
+ * de v0.3 usa controles que devuelven null para vacios.
  */
 function pickLocalizedField<T extends string | null | undefined>(
   es: T,
@@ -172,8 +184,8 @@ function pickLocalizedField<T extends string | null | undefined>(
   locale: SupportedLocale,
 ): T {
   if (locale === "es") return es;
-  if (locale === "en") return en || es;
-  return ptBr || es;
+  if (locale === "en") return en ?? es;
+  return ptBr ?? es;
 }
 
 function pickLocalizedSource(
