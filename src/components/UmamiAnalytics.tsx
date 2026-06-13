@@ -54,16 +54,38 @@ import Script from "next/script";
   Sin esto, en enforcement el script no postea pageviews.
 */
 
-const UMAMI_SRC =
-  process.env.NEXT_PUBLIC_UMAMI_SRC ??
-  "https://umami.lahuelladelcaminante.de/script.js";
+/*
+  envOrDefault — usa `||` semantics via trim check en lugar de `??`.
 
-const UMAMI_WEBSITE_ID =
-  process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ??
-  "c4e449ca-23ed-4399-a599-96d39c661328";
+  Las env vars de Umami en `.env.example` se versionan VACIAS
+  (`NEXT_PUBLIC_UMAMI_SRC=`). Si alguien copia `.env.example` -> `.env`
+  y buildea, `process.env.NEXT_PUBLIC_UMAMI_SRC` llega como `""`, no
+  como undefined. Con `??` el `""` se trataba como valor valido y
+  bypaseaba el default — script roto (`src=""`), tracking apagado
+  silenciosamente (`website-id=""` lo cacha el guard), o `data-domains=""`.
 
-const UMAMI_DOMAINS =
-  process.env.NEXT_PUBLIC_UMAMI_DOMAINS ?? "viajarpais.com.ar";
+  `value?.trim() ? value : fallback` trata vacio/whitespace como "no
+  seteado" y cae al default. Distinto al caso de `pickLocalizedField`
+  en geoLoader (v0.4-a) donde `""` SI es un valor intencional — aca
+  el `""` viene de un example copiado, no de una decision editorial.
+*/
+const envOrDefault = (value: string | undefined, fallback: string) =>
+  value?.trim() ? value : fallback;
+
+const UMAMI_SRC = envOrDefault(
+  process.env.NEXT_PUBLIC_UMAMI_SRC,
+  "https://umami.lahuelladelcaminante.de/script.js",
+);
+
+const UMAMI_WEBSITE_ID = envOrDefault(
+  process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID,
+  "c4e449ca-23ed-4399-a599-96d39c661328",
+);
+
+const UMAMI_DOMAINS = envOrDefault(
+  process.env.NEXT_PUBLIC_UMAMI_DOMAINS,
+  "viajarpais.com.ar",
+);
 
 export function UmamiAnalytics() {
   if (process.env.NODE_ENV !== "production") return null;
