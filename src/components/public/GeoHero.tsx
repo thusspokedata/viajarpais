@@ -407,6 +407,7 @@ function GeoHeroTypographic({
           </p>
 
           <h1
+            id={GEO_HERO_H1_ID}
             className={cn(
               "font-display font-semibold",
               "[letter-spacing:var(--tracking-tight)]",
