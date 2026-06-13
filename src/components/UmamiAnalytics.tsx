@@ -18,8 +18,11 @@ import Script from "next/script";
      accidentalmente se sirve desde IP, preview, otro dominio, etc.,
      Umami descarta las requests del lado del servidor.
 
-  3. Si no hay `NEXT_PUBLIC_UMAMI_WEBSITE_ID` ni el default
-     hardcodeado (caso fork sin Umami), el componente returns null.
+  2b. `data-domains` + el gate de NODE_ENV son las unicas defensas.
+      El website-id SIEMPRE tiene valor (env o default hardcodeado),
+      asi que un fork que quiera deshabilitar Umami tiene que cambiar
+      el CODIGO (e.g. no montar <UmamiAnalytics /> en el layout, o
+      gatearlo por otra env var), no basta con vaciar la env var.
 
   Privacidad: Umami es cookieless por diseno — no setea cookies, no
   guarda IPs, no construye perfiles personales. La pagina de
@@ -70,7 +73,7 @@ import Script from "next/script";
   el `""` viene de un example copiado, no de una decision editorial.
 */
 const envOrDefault = (value: string | undefined, fallback: string) =>
-  value?.trim() ? value : fallback;
+  value?.trim() || fallback;
 
 const UMAMI_SRC = envOrDefault(
   process.env.NEXT_PUBLIC_UMAMI_SRC,
@@ -89,7 +92,6 @@ const UMAMI_DOMAINS = envOrDefault(
 
 export function UmamiAnalytics() {
   if (process.env.NODE_ENV !== "production") return null;
-  if (!UMAMI_WEBSITE_ID) return null;
 
   return (
     <Script
