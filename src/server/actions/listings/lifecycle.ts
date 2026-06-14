@@ -1,9 +1,28 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/authz";
+import { buildAllPaths } from "@/lib/public/buildAllPaths";
+
+/**
+ * Invalida los caches admin + tags geo (region/province/department/
+ * locality) que contienen esta ficha. buildAllPaths hace UN query
+ * Prisma para resolver los 4 FKs denormalizados.
+ *
+ * Antes del fix H1, las server actions de lifecycle solo
+ * invalidaban paths admin — las paginas publicas /es/cuyo/mendoza
+ * etc. quedaban con cache stale hasta el revalidate ISR de 24h.
+ * Ahora una ficha publicada/archived/promovida a FEATURED se
+ * refleja inmediatamente en el order top-featured y los counts del
+ * PlaceCard.
+ */
+async function revalidateListing(id: string): Promise<void> {
+  const { paths, tags } = await buildAllPaths("listing", id);
+  paths.forEach((p) => revalidatePath(p));
+  tags.forEach((t) => updateTag(t));
+}
 
 /*
   TODO (v0.2.b — Cloudinary): cuando se implemente `hardDeleteListing`,
@@ -62,8 +81,7 @@ export async function publishListing(id: string): Promise<LifecycleResult> {
     throw err;
   }
 
-  revalidatePath("/admin/listings");
-  revalidatePath(`/admin/listings/${id}`);
+  await revalidateListing(id);
   return { ok: true };
 }
 
@@ -93,8 +111,7 @@ export async function unpublishListing(id: string): Promise<LifecycleResult> {
     throw err;
   }
 
-  revalidatePath("/admin/listings");
-  revalidatePath(`/admin/listings/${id}`);
+  await revalidateListing(id);
   return { ok: true };
 }
 
@@ -114,8 +131,7 @@ export async function archiveListing(id: string): Promise<LifecycleResult> {
     throw err;
   }
 
-  revalidatePath("/admin/listings");
-  revalidatePath(`/admin/listings/${id}`);
+  await revalidateListing(id);
   return { ok: true };
 }
 
@@ -135,8 +151,7 @@ export async function restoreListing(id: string): Promise<LifecycleResult> {
     throw err;
   }
 
-  revalidatePath("/admin/listings");
-  revalidatePath(`/admin/listings/${id}`);
+  await revalidateListing(id);
   return { ok: true };
 }
 
@@ -172,8 +187,7 @@ export async function verifyListing(id: string): Promise<LifecycleResult> {
     throw err;
   }
 
-  revalidatePath("/admin/listings");
-  revalidatePath(`/admin/listings/${id}`);
+  await revalidateListing(id);
   return { ok: true };
 }
 
@@ -194,7 +208,6 @@ export async function unverifyListing(id: string): Promise<LifecycleResult> {
     throw err;
   }
 
-  revalidatePath("/admin/listings");
-  revalidatePath(`/admin/listings/${id}`);
+  await revalidateListing(id);
   return { ok: true };
 }

@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireRole } from "@/lib/authz";
 import { type TranslationTarget } from "@/lib/deepl";
@@ -12,6 +12,7 @@ import {
   type TranslationStatus,
 } from "@/lib/translations/orchestrator";
 import { type EntityType } from "@/lib/translations/dispatcher";
+import { buildAllPaths } from "@/lib/public/buildAllPaths";
 
 /*
   Server actions del panel de traducciones. 3 verbos:
@@ -50,31 +51,24 @@ const FIELD_VALUES = [
 ] as const satisfies readonly TranslatableField[];
 
 /**
- * Cada nivel se rutea por `code` (Georef ID) o por `id` (Listing).
- * Cuando aplica revalidate al panel, necesitamos saber el path que
- * sirve la página. El caller pasa `code` (geo) o `id` (Listing) en el
- * payload — esta función arma las paths admin correspondientes.
+ * Helper para revalidar paths + tags despues de cualquier mutacion
+ * de contenido editorial (panel de traducciones). Delega a
+ * buildAllPaths (compartido con images actions) que resuelve admin
+ * paths + 3 publicos (es/en/pt-BR) + tags level:slug para el data
+ * cache de geoLoader.
  *
- * Pasamos `code` opcional porque la server action solo recibe el
- * `entityId` (cuid) — el caller del panel del Listing pasa null para
- * `code`, y construimos el path con el id directamente.
+ * Pre-v0.4-a este helper era `buildAdminPaths` local que solo
+ * revalidaba paths admin. Cerrar deuda M-4 del backlog tecnico.
  */
-function buildAdminPaths(
+async function revalidateForEntity(
   type: EntityType,
   identifier: string,
-): string[] {
-  switch (type) {
-    case "region":
-      return [`/admin/geo/regions/${identifier}`];
-    case "province":
-      return [`/admin/geo/provinces/${identifier}`];
-    case "department":
-      return [`/admin/geo/departments/${identifier}`];
-    case "locality":
-      return [`/admin/geo/localities/${identifier}`];
-    case "listing":
-      return [`/admin/listings/${identifier}`];
-  }
+): Promise<void> {
+  const { paths, tags } = await buildAllPaths(type, identifier);
+  paths.forEach((p) => revalidatePath(p));
+  // updateTag (Next 16): variante simple para read-your-own-writes
+  // desde un Server Action.
+  tags.forEach((t) => updateTag(t));
 }
 
 const BasePayloadSchema = z.object({
@@ -114,9 +108,7 @@ export async function retryPendingTranslations(
     const status = await runRetryPending({ type: entityType, id: entityId });
 
     if (revalidateIdentifier) {
-      buildAdminPaths(entityType, revalidateIdentifier).forEach((p) =>
-        revalidatePath(p),
-      );
+      await revalidateForEntity(entityType, revalidateIdentifier);
     }
 
     return { ok: true, status };
@@ -164,9 +156,7 @@ export async function forceRetranslateField(
     });
 
     if (revalidateIdentifier) {
-      buildAdminPaths(entityType, revalidateIdentifier).forEach((p) =>
-        revalidatePath(p),
-      );
+      await revalidateForEntity(entityType, revalidateIdentifier);
     }
 
     return { ok: true, status };
@@ -246,9 +236,7 @@ export async function markTranslationManuallyEdited(
     });
 
     if (revalidateIdentifier) {
-      buildAdminPaths(entityType, revalidateIdentifier).forEach((p) =>
-        revalidatePath(p),
-      );
+      await revalidateForEntity(entityType, revalidateIdentifier);
     }
 
     // Marcar como REVIEWED no involucra DeepL — devolvemos `skipped`

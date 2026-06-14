@@ -66,4 +66,5 @@ export {
   Bus,
   ShoppingBag,
   Waves,
+  Languages,
 } from "lucide-react";

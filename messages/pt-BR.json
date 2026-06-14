@@ -71,5 +71,48 @@
     "regionsCount": "Regiões",
     "usersCount": "Usuários",
     "currentLocale": "Idioma atual"
+  },
+  "Public": {
+    "breadcrumbsLabel": "Trilha de navegação",
+    "galleryAriaLabel": "Galeria de fotos",
+    "galleryClose": "Fechar galeria",
+    "galleryPrev": "Foto anterior",
+    "galleryNext": "Próxima foto",
+    "galleryThumbPrefix": "Foto",
+    "viewGallery": "Ver galeria · {count}",
+    "openGallery": "Abrir galeria de fotos",
+    "breadcrumbBack": "Voltar para {name}",
+    "eyebrow": {
+      "region": "REGIÃO",
+      "province": "PROVÍNCIA",
+      "department": "DEPARTAMENTO",
+      "locality": "LOCALIDADE"
+    },
+    "childrenTitle": {
+      "provinces": "Províncias dentro",
+      "departments": "Departamentos dentro",
+      "localities": "Localidades dentro"
+    },
+    "levelSingular": {
+      "region": "região",
+      "province": "província",
+      "department": "departamento",
+      "locality": "localidade"
+    },
+    "emptyTitle": "Ainda estamos construindo esta página",
+    "emptyDescription": "Ainda não carregamos informações nem fotos de {name}. Estamos somando cada {level} aos poucos, com material verificado.",
+    "emptyBackTo": "Voltar para {name}",
+    "emptyExplore": "Explorar {name}",
+    "listingsCount": "{count, plural, one {# ficha} other {# fichas}}",
+    "localitiesCount": "{count, plural, one {# localidade} other {# localidades}}",
+    "noListingsYet": "Ainda sem fichas",
+    "noPhotoLabel": "sem foto ainda",
+    "fallbackMetaDescription": "Descubra {name} no ViajarPaís — o diretório nacional do turismo argentino, com informações verificadas.",
+    "translationDisclaimer": {
+      "leadStrong": "Traduzido automaticamente",
+      "leadMuted": " — texto original em espanhol",
+      "tooltipQuestion": "Mais informações sobre esta tradução",
+      "tooltipBody": "Esta tradução foi gerada automaticamente com DeepL. Nossa equipe editorial revisa as traduções das principais regiões e províncias."
+    }
   }
 }

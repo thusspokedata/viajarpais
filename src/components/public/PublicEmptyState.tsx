@@ -1,0 +1,123 @@
+import * as React from "react";
+import { MapPin, ChevronLeft } from "@/components/ui/icons";
+import { EmptyState, buttonVariants, cn } from "@/components/ui";
+import { Link } from "@/i18n/navigation";
+
+/*
+  <PublicEmptyState /> — pattern v0.4-a §6 del handoff.
+
+  Composicion del <EmptyState /> existente (no es un componente
+  nuevo desde cero). Se monta cuando un nivel geografico existe
+  pero NO tiene tagline ni description ni galeria ni fichas ni
+  sub-niveles con fichas.
+
+  Diferencias contra la variante admin del mismo EmptyState:
+  - size="lg" (es el contenido principal de la pagina, no un caso
+    secundario).
+  - Icono MapPin (lugar generico).
+  - Sin CTA "Crear primera ficha" (eso es admin-only). En su lugar
+    botones de navegacion al padre/abuelo: "Volver a {padre}"
+    (secondary) + "Explorar {abuelo}" (ghost).
+  - Tono honesto: "Todavia estamos construyendo esta pagina" en
+    lugar del operativo "No hay nada cargado todavia".
+
+  La pagina compone los textos (i18n + interpolacion del name de
+  padre/abuelo) y los pasa como props. PublicEmptyState NO conoce
+  i18n — toda la UX la maneja el caller. Esta separacion permite
+  que la pagina decida copy contextual segun nivel (region vs
+  locality) sin que el componente arbitre.
+
+  Server Component — EmptyState es client pero la composicion
+  no requiere estado en el wrapper.
+*/
+
+export interface PublicEmptyStateProps {
+  /**
+   * Titulo principal. Ej. "Todavia estamos construyendo esta pagina".
+   */
+  title: string;
+  /**
+   * Descripcion editorial. Pasada ya interpolada con name del nivel
+   * y level label apropiado.
+   */
+  description?: string;
+  /**
+   * Navegacion al padre directo. Si no se pasa, NO se renderiza
+   * el boton "Volver a ..." (caso region sin padre — no aplica,
+   * region siempre tiene padre conceptual via home).
+   */
+  parent?: {
+    name: string;
+    href: string;
+    /** Texto del boton, ej. "Volver a Mendoza". Compuesto por la pagina. */
+    label: string;
+  };
+  /**
+   * Navegacion al abuelo. Opcional. Para region/province a menudo
+   * no aplica (region no tiene abuelo geografico, province podria
+   * apuntar al region).
+   */
+  grandparent?: {
+    name: string;
+    href: string;
+    label: string;
+  };
+  className?: string;
+}
+
+export function PublicEmptyState({
+  title,
+  description,
+  parent,
+  grandparent,
+  className,
+}: PublicEmptyStateProps) {
+  return (
+    <EmptyState
+      size="lg"
+      icon={<MapPin className="h-6 w-6" />}
+      title={title}
+      description={description}
+      action={
+        (parent || grandparent) && (
+          /*
+            Estilamos los <Link> directo con `buttonVariants` en lugar
+            de `<Button asChild>`. El patron asChild de Button rompe
+            con Radix Slot: Button renderea {leadingIcon}{children}
+            {trailingIcon} y aunque los iconos sean undefined, JSX crea
+            un array de 3 hijos -> React.Children.only del Slot explota
+            (500 en paginas geo totalmente vacias). buttonVariants para
+            estilar Links es el patron que el propio Button.tsx
+            documenta para este caso.
+
+            Sin aria-label hardcodeado: el texto visible (`label`) ya
+            viene localizado desde la pagina ("Volver a Mendoza" /
+            "Back to Mendoza") y es el accessible name del Link. Un
+            aria-label en espanol fijo daba inconsistencia de idioma
+            para screen readers en EN/PT-BR (CodeRabbit).
+          */
+          <div className="flex flex-wrap items-center justify-center gap-[var(--space-2)]">
+            {parent && (
+              <Link
+                href={parent.href}
+                className={cn(buttonVariants({ variant: "secondary" }))}
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                <span>{parent.label}</span>
+              </Link>
+            )}
+            {grandparent && (
+              <Link
+                href={grandparent.href}
+                className={cn(buttonVariants({ variant: "ghost" }))}
+              >
+                <span>{grandparent.label}</span>
+              </Link>
+            )}
+          </div>
+        )
+      }
+      className={className}
+    />
+  );
+}

@@ -97,8 +97,20 @@ respetar estas reglas sin excepción.
 
 - Slugs de regiones: `cuyo`, `noa`, `nea`, `centro`, `pampeana`, `patagonia`.
 - Slug de CABA: `caba` (no `ciudad-de-buenos-aires`).
-- URLs públicas: 2 niveles geo (provincia/localidad), departamento solo en DB y
-  filtros admin.
+- **URLs públicas — 4 niveles geo** (revisado v0.4-a, reemplaza la
+  decisión original de 2 niveles): las URLs públicas usan **los 4
+  niveles geográficos** `/{region}/{province}/{department}/{locality}`.
+  El cambio se hizo porque Claude Design diseñó 4 páginas
+  geográficas en el handoff de v0.4-a y producto confirmó que vale
+  el costo extra de URLs más largas + el SEO con `BreadcrumbList` +
+  `AdministrativeArea` JSON-LD. Department ahora tiene página propia
+  con contenido editorial cargable desde admin — no es solo un
+  nivel intermedio en DB.
+  - Region: `code` (e.g. `/cuyo`).
+  - Province/Department/Locality: `slug` (e.g. `/cuyo/mendoza/las-heras/uspallata`).
+  - Las páginas resuelven la cadena completa para evitar URLs
+    ambiguas (department.slug es `@@unique([provinceId, slug])`, no
+    global; locality.slug también).
 - Mapeo provincia → región: ver `prisma/seed.ts`.
 - Filtro de localidades de Georef: incluir `Localidad simple`,
   `Localidad compuesta`, `Componente de localidad compuesta`. Excluir `Entidad`.
@@ -187,46 +199,34 @@ contacto, redes) NO se traducen — son topónimos o datos puros.
 Variables de entorno previstas (ya en `.env.example` con valor vacío):
 `DEEPL_API_KEY`, `RESEND_API_KEY`.
 
-## Sanitización de Markdown del editor (deuda crítica hacia v0.4)
+## Sanitización de Markdown del editor — APLICADO en v0.4-a
 
-Los campos `descriptionEs/En/PtBr` y `taglineEs/En/PtBr` aceptan
-Markdown del editor (admin) y se persisten **sin sanitizar** en
-v0.3-geo-b. Zod solo valida longitud (max 5000 / 120). DeepL preserva
-HTML del input por defecto, así que las traducciones EN/PT-BR pueden
-contener cualquier cosa que el editor haya puesto en ES.
+Aplicado en el commit `feat(ui): editorialContent con react-markdown
+sanitizado` (PR v0.4-a). Lib elegida: **`react-markdown` +
+`rehype-sanitize`** (descartado el path original `marked` +
+`DOMPurify` porque agregaba un paso por HTML intermedio innecesario).
 
-**La sanitización es OBLIGATORIA en v0.4 cuando este contenido se
-renderice como HTML en `/[locale]/...` público.** Sin sanitización
-antes del render, cualquiera con rol EDITOR/ADMIN podría inyectar
-`<script>` o eventos JS y ejecutar XSS en cualquier visitante.
+Implementación:
+- `EditorialContent` (`src/components/public/EditorialContent.tsx`)
+  renderiza `descriptionEs/En/PtBr` con un schema explícito de
+  `rehype-sanitize` aplicado sobre el AST hast — ANTES del render
+  React. Sin paso por HTML stringificado.
+- Schema strictly allowlist: `p, h1, h2, h3, ul, ol, li, a, strong,
+  em, blockquote, br, hr`. Atributos en `<a>`: solo `href`, `title`,
+  `rel` (allowlist `nofollow|noopener|noreferrer`) y `target`
+  (allowlist `_blank`). Protocolos `href`: `http`, `https`, `mailto`.
+- Helper `markdownToPlainText` en `src/lib/public/sanitizeMarkdown.ts`
+  para extraer plain-text de markdown en metadata (OG description,
+  JSON-LD). NO es sanitization de seguridad — strip de sintaxis
+  visual para meta.
+- Cero `dangerouslySetInnerHTML` en el render del contenido editorial.
+  Único uso de `dangerouslySetInnerHTML` en el proyecto: `<JsonLd>`
+  para emitir scripts JSON-LD, con escape `</script>` defendido por
+  `safeJsonStringify`.
 
-**Libs recomendadas** (elegir una en v0.4):
-
-- `marked` (parse Markdown → HTML) + `isomorphic-dompurify` (sanitiza
-  HTML server-side con allowlist). Ventaja: API simple, dos pasos
-  claros, fácil de testear.
-- `react-markdown` + `rehype-sanitize` con el schema default (sin
-  `rehype-raw`). Ventaja: React-native, sin HTML intermedio.
-
-**NUNCA usar `rehype-raw` ni `dangerouslySetInnerHTML` sin un
-sanitizer interpuesto.** El repo hoy tiene 0 hits de
-`dangerouslySetInnerHTML` (grep confirmado); cualquier hit nuevo debe
-pasar por code review con foco en sanitización.
-
-**TODOs inline** marcados con `// XSS: ...` en los sitios donde el
-contenido se persiste sin sanitizar:
-
-- `src/server/actions/translations/index.ts` — `markTranslationManuallyEdited`.
-- `src/server/actions/geo/update.ts` — `performGeoUpdate` antes de
-  `runAutoTranslation`.
-- `src/server/actions/listings/update.ts` — antes de `runAutoTranslation`.
-- `src/server/actions/listings/create.ts` — antes de `runAutoTranslation`.
-- `src/lib/translations/orchestrator.ts` — `translateOne` antes de
-  persistir el output de DeepL.
-
-Si el contenido se renderea como HTML/Markdown en cualquier path
-antes de v0.4, **bloquear el PR** y agregar el pipeline de sanitización
-primero.
+Los `// XSS: ...` TODOs en server actions ya no son bloqueantes: el
+contenido editorial se persiste como-es y la sanitización pasa en el
+render. Se pueden remover en cleanup futuro.
 
 ## Backlog técnico de v0.3-geo-b (DeepL)
 
@@ -365,21 +365,24 @@ Schema reusable `sanitizedShortText` en
 store — el catch es upfront en el server action, no esperamos al
 render para escapar.
 
-**Lo que TODAVÍA falta para v0.4** (render público):
-- HTML tags arbitrarios (`<script>`, `<img onerror>`, etc.) siguen
-  siendo aceptables hoy en la longitud disponible (200 chars).
-- Markdown/HTML embebido en `description*` y `tagline*` (cubierto por
-  la sección anterior, mismo `DOMPurify` server-side).
+**Estado v0.4-a** (render público implementado):
+- En el render público de las 4 páginas geográficas, `caption` se
+  pasa por `alt`/`caption` del lightbox (texto inerte, sin
+  interpretación HTML). `altText` va al `<img alt>` (Next/React lo
+  escapa automáticamente). No hay `dangerouslySetInnerHTML` para
+  estos campos.
+- Las 200 chars siguen permitiendo `<script>` / `<` en el string —
+  el riesgo XSS NO se materializa porque ningún render del público
+  pasa estos valores por innerHTML.
+- Si v0.4-b o posterior agrega un componente que **sí** los renderea
+  como HTML (formato rich-text en caption, OG image alt con markup,
+  etc.), aplicar el mismo pipeline `react-markdown + rehype-sanitize`
+  del editorial — o `escapeHtml` simple para uso en atributos.
 
-**Riesgo XSS persistente en v0.4** si el frontend público renderea
-estos campos con `dangerouslySetInnerHTML`, en atributos `<meta>` de
-Open Graph, JSON-LD para SEO, o en `<title>` interpolation. Plan:
-
-- Sanitización con `isomorphic-dompurify` antes del render HTML.
-- Para `<title>`/atributos: aplicar `escapeHtml` simple — no se
-  permite Markdown en esos contextos de todas formas.
-- Considerar whitelist más restrictiva con `\p{L}\p{N}\p{P}\p{Z}` si
-  el equipo decide que `<` y `>` no son legítimos para captions.
+**TODO futuro**: si se decide formato rich-text en captions,
+extender `editorialSanitizeSchema` y reusar `EditorialContent` para
+captions con un schema más restrictivo (sin headings, sin
+blockquote — solo `p, strong, em, a, br`).
 
 ## Rate limiting en server actions de imágenes (backlog)
 
@@ -398,18 +401,30 @@ Fix futuro: middleware o wrapper `withRateLimit(userId, action,
 serverless single-region). ~30 invocaciones/min por usuario por
 action es razonable para uso editorial real.
 
-## Revalidación pública de imágenes (v0.4)
+## Revalidación pública de imágenes — APLICADO en v0.4-a
 
-`buildAdminPaths` en `src/server/actions/images/index.ts` revalida
-solo paths admin. Cuando v0.4 cablee rutas públicas
-(`/{locale}/cuyo/...`, `/{locale}/cuyo/mendoza/{slug}`, etc.), hay
-que extender el helper para revalidate por locale + por nivel
-afectado. Sin esto, las galerías públicas mostrarán imágenes stale
-hasta el próximo ISR cycle.
+Aplicado en el commit `refactor(admin): buildAdminPaths ->
+buildAllPaths + updateTag granular` (PR v0.4-a).
 
-Pattern sugerido: `buildAllPaths(entityType, identifier)` que devuelve
-admin + público × 3 locales. Las 6 server actions de imágenes lo
-usan en lugar de `buildAdminPaths`.
+Implementación:
+- `src/lib/public/buildAllPaths.ts` (compartido). Resuelve la cadena
+  de slugs (region.code + province.slug + department.slug +
+  locality.slug) via Prisma lookup y devuelve:
+  - `paths`: 1 admin path + 3 públicos (es/en/pt-BR).
+  - `tags`: 1 tag formato `{level}:{slug}` que matchea el formato
+    del `geoLoader.ts`.
+- Las server actions de imágenes (5 callsites) y de translations
+  (3 callsites) usan un helper local `revalidateForEntity` que
+  delega a `buildAllPaths` y dispara `revalidatePath` + `updateTag`.
+- `updateTag` (Next 16): variante para read-your-own-writes desde
+  Server Actions. `revalidateTag` cambió firma en Next 16 a requerir
+  `profile: CacheLifeConfig` explícito — para nuestro caso (admin
+  mutation invalidando data cache público), `updateTag` es el
+  match exacto.
+
+Listing: solo admin path + tag `listing:{id}` (no hay página detail
+pública en v0.4-a). Cuando v0.4-b agregue la página de ficha, se
+extiende `buildAllPaths` para emitir las 3 públicas también.
 
 ## Audit trail por imagen (resuelto en v0.3-geo-c follow-up)
 
@@ -498,22 +513,21 @@ de referencia (líneas 415-433 de `src/server/actions/images/index.ts`).
   futuro se sirve desde CDN custom (e.g. `cdn.viajarpais.com.ar`
   con CNAME a Cloudinary), tocar ambas funciones simultáneamente.
 
-## Next.js security update (Mayo 2026) — PR INMEDIATO post v0.3-geo-c
+## Next.js security update (Mayo 2026) — APLICADO en PR #13
 
-Vercel publicó 13 advisories de seguridad el 6 de mayo 2026. Versión
-patcheada Next 16: `16.2.5`. Afecta middleware/proxy bypass, SSRF,
-XSS, DoS. Defense in depth del proyecto (role gate en server actions,
-no solo en middleware) cubre el principal vector pero igual hay que
-aplicar el patch antes de v0.4 (UI pública con tráfico real).
+Aplicado vía Dependabot PR #13 mergeado post v0.3-geo-c. Bump
+`next` 16.2.5 → 16.2.6 cubre 13 advisories de mayo 2026 + 6 fixes
+adicionales del follow-up release: middleware/proxy bypass × 4
+(incluido fix incompleto), SSRF en WebSocket upgrades, DoS Cache
+Components, DoS Server Components, XSS en CSP nonces +
+`beforeInteractive`, DoS Image Optimization, cache poisoning RSC.
 
-PR scope: `npm update next` + `npm update react` (revisar versión
-patcheada exacta al momento del PR — al 11 may 2026 es 19.1.7 o
-19.2.6) + revisión de breaking changes + smoke tests de áreas
-afectadas (auth, role gates, image optimization, server actions,
-middleware/proxy.ts).
+Defense in depth del proyecto (role gate en cada server action +
+zod validation por endpoint) ya cubría el principal vector
+"middleware bypass". El patch cierra el resto.
 
-Este PR va INMEDIATAMENTE después del merge de v0.3-geo-c. Antes de
-cualquier otro PR de feature.
+Smoke local + CI verde sobre 16.2.6 antes del merge. Sin breaking
+changes que requirieran ajustes de código.
 
 Referencias: <https://vercel.com/changelog/next-js-may-2026-security-release>
 
@@ -582,6 +596,95 @@ de Cloudinary (complementan la validación cliente en `<GalleryUploader />`):
 Cada entorno (preview, staging, prod) puede tener su propio preset.
 En CI usamos un placeholder porque `next build` no invoca uploads
 reales.
+
+## Backlog v0.4-b — follow-ups del audit de v0.4-a
+
+Items detectados por las 3 auditorías internas del PR v0.4-a
+(security review + data integrity + product correctness) que
+quedaron deferred con justificación. Se aplican en v0.4-b o un
+PR específico cuando llegue el momento.
+
+### Cloudinary 404 fallback en imágenes públicas (HIGH H5 deferred)
+
+Cuando Cloudinary devuelve 404 para una imagen (asset borrado
+manualmente, race con cleanup, CDN cache issue), `GeoHero` y
+`PlaceCard` muestran el ícono de imagen rota de next/image en
+lugar del fallback tipográfico/placeholder documentado en el
+handoff §"Casos edge".
+
+Solución: client wrapper con `onError` sobre next/image que
+re-renderea la variante sin foto (placeholder/tipográfico) al
+detectar fallo de carga. Aplicable a `HeroPhotoImage` y al
+`<Image>` del `PlaceCard`.
+
+Defer porque (a) requiere Cloudinary respondiendo 404, raro en
+operación normal mientras el editor no borre assets manualmente,
+(b) se hace junto con el "cleanup de orphans Cloudinary"
+(documentado en este mismo archivo) — ambos comparten el patrón
+de detectar/manejar inconsistencias DB ↔ CDN.
+
+### Optimizaciones de performance pública (MAJOR M2-M4 deferred)
+
+Tres optimizaciones sin impacto correctness inmediato pero con
+mejora medible cuando el volumen crezca:
+
+**M2 — Cache tags no incluyen locale.** El `unstable_cache` parts
+incluye locale (correcto — cada locale cachea separado), pero el
+tag por nivel es uniforme (ej. `region:cuyo` sin locale). Combinado
+con `expandLocalePaths` en `buildAllPaths` se hace doble trabajo:
+el tag invalida las 3 versiones del locale + los 3 paths
+expandidos también. Considerar simplificar `buildAllPaths` para
+emitir solo admin paths + tags, dejando la invalidación de las 3
+versiones públicas vía tag exclusivamente.
+
+**M3 — `take 30 → slice 24` rompe promesa "FEATURED arriba" —
+APLICADO (CodeRabbit re-flageó en #23).** `loadListingsForLevel`
+ahora ordena por `tier: "desc"` en la DB (el enum `FREE PAID
+FEATURED` ordena por declaracion en Postgres, asi que desc da
+FEATURED > PAID > FREE — exacto, sin importar antiguedad). El
+`take` subio a 60 para dar margen al refinamiento in-memory de
+"verified primero dentro de cada tier" (verifiedUntil > now, que
+Prisma no expresa en orderBy). Para nodos con <= 60 PUBLISHED
+—todos los casos realistas— el resultado es 100% exacto; mas alla
+sigue tier-correcto con verified-order aproximado en el tier de
+corte.
+
+**M4 — Province query usa `findFirst` con relation filter.**
+`loadProvinceNode` usa `findFirst({ where: { slug, region: { code } } })`
+que genera JOIN. `Province.slug` es @unique global — más eficiente
+`findUnique({ where: { slug } })` + validar `province.region.code
+=== regionCode` en código. ~10ms más rápido por request.
+
+### Validación Zod de empty string → null en form admin (follow-up M5)
+
+`pickLocalizedField` en geoLoader usa `??` (nullish) para distinguir
+"no traducido" (null) de "vacío intencional" (`""`). El form admin
+de v0.3 devuelve `null` para vacíos en la práctica, pero no hay
+validación Zod explícita que enforce eso. Si cambia el form en
+v0.5+ (e.g. tag input que devuelve `""` al limpiar), el operador
+nullish empezaría a confundir los dos casos.
+
+Fix: agregar `.transform((s) => (s === "" ? null : s))` en el
+schema Zod de campos editoriales del form admin, o equivalente en
+`GeoEditorialContentSchema`.
+
+### DeepL fallback edge case — decisión pendiente del PM
+
+Locality con `descriptionEs` cargado pero `descriptionEn = null` y
+`descriptionEnSource = NONE` (DeepL no procesó todavía o falló).
+En `/en/...` se muestra el español como fallback SIN
+`TranslationDisclaimer` (porque source es NONE, no MACHINE).
+
+Opciones para v0.4-b o cuando el PM decida:
+- **A (actual):** muestra ES sin disclaimer. Visitante ve texto
+  en idioma "incorrecto" sin saber por qué.
+- **B:** muestra ES con disclaimer adaptado "Original in Spanish
+  — translation pending" / "Original em espanhol — tradução
+  pendente". Más honesto, pero requiere extender
+  TranslationDisclaimer con variant "pending" (~10 líneas).
+
+NO se aplicó en v0.4-a porque la decisión es de producto, no
+técnica.
 
 ## Cuando dudes, preguntá
 

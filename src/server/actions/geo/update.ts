@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/authz";
@@ -17,6 +17,7 @@ import {
   type EntityType,
   type TranslationState,
 } from "@/lib/translations/dispatcher";
+import { buildAllPaths } from "@/lib/public/buildAllPaths";
 
 /*
   Server actions para editar contenido editorial geográfico. Una por
@@ -55,29 +56,18 @@ export type UpdateGeoResult =
 type GeoLevel = "region" | "province" | "department" | "locality";
 
 /*
-  Las paths de edición geo se rutean por `[code]` (Georef ID), NO por
-  `id` (cuid). El `revalidatePath` tiene que pasar `code` o el cache RSC
-  no matchea y queda staleado.
+  Revalidación post-mutación centralizada en `buildAllPaths`
+  (`src/lib/public/buildAllPaths.ts`) — devuelve admin paths
+  (lista + detail) y tags por nivel (`region:{code}`,
+  `province:{slug}`, etc.). El helper resuelve la cadena de
+  slugs con UN query Prisma.
 
-  `/admin/geo/regions` y similares NO son rutas (no hay
-  `/regions/page.tsx`, solo `/regions/[code]/page.tsx`), así que las
-  saco del array — el revalidate sería no-op.
+  Antes del fix de C1, esta server action solo invalidaba paths
+  admin via un map local — las paginas publicas quedaban staleas
+  hasta el revalidate de 24h (deuda M-4 abierta). Ahora se cablea
+  el helper con `revalidatePath` + `revalidateTag` consistente con
+  el patron de `images/index.ts` y `translations/index.ts`.
 */
-const REVALIDATE_PATHS: Record<GeoLevel, (code: string) => string[]> = {
-  region: (code) => ["/admin/geo", `/admin/geo/regions/${code}`],
-  province: (code) => [
-    "/admin/geo/provinces",
-    `/admin/geo/provinces/${code}`,
-  ],
-  department: (code) => [
-    "/admin/geo/departments",
-    `/admin/geo/departments/${code}`,
-  ],
-  locality: (code) => [
-    "/admin/geo/localities",
-    `/admin/geo/localities/${code}`,
-  ],
-};
 
 function flattenErrors(
   parsed: ReturnType<typeof GeoEditorialContentSchema.safeParse>,
@@ -202,7 +192,18 @@ async function performGeoUpdate(args: {
     },
   });
 
-  REVALIDATE_PATHS[level](updated.code).forEach((p) => revalidatePath(p));
+  // Invalidacion completa via helper centralizado: admin paths
+  // (lista + detail) + tags geo del loader publico (`{level}:{slug}`).
+  // Cierra deuda M-4 — los lectores publicos ven el cambio sin
+  // esperar el revalidate ISR de 24h.
+  //
+  // updateTag (Next 16): variante simple para read-your-own-writes
+  // desde un Server Action. Es el reemplazo del legacy revalidateTag
+  // — mismo efecto, mejor naming.
+  const { paths, tags } = await buildAllPaths(level, updated.code);
+  paths.forEach((p) => revalidatePath(p));
+  tags.forEach((t) => updateTag(t));
+
   return {
     ok: true,
     updatedAt: updated.updatedAt.toISOString(),
