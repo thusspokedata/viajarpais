@@ -53,6 +53,12 @@ export interface BreadcrumbsProps {
    * para uso ES sin pasar prop.
    */
   ariaLabel?: string;
+  /**
+   * Formatter localizado para el aria-label del back-link compacto
+   * (mobile <360px). Recibe el nombre del padre. Default ES.
+   * Componer desde pagina: `(name) => t("Public.breadcrumbBack", { name })`.
+   */
+  backLabel?: (parentName: string) => string;
   className?: string;
 }
 
@@ -60,6 +66,7 @@ export function Breadcrumbs({
   items,
   variant = "canvas",
   ariaLabel = "Migas de pan",
+  backLabel = (name) => `Volver a ${name}`,
   className,
 }: BreadcrumbsProps) {
   if (items.length === 0) return null;
@@ -169,7 +176,7 @@ export function Breadcrumbs({
                   ? "text-[oklch(100%_0_0_/_0.82)] hover:text-white hover:underline underline-offset-2"
                   : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:underline underline-offset-2",
               )}
-              aria-label={`Volver a ${parent.label}`}
+              aria-label={backLabel(parent.label)}
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
               <span>{parent.label}</span>

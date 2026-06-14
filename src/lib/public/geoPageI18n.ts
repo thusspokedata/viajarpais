@@ -63,8 +63,10 @@ export async function buildGeoPageI18n(
   return {
     eyebrow: t(eyebrowKey),
     breadcrumbsAriaLabel: t("breadcrumbsLabel"),
+    breadcrumbBackLabel: (name: string) => t("breadcrumbBack", { name }),
     galleryAriaLabel: t("galleryAriaLabel"),
     galleryTriggerLabel: t("viewGallery", { count: node.images.length }),
+    openGalleryLabel: t("openGallery"),
     galleryLabels: {
       closeLabel: t("galleryClose"),
       prevLabel: t("galleryPrev"),

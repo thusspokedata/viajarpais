@@ -89,12 +89,17 @@ export function PublicEmptyState({
             (500 en paginas geo totalmente vacias). buttonVariants para
             estilar Links es el patron que el propio Button.tsx
             documenta para este caso.
+
+            Sin aria-label hardcodeado: el texto visible (`label`) ya
+            viene localizado desde la pagina ("Volver a Mendoza" /
+            "Back to Mendoza") y es el accessible name del Link. Un
+            aria-label en espanol fijo daba inconsistencia de idioma
+            para screen readers en EN/PT-BR (CodeRabbit).
           */
           <div className="flex flex-wrap items-center justify-center gap-[var(--space-2)]">
             {parent && (
               <Link
                 href={parent.href}
-                aria-label={`Volver a ${parent.name}`}
                 className={cn(buttonVariants({ variant: "secondary" }))}
               >
                 <ChevronLeft className="h-4 w-4" aria-hidden="true" />
@@ -104,7 +109,6 @@ export function PublicEmptyState({
             {grandparent && (
               <Link
                 href={grandparent.href}
-                aria-label={`Explorar ${grandparent.name}`}
                 className={cn(buttonVariants({ variant: "ghost" }))}
               >
                 <span>{grandparent.label}</span>

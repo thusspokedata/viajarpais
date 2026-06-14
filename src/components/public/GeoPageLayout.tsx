@@ -64,10 +64,14 @@ export interface GeoPageLayoutI18n {
   eyebrow: string;
   /** Aria-label de breadcrumbs ("Migas de pan" / "Breadcrumbs"). */
   breadcrumbsAriaLabel: string;
+  /** Formatter del aria-label del back-link compacto de breadcrumbs. */
+  breadcrumbBackLabel: (parentName: string) => string;
   /** Aria-label del lightbox ("Galería de fotos"). */
   galleryAriaLabel: string;
   /** Trigger button label ya interpolado ("Ver galería · 12"). */
   galleryTriggerLabel: string;
+  /** Aria-label de la imagen clickeable del hero (abre el lightbox). */
+  openGalleryLabel: string;
   /** Lightbox keyboard/aria labels. */
   galleryLabels: {
     closeLabel: string;
@@ -150,6 +154,7 @@ export function GeoPageLayout({
           items={node.breadcrumbs}
           variant="canvas"
           ariaLabel={i18n.breadcrumbsAriaLabel}
+          backLabel={i18n.breadcrumbBackLabel}
         />
       )}
 
@@ -160,8 +165,10 @@ export function GeoPageLayout({
         tagline={node.tagline}
         breadcrumbs={node.breadcrumbs}
         breadcrumbsAriaLabel={i18n.breadcrumbsAriaLabel}
+        breadcrumbBackLabel={i18n.breadcrumbBackLabel}
         imageUrl={node.primaryImage?.url}
         imageAlt={node.primaryImage?.alt}
+        openGalleryLabel={i18n.openGalleryLabel}
         galleryTrigger={
           hasPhoto && hasGallery ? (
             <GalleryTrigger label={i18n.galleryTriggerLabel} />

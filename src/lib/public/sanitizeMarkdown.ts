@@ -37,10 +37,12 @@ export function stripMarkdown(md: string): string {
     // Italic (*foo* or _foo_)
     .replace(/\*([^*\n]+)\*/g, "$1")
     .replace(/_([^_\n]+)_/g, "$1")
+    // Code blocks (```...```) — ANTES del inline code, sino el regex
+    // de inline `foo` consume backticks DENTRO del bloque fenced y
+    // deja escapar el codigo al output (CodeRabbit).
+    .replace(/```[\s\S]*?```/g, "")
     // Inline code (`foo`)
     .replace(/`([^`]+)`/g, "$1")
-    // Code blocks (```...```)
-    .replace(/```[\s\S]*?```/g, "")
     // Images: ![alt](url) → alt
     .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
     // Links: [text](url) → text

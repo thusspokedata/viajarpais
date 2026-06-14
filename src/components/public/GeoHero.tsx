@@ -95,6 +95,11 @@ export interface GeoHeroProps {
    */
   breadcrumbsAriaLabel?: string;
   /**
+   * Formatter localizado para el aria-label del back-link compacto
+   * de breadcrumbs (se pasa al <Breadcrumbs> interno con foto).
+   */
+  breadcrumbBackLabel?: (parentName: string) => string;
+  /**
    * URL Cloudinary de la imagen primary del nivel (hero variant
    * ~1920x1080). Si es undefined/null -> variante tipografica.
    */
@@ -105,6 +110,11 @@ export interface GeoHeroProps {
    * imagenes Cloudinary.
    */
   imageAlt?: string;
+  /**
+   * Aria-label localizado para la imagen clickeable del hero (abre
+   * el lightbox). Se pasa a HeroPhotoImage. Default ES.
+   */
+  openGalleryLabel?: string;
   /**
    * Slot para el trigger de galeria (botton "Ver galeria · N").
    * Vive en el hero abajo-derecha solo cuando hay foto. La pagina
@@ -173,8 +183,10 @@ function GeoHeroWithPhoto({
   tagline,
   breadcrumbs,
   breadcrumbsAriaLabel,
+  breadcrumbBackLabel,
   imageUrl,
   imageAlt,
+  openGalleryLabel,
   galleryTrigger,
   className,
 }: GeoHeroProps) {
@@ -209,7 +221,11 @@ function GeoHeroWithPhoto({
           imagen clickeable para abrir el lightbox (M7 fix). Cuando no
           hay galeria, renderea Image simple sin handler.
         */}
-        <HeroPhotoImage src={imageUrl!} alt={computedAlt} />
+        <HeroPhotoImage
+          src={imageUrl!}
+          alt={computedAlt}
+          openGalleryLabel={openGalleryLabel}
+        />
 
         {/* Scrim degradado. oklch oscuro con stops del handoff. */}
         <div
@@ -235,6 +251,7 @@ function GeoHeroWithPhoto({
               items={breadcrumbs}
               variant="photo"
               ariaLabel={breadcrumbsAriaLabel}
+              backLabel={breadcrumbBackLabel}
             />
           )}
 

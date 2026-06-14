@@ -80,6 +80,8 @@
     "galleryNext": "Foto siguiente",
     "galleryThumbPrefix": "Foto",
     "viewGallery": "Ver galería · {count}",
+    "openGallery": "Abrir galería de fotos",
+    "breadcrumbBack": "Volver a {name}",
     "eyebrow": {
       "region": "REGIÓN",
       "province": "PROVINCIA",

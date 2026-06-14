@@ -80,6 +80,8 @@
     "galleryNext": "Next photo",
     "galleryThumbPrefix": "Photo",
     "viewGallery": "View gallery · {count}",
+    "openGallery": "Open photo gallery",
+    "breadcrumbBack": "Back to {name}",
     "eyebrow": {
       "region": "REGION",
       "province": "PROVINCE",
@@ -98,7 +100,7 @@
       "locality": "locality"
     },
     "emptyTitle": "We're still building this page",
-    "emptyDescription": "We haven't loaded information or photos for {name} yet. We're adding {level}s steadily, with vetted material.",
+    "emptyDescription": "We haven't loaded information or photos for {name} yet. We're adding each {level} steadily, with vetted material.",
     "emptyBackTo": "Back to {name}",
     "emptyExplore": "Explore {name}",
     "listingsCount": "{count, plural, one {# listing} other {# listings}}",
