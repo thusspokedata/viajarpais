@@ -382,7 +382,15 @@ export function EditorialContentForm(props: EditorialContentFormProps) {
             ) : (
               "el "
             )}
-            <time dateTime={props.lastEdited.at}>
+            {/*
+              La fecha humana se formatea con `toLocaleString` y depende del
+              ICU del runtime: el de Node (server) y el del browser (cliente)
+              difieren en el conector ("12:32 a. m." vs "a las 12:32 a. m."),
+              lo que dispara un hydration mismatch. El `dateTime` ISO es estable
+              y machine-readable, así que suprimimos el warning sólo para el
+              texto visible (patrón recomendado de Next para fechas locale-dependientes).
+            */}
+            <time dateTime={props.lastEdited.at} suppressHydrationWarning>
               {new Date(props.lastEdited.at).toLocaleString("es-AR", {
                 dateStyle: "long",
                 timeStyle: "short",
