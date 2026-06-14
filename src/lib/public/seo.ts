@@ -114,15 +114,14 @@ export async function buildGeoMetadata(
     : `${node.name} | ${SITE_NAME}`;
 
   // Description: prefer descriptionEs/En/PtBr stripped a 155 chars;
-  // sino tagline (max 155); sino fallback i18n.
+  // sino tagline (tambien via markdownToPlainText — si el editor mete
+  // markdown en el tagline no debe filtrarse crudo al meta description);
+  // sino fallback i18n.
   let description: string;
   if (node.description) {
     description = markdownToPlainText(node.description, 155);
   } else if (node.tagline) {
-    description =
-      node.tagline.length <= 155
-        ? node.tagline
-        : node.tagline.slice(0, 154).trimEnd() + "…";
+    description = markdownToPlainText(node.tagline, 155);
   } else {
     description = t("fallbackMetaDescription", { name: node.name });
   }
@@ -205,7 +204,8 @@ export function buildGeoJsonLd(
   if (node.description) {
     jsonLd.description = markdownToPlainText(node.description, 300);
   } else if (node.tagline) {
-    jsonLd.description = node.tagline;
+    // Tambien por markdownToPlainText — el tagline puede traer markdown.
+    jsonLd.description = markdownToPlainText(node.tagline, 300);
   }
 
   if (ogImageUrl) {
