@@ -1124,6 +1124,35 @@ async function loadListingsForLevel(
    ================================================================ */
 
 /**
+ * Wrapper para los `listPopulated*` que alimentan `generateStaticParams`.
+ *
+ * El build de CI corre `next build` con un DATABASE_URL placeholder
+ * (localhost sin Postgres real), asi que la query Prisma de
+ * `generateStaticParams` tira al intentar conectar y rompe el build
+ * con "Failed to collect page data". Como `dynamicParams = true` en
+ * las 4 paginas, no necesitamos pre-renderizar NADA en build — todo
+ * puede generarse on-demand con ISR.
+ *
+ * Por eso: si la query falla (DB no disponible en build), devolvemos
+ * `[]` y logueamos. En CI -> 0 paginas pre-generadas, build verde.
+ * En prod (DB real) -> pre-genera los nodos populados normalmente.
+ */
+async function safeStaticParams<T>(
+  label: string,
+  fn: () => Promise<T[]>,
+): Promise<T[]> {
+  try {
+    return await fn();
+  } catch (err) {
+    console.warn(
+      `[geoLoader] ${label}: DB no disponible en build, 0 static params (ISR on-demand)`,
+      err instanceof Error ? err.message : err,
+    );
+    return [];
+  }
+}
+
+/**
  * Lista los regions populados (con descriptionEs cargada) para
  * pre-render en build. El resto se genera on-demand con ISR
  * (dynamicParams=true en la pagina).
@@ -1133,49 +1162,55 @@ async function loadListingsForLevel(
  * caen en `PublicEmptyState` la primera vez que las visitan.
  */
 export async function listPopulatedRegions(): Promise<{ region: string }[]> {
-  const regions = await prisma.region.findMany({
-    where: { descriptionEs: { not: null } },
-    select: { code: true },
+  return safeStaticParams("listPopulatedRegions", async () => {
+    const regions = await prisma.region.findMany({
+      where: { descriptionEs: { not: null } },
+      select: { code: true },
+    });
+    return regions.map((r) => ({ region: r.code }));
   });
-  return regions.map((r) => ({ region: r.code }));
 }
 
 export async function listPopulatedProvinces(): Promise<
   { region: string; province: string }[]
 > {
-  const provinces = await prisma.province.findMany({
-    where: { descriptionEs: { not: null } },
-    select: {
-      slug: true,
-      region: { select: { code: true } },
-    },
+  return safeStaticParams("listPopulatedProvinces", async () => {
+    const provinces = await prisma.province.findMany({
+      where: { descriptionEs: { not: null } },
+      select: {
+        slug: true,
+        region: { select: { code: true } },
+      },
+    });
+    return provinces.map((p) => ({
+      region: p.region.code,
+      province: p.slug,
+    }));
   });
-  return provinces.map((p) => ({
-    region: p.region.code,
-    province: p.slug,
-  }));
 }
 
 export async function listPopulatedDepartments(): Promise<
   { region: string; province: string; department: string }[]
 > {
-  const departments = await prisma.department.findMany({
-    where: { descriptionEs: { not: null } },
-    select: {
-      slug: true,
-      province: {
-        select: {
-          slug: true,
-          region: { select: { code: true } },
+  return safeStaticParams("listPopulatedDepartments", async () => {
+    const departments = await prisma.department.findMany({
+      where: { descriptionEs: { not: null } },
+      select: {
+        slug: true,
+        province: {
+          select: {
+            slug: true,
+            region: { select: { code: true } },
+          },
         },
       },
-    },
+    });
+    return departments.map((d) => ({
+      region: d.province.region.code,
+      province: d.province.slug,
+      department: d.slug,
+    }));
   });
-  return departments.map((d) => ({
-    region: d.province.region.code,
-    province: d.province.slug,
-    department: d.slug,
-  }));
 }
 
 export async function listPopulatedLocalities(): Promise<
@@ -1186,27 +1221,29 @@ export async function listPopulatedLocalities(): Promise<
     locality: string;
   }[]
 > {
-  const localities = await prisma.locality.findMany({
-    where: { descriptionEs: { not: null } },
-    select: {
-      slug: true,
-      department: {
-        select: {
-          slug: true,
-          province: {
-            select: {
-              slug: true,
-              region: { select: { code: true } },
+  return safeStaticParams("listPopulatedLocalities", async () => {
+    const localities = await prisma.locality.findMany({
+      where: { descriptionEs: { not: null } },
+      select: {
+        slug: true,
+        department: {
+          select: {
+            slug: true,
+            province: {
+              select: {
+                slug: true,
+                region: { select: { code: true } },
+              },
             },
           },
         },
       },
-    },
+    });
+    return localities.map((l) => ({
+      region: l.department.province.region.code,
+      province: l.department.province.slug,
+      department: l.department.slug,
+      locality: l.slug,
+    }));
   });
-  return localities.map((l) => ({
-    region: l.department.province.region.code,
-    province: l.department.province.slug,
-    department: l.department.slug,
-    locality: l.slug,
-  }));
 }
