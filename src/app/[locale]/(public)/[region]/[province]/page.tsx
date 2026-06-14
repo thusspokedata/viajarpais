@@ -59,8 +59,8 @@ export async function generateMetadata({
 
 export default async function ProvincePage({ params }: Props) {
   const { locale, region, province } = await params;
-  setRequestLocale(locale);
   if (!isSupportedLocale(locale)) notFound();
+  setRequestLocale(locale);
 
   const node = await getProvinceNode(region, province, locale);
   if (!node) notFound();
@@ -71,5 +71,5 @@ export default async function ProvincePage({ params }: Props) {
 }
 
 function isSupportedLocale(locale: string): locale is SupportedLocale {
-  return locale === "es" || locale === "en" || locale === "pt-BR";
+  return (routing.locales as readonly string[]).includes(locale);
 }

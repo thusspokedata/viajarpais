@@ -66,11 +66,11 @@ export async function generateMetadata({
 
 export default async function RegionPage({ params }: Props) {
   const { locale, region } = await params;
-  setRequestLocale(locale);
 
-  // Locale validation — fallback si llega algo fuera del set
-  // soportado. notFound activa el 404 publico.
+  // Validar el locale ANTES de setRequestLocale — sino seteamos el
+  // request state con un valor invalido. notFound activa el 404.
   if (!isSupportedLocale(locale)) notFound();
+  setRequestLocale(locale);
 
   const node = await getRegionNode(region, locale);
   if (!node) notFound();
@@ -81,5 +81,7 @@ export default async function RegionPage({ params }: Props) {
 }
 
 function isSupportedLocale(locale: string): locale is SupportedLocale {
-  return locale === "es" || locale === "en" || locale === "pt-BR";
+  // Deriva del routing config — no hardcodear el allowlist (drift con
+  // generateStaticParams que tambien usa routing.locales).
+  return (routing.locales as readonly string[]).includes(locale);
 }
