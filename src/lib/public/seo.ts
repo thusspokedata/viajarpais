@@ -38,6 +38,25 @@ import type { GeoNode, SupportedLocale } from "./geoLoader";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "";
+
+/*
+  Fail-fast en produccion si falta NEXT_PUBLIC_SITE_URL — sino TODAS
+  las paginas geo degradan a canonical/hreflang/OG relativos sin
+  avisar (penaliza SEO + social sharing roto). Mejor romper el build/
+  deploy que shippear metadata debil silenciosamente. Convencion del
+  proyecto (AGENTS.md: "Validar variables criticas con fail-fast en
+  produccion").
+
+  CI lo setea (.github/workflows/ci.yml: NEXT_PUBLIC_SITE_URL=
+  http://localhost:3006), asi que este throw NO dispara en el build
+  de CI — solo en un deploy prod real sin la var.
+*/
+if (process.env.NODE_ENV === "production" && !SITE_URL) {
+  throw new Error(
+    "NEXT_PUBLIC_SITE_URL debe estar seteado en produccion (canonical/hreflang/OG quedan relativos sin el).",
+  );
+}
+
 const SITE_NAME = "ViajarPaís";
 
 /**
