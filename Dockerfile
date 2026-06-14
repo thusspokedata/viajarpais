@@ -46,7 +46,11 @@ RUN npm run build
 # --- runner: sirve la app ya compilada ---
 FROM base AS runner
 ENV NODE_ENV=production
-COPY --from=build /app ./
+# Correr como usuario no-root (node, uid 1000 — ya existe en la imagen base).
+# --chown para que `node` sea dueño de /app y pueda escribir .next/cache en
+# runtime (ISR + unstable_cache). El puerto 3006 es >1024, bindea sin root.
+COPY --chown=node:node --from=build /app ./
+USER node
 EXPOSE 3006
 # Bind a 0.0.0.0 a proposito: el reverse proxy del VPS la alcanza por el tunel.
 CMD ["node_modules/.bin/next", "start", "-H", "0.0.0.0", "-p", "3006"]

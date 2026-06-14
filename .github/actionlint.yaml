@@ -1,0 +1,7 @@
+# actionlint no conoce los labels de runners self-hosted. Declaramos el
+# label custom `viajarpais` (lo expone el runner instalado en la Pi
+# `nextcloud`) para que `runs-on: [self-hosted, viajarpais]` no se marque
+# como label desconocido.
+self-hosted-runner:
+  labels:
+    - viajarpais

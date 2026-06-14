@@ -22,10 +22,17 @@ concurrency:
 jobs:
   deploy:
     runs-on: [self-hosted, viajarpais]
+    # Least-privilege: el job solo hace checkout (lectura del repo).
+    permissions:
+      contents: read
     timeout-minutes: 30
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          # No persistir el GITHUB_TOKEN en el workdir (el self-hosted
+          # runner lo reutiliza entre jobs); el deploy no pushea nada.
+          persist-credentials: false
 
       - name: Inyectar secrets (app.env vive solo en la Pi)
         run: cp /home/kilo/viajarpais/app.env ./app.env
