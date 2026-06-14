@@ -1,6 +1,6 @@
 import * as React from "react";
 import { MapPin, ChevronLeft } from "@/components/ui/icons";
-import { Button, EmptyState } from "@/components/ui";
+import { EmptyState, buttonVariants, cn } from "@/components/ui";
 import { Link } from "@/i18n/navigation";
 
 /*
@@ -80,27 +80,35 @@ export function PublicEmptyState({
       description={description}
       action={
         (parent || grandparent) && (
+          /*
+            Estilamos los <Link> directo con `buttonVariants` en lugar
+            de `<Button asChild>`. El patron asChild de Button rompe
+            con Radix Slot: Button renderea {leadingIcon}{children}
+            {trailingIcon} y aunque los iconos sean undefined, JSX crea
+            un array de 3 hijos -> React.Children.only del Slot explota
+            (500 en paginas geo totalmente vacias). buttonVariants para
+            estilar Links es el patron que el propio Button.tsx
+            documenta para este caso.
+          */
           <div className="flex flex-wrap items-center justify-center gap-[var(--space-2)]">
             {parent && (
-              <Button asChild variant="secondary">
-                <Link
-                  href={parent.href}
-                  aria-label={`Volver a ${parent.name}`}
-                >
-                  <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-                  <span>{parent.label}</span>
-                </Link>
-              </Button>
+              <Link
+                href={parent.href}
+                aria-label={`Volver a ${parent.name}`}
+                className={cn(buttonVariants({ variant: "secondary" }))}
+              >
+                <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                <span>{parent.label}</span>
+              </Link>
             )}
             {grandparent && (
-              <Button asChild variant="ghost">
-                <Link
-                  href={grandparent.href}
-                  aria-label={`Explorar ${grandparent.name}`}
-                >
-                  <span>{grandparent.label}</span>
-                </Link>
-              </Button>
+              <Link
+                href={grandparent.href}
+                aria-label={`Explorar ${grandparent.name}`}
+                className={cn(buttonVariants({ variant: "ghost" }))}
+              >
+                <span>{grandparent.label}</span>
+              </Link>
             )}
           </div>
         )
