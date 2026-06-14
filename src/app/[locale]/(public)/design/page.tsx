@@ -237,6 +237,16 @@ export default function DesignSystemPage() {
                 <Button size="lg">Large</Button>
                 <Button leadingIcon={<Plus className="h-4 w-4" />}>Con icono</Button>
               </div>
+              {/* asChild: el Slot de Radix exige un único hijo. Este caso ejercita
+                  ese camino para que el bug de React.Children.only no regrese. */}
+              <div className="flex flex-wrap gap-3 items-center mt-3">
+                <Button asChild>
+                  <a href="#primitives">asChild · link</a>
+                </Button>
+                <Button asChild variant="secondary">
+                  <a href="#primitives">asChild · secondary</a>
+                </Button>
+              </div>
             </Subsection>
 
             <Subsection title="Input / Label / Textarea / Select">

@@ -48,9 +48,24 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : "button";
+    // En modo asChild, el Slot de Radix exige un único hijo (React.Children.only).
+    // Los wrappers de leadingIcon/trailingIcon + loader crean un array de 3 hijos
+    // aunque sean undefined, lo que rompe el Slot. Por eso pasamos sólo `children`:
+    // si el elemento envuelto necesita íconos, van dentro de ese elemento.
+    if (asChild) {
+      return (
+        <Slot
+          ref={ref}
+          className={cn(buttonVariants({ variant, size }), className)}
+          {...props}
+        >
+          {children}
+        </Slot>
+      );
+    }
+
     return (
-      <Comp
+      <button
         ref={ref}
         className={cn(buttonVariants({ variant, size }), className)}
         disabled={disabled || loading}
@@ -63,7 +78,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {children}
         {!loading && trailingIcon}
-      </Comp>
+      </button>
     );
   }
 );
