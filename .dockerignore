@@ -1,0 +1,15 @@
+# Nunca hornear node_modules/.next/.git ni ningun env con secrets.
+node_modules
+.next
+.git
+.gitignore
+.github
+*.env
+.env
+.env.*
+app.env
+npm-debug.log*
+Dockerfile
+docker-compose.yml
+.dockerignore
+.claude

@@ -1,0 +1,37 @@
+# viajarpais en la Pi `nextcloud`. Publica 0.0.0.0:3006 en el host
+# (lo consume el reverse proxy del VPS por el tunel WireGuard).
+# restart: unless-stopped + docker.service enabled => sobrevive reboots.
+#
+# Deploy: lo corre el self-hosted runner (.github/workflows/deploy.yml)
+# en cada push a main. El runner hace checkout del repo, copia el app.env
+# (secrets, vive solo en la Pi) al lado de este compose, y `up -d --build`.
+name: viajarpais
+
+services:
+  web:
+    build:
+      context: .
+      args:
+        # Publicas (no secretas): se hornean en el bundle en build-time.
+        NEXT_PUBLIC_SITE_URL: "https://viajarpais.com.ar"
+        NEXT_PUBLIC_BETTER_AUTH_URL: "https://viajarpais.com.ar"
+    image: viajarpais:latest
+    container_name: viajarpais
+    restart: unless-stopped
+    # Secrets/runtime env (DATABASE_URL, BETTER_AUTH_SECRET, etc.).
+    # app.env NO esta en git ni se hornea en la imagen (ver .dockerignore);
+    # el runner lo copia desde /home/kilo/viajarpais/app.env antes del build.
+    env_file:
+      - app.env
+    ports:
+      - "3006:3006"
+    healthcheck:
+      test:
+        - "CMD"
+        - "node"
+        - "-e"
+        - "fetch('http://127.0.0.1:3006/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
