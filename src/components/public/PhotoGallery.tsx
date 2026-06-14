@@ -151,12 +151,24 @@ export function PhotoGallery({
   children,
 }: PhotoGalleryProps) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [index, setIndex] = React.useState(initialIndex);
+  // Clamp del index a [0, length-1]. Si `initialIndex` (o un `open(i)`
+  // mas abajo) viene fuera de rango, `images[index]` seria undefined y
+  // el render del lightbox crashea al leer `current.publicId`.
+  const clampIndex = React.useCallback(
+    (i: number) => Math.min(Math.max(i, 0), images.length - 1),
+    [images.length],
+  );
+  const [index, setIndex] = React.useState(() =>
+    Math.min(Math.max(initialIndex, 0), Math.max(images.length - 1, 0)),
+  );
 
-  const open = React.useCallback((i: number = 0) => {
-    setIndex(i);
-    setIsOpen(true);
-  }, []);
+  const open = React.useCallback(
+    (i: number = 0) => {
+      setIndex(clampIndex(i));
+      setIsOpen(true);
+    },
+    [clampIndex],
+  );
 
   const close = React.useCallback(() => setIsOpen(false), []);
 
@@ -262,7 +274,10 @@ function GalleryLightbox({
   labels?: PhotoGalleryProps["labels"];
 }) {
   const { images, index, isOpen, close, prev, next, goTo } = useGallery();
-  const current = images[index];
+  // Defensa adicional: si por algun motivo `index` quedo fuera de rango
+  // (ej. `images` cambia de tamano mientras el lightbox esta abierto),
+  // caemos a la primera imagen en vez de crashear con undefined.
+  const current = images[index] ?? images[0];
 
   const closeLabel = labels?.closeLabel ?? "Cerrar galería";
   const prevLabel = labels?.prevLabel ?? "Foto anterior";
