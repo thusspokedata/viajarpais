@@ -1,0 +1,54 @@
+# Auto-deploy a la Raspberry Pi `nextcloud` del homelab.
+#
+# Corre en un self-hosted runner INSTALADO EN la Pi (label `viajarpais`),
+# asi funciona detras de CGNAT (conexion saliente del runner a GitHub) y
+# no depende de SSH ni del agente Bitwarden de la Mac.
+#
+# Flujo: push a main -> el runner hace checkout -> copia el app.env (los
+# secrets viven solo en la Pi, fuera de git) -> docker compose up -d --build
+# (reconstruye la imagen y recrea el contenedor) -> verifica HTTP 200.
+name: deploy-pi
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Nunca dos deploys en paralelo; no cancelar uno en curso a mitad del build.
+concurrency:
+  group: deploy-pi
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, viajarpais]
+    timeout-minutes: 30
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+
+      - name: Inyectar secrets (app.env vive solo en la Pi)
+        run: cp /home/kilo/viajarpais/app.env ./app.env
+
+      - name: Build + deploy (recrea el contenedor)
+        run: docker compose up -d --build
+
+      - name: Verificar health + HTTP 200
+        run: |
+          for i in $(seq 1 36); do
+            health=$(docker inspect -f '{{.State.Health.Status}}' viajarpais 2>/dev/null || echo none)
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3006/ || echo 000)
+            echo "t=$((i*5))s health=$health http=$code"
+            if [ "$health" = "healthy" ] && [ "$code" = "200" ]; then
+              echo "✓ deploy OK — viajarpais responde 200 y esta healthy"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "✗ verificacion fallo tras 180s"
+          docker logs --tail 50 viajarpais || true
+          exit 1
+
+      - name: Limpiar imagenes dangling
+        if: always()
+        run: docker image prune -f
