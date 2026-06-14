@@ -159,6 +159,11 @@ export function GalleryUploader({
       }
 
       // 2. Subir a Cloudinary directamente.
+      //    Solo los params firmados (signature cubre timestamp + folder
+      //    + upload_preset). El `nonce` NO va acá — Cloudinary ignora
+      //    params custom desconocidos al validar la signature, y
+      //    mandarlo firmado rompía el upload con 401. El nonce viaja
+      //    SOLO a saveImageMetadata (paso 5).
       const form = new FormData();
       form.append("file", file);
       form.append("signature", sig.data.signature);
@@ -166,9 +171,6 @@ export function GalleryUploader({
       form.append("api_key", sig.data.apiKey);
       form.append("upload_preset", sig.data.uploadPreset);
       form.append("folder", sig.data.folder);
-      // H-1: el nonce viaja como param firmado. Cloudinary lo verifica
-      // con la signature server-side y rechaza si está manipulado.
-      form.append("nonce", sig.data.nonce);
 
       /*
         MAJ-1: AbortController con timeout. Sin esto, una conexión
