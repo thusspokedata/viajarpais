@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Slot } from "@radix-ui/react-slot";
 import { cn } from "./cn";
 
 /**
@@ -46,14 +47,23 @@ const cardVariantClass: Record<CardVariant, string> = {
 };
 
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, variant = "default", ...props }, ref) => (
-    <div
-      ref={ref}
-      data-tier={variant.startsWith("tier-") ? variant.replace("tier-", "") : undefined}
-      className={cn(cardBase, cardVariantClass[variant], className)}
-      {...props}
-    />
-  )
+  ({ className, variant = "default", asChild = false, ...props }, ref) => {
+    // Con `asChild`, el Slot de Radix renderiza la Card COMO su hijo (p. ej.
+    // un <a>/<Link>) en vez de envolverlo en un <div> extra — el patrón típico
+    // de los grids de directorio donde la card entera es el link. La Card pasa
+    // un único hijo vía `children`/`...props`, así que no toca el
+    // React.Children.only que sí rompía a Button (ver Button.tsx). Destructurar
+    // `asChild` además evita que se filtre como atributo DOM inválido (`aschild`).
+    const Comp = asChild ? Slot : "div";
+    return (
+      <Comp
+        ref={ref}
+        data-tier={variant.startsWith("tier-") ? variant.replace("tier-", "") : undefined}
+        className={cn(cardBase, cardVariantClass[variant], className)}
+        {...props}
+      />
+    );
+  }
 );
 Card.displayName = "Card";
 

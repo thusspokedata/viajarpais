@@ -321,6 +321,17 @@ export default function DesignSystemPage() {
                   <Skeleton className="h-4 w-5/6" />
                 </Card>
               </div>
+              {/* asChild: la Card se renderiza COMO su hijo (acá un <a>), sin
+                  <div> envoltorio extra. Ejercita ese camino para que el leak
+                  de atributo (`aschild`) y el wiring del Slot no regresen. */}
+              <Card asChild variant="interactive" className="mt-5 block p-5">
+                <a href="#primitives">
+                  <CardTitle>Card asChild · link</CardTitle>
+                  <CardDescription>
+                    Toda la card es un &lt;a&gt; — un solo elemento, sin div envoltorio.
+                  </CardDescription>
+                </a>
+              </Card>
               <Separator className="my-5" />
               <Tabs defaultValue="t1">
                 <TabsList>
