@@ -26,13 +26,17 @@ import { SortableImageGrid, type GalleryImage } from "./SortableImageGrid";
      `mapWithConcurrency` que NUNCA propaga rejection (M-C).
   4. Por upload:
      a. `getUploadSignature(...)` → server genera nonce single-use,
-        lo persiste en DB, lo firma con la signature Cloudinary (H-1).
+        lo persiste en DB y firma SOLO los params que Cloudinary
+        reconoce (`timestamp`, `folder`, `upload_preset`). El nonce
+        NO se firma — Cloudinary ignora params custom y firmarlo
+        rompía la validacion con 401.
      b. POST a `https://api.cloudinary.com/v1_1/{cloud}/upload` con
-        signature + file + nonce + preset, con `AbortController`
+        signature + file + preset (SIN nonce), con `AbortController`
         timeout 60s (MAJ-1).
-     c. `saveImageMetadata({..., nonce})` → server marca nonce como
-        usado atómicamente + verifica que el asset realmente existe
-        en Cloudinary (M-3).
+     c. `saveImageMetadata({..., nonce})` → el nonce viaja SOLO acá;
+        el server lo marca como usado atómicamente + verifica que el
+        asset realmente existe en Cloudinary (M-3). La proteccion
+        single-use del nonce es 100% server-side.
   5. router.refresh() para que el grid muestre la nueva imagen.
 
   Tab close protection:
