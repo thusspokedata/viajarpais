@@ -26,13 +26,17 @@ import { SortableImageGrid, type GalleryImage } from "./SortableImageGrid";
      `mapWithConcurrency` que NUNCA propaga rejection (M-C).
   4. Por upload:
      a. `getUploadSignature(...)` → server genera nonce single-use,
-        lo persiste en DB, lo firma con la signature Cloudinary (H-1).
+        lo persiste en DB y firma SOLO los params que Cloudinary
+        reconoce (`timestamp`, `folder`, `upload_preset`). El nonce
+        NO se firma — Cloudinary ignora params custom y firmarlo
+        rompía la validacion con 401.
      b. POST a `https://api.cloudinary.com/v1_1/{cloud}/upload` con
-        signature + file + nonce + preset, con `AbortController`
+        signature + file + preset (SIN nonce), con `AbortController`
         timeout 60s (MAJ-1).
-     c. `saveImageMetadata({..., nonce})` → server marca nonce como
-        usado atómicamente + verifica que el asset realmente existe
-        en Cloudinary (M-3).
+     c. `saveImageMetadata({..., nonce})` → el nonce viaja SOLO acá;
+        el server lo marca como usado atómicamente + verifica que el
+        asset realmente existe en Cloudinary (M-3). La proteccion
+        single-use del nonce es 100% server-side.
   5. router.refresh() para que el grid muestre la nueva imagen.
 
   Tab close protection:
@@ -159,6 +163,11 @@ export function GalleryUploader({
       }
 
       // 2. Subir a Cloudinary directamente.
+      //    Solo los params firmados (signature cubre timestamp + folder
+      //    + upload_preset). El `nonce` NO va acá — Cloudinary ignora
+      //    params custom desconocidos al validar la signature, y
+      //    mandarlo firmado rompía el upload con 401. El nonce viaja
+      //    SOLO a saveImageMetadata (paso 5).
       const form = new FormData();
       form.append("file", file);
       form.append("signature", sig.data.signature);
@@ -166,9 +175,6 @@ export function GalleryUploader({
       form.append("api_key", sig.data.apiKey);
       form.append("upload_preset", sig.data.uploadPreset);
       form.append("folder", sig.data.folder);
-      // H-1: el nonce viaja como param firmado. Cloudinary lo verifica
-      // con la signature server-side y rechaza si está manipulado.
-      form.append("nonce", sig.data.nonce);
 
       /*
         MAJ-1: AbortController con timeout. Sin esto, una conexión

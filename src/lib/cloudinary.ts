@@ -154,12 +154,17 @@ export type UploadSignatureResult = {
   uploadPreset: string;
   folder: string;
   /**
-   * Nonce único single-use generado server-side. El cliente debe
-   * incluirlo en el FormData del upload a Cloudinary (queda firmado
-   * dentro de la signature) y enviarlo a `saveImageMetadata` para
-   * que el server lo marque como usado. Sin esto, un atacante con
-   * la signature cacheada puede subir N archivos al folder firmado
-   * durante la ventana de validez (1h).
+   * Nonce único single-use generado server-side. El cliente lo envía
+   * a `saveImageMetadata` (NO a Cloudinary) para que el server lo
+   * marque como usado con un UPDATE atómico `WHERE usedAt IS NULL`.
+   * Esto impide que una signature cacheada registre N rows en DB
+   * durante su ventana de validez (1h) — para subir N veces el
+   * cliente necesita N signatures distintas, cada una con su nonce.
+   *
+   * NO se firma en la signature de Cloudinary ni viaja en el FormData
+   * del upload: Cloudinary ignora params custom desconocidos y firmar
+   * el nonce rompía la validación de la signature (401 Invalid
+   * Signature). La protección single-use es 100% server-side.
    */
   nonce: string;
 };
@@ -221,20 +226,31 @@ export async function getUploadSignature(
   const timestamp = Math.floor(Date.now() / 1000);
 
   /*
-    Firmamos `nonce` como parámetro custom. Cloudinary verifica que
-    todos los parámetros del FormData del cliente coinciden con la
-    signature. Esto sirve dos propósitos:
-    - Cliente no puede manipular el nonce que envía a Cloudinary sin
-      invalidar la signature.
-    - El nonce queda asociado server-side al upload Cloudinary que
-      `saveImageMetadata` después va a validar.
+    Firmamos SOLO los parámetros que Cloudinary reconoce como firmables
+    (`timestamp`, `folder`, `upload_preset`). NO firmamos el `nonce`.
+
+    Por qué NO el nonce (fix del bug "Invalid Signature 401"):
+    Cloudinary computa su propia "string to sign" usando solo los
+    parámetros que CONOCE del upload (folder, timestamp, upload_preset,
+    etc.) e IGNORA params custom desconocidos como `nonce`. Si lo
+    incluíamos en `api_sign_request`, nuestra signature cubría
+    `folder + nonce + timestamp + upload_preset` pero Cloudinary
+    validaba contra `folder + timestamp + upload_preset` (sin nonce) →
+    mismatch → todos los uploads rechazados con 401. El bug nunca se
+    detectó en v0.3-geo-c porque los smokes fueron vía Prisma directo,
+    sin un upload real browser→Cloudinary.
+
+    El nonce NO necesita ir a Cloudinary. Su protección single-use se
+    enforza server-side en `saveImageMetadata` (UPDATE atómico
+    `WHERE usedAt IS NULL` contra `UploadSignatureNonce`). El cliente
+    pasa el nonce DIRECTO a `saveImageMetadata`, no via Cloudinary.
+    Cloudinary nunca tuvo nada que ver con la semántica del nonce.
   */
   const signature = cloudinary.utils.api_sign_request(
     {
       timestamp,
       folder,
       upload_preset: uploadPreset,
-      nonce,
     },
     apiSecret,
   );
@@ -246,6 +262,8 @@ export async function getUploadSignature(
     cloudName,
     uploadPreset,
     folder,
+    // El nonce se devuelve para que el cliente lo pase a
+    // `saveImageMetadata` (NO a Cloudinary).
     nonce,
   };
 }
