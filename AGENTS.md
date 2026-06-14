@@ -637,16 +637,17 @@ expandidos también. Considerar simplificar `buildAllPaths` para
 emitir solo admin paths + tags, dejando la invalidación de las 3
 versiones públicas vía tag exclusivamente.
 
-**M3 — `take 30 → slice 24` rompe promesa "FEATURED arriba" con
->30 PUBLISHED.** `loadListingsForLevel` toma 30 con orderBy
-`updatedAt desc`, luego sort en memoria por tier+verified+
-updatedAt y slice 24. Si una provincia tiene 10 FEATURED viejos
-+ 25 PAID + 100 FREE recientes, los FREE recientes ocupan los
-primeros 30 y desplazan FEATUREDs del ranking final.
-
-Fix: 2 queries (`tier IN ('FEATURED','PAID')` con take 24 + FREE
-para rellenar si quedan slots), o `$queryRaw` con `CASE WHEN
-tier=...`. Trivial hoy (entidades chicas), no urgente.
+**M3 — `take 30 → slice 24` rompe promesa "FEATURED arriba" —
+APLICADO (CodeRabbit re-flageó en #23).** `loadListingsForLevel`
+ahora ordena por `tier: "desc"` en la DB (el enum `FREE PAID
+FEATURED` ordena por declaracion en Postgres, asi que desc da
+FEATURED > PAID > FREE — exacto, sin importar antiguedad). El
+`take` subio a 60 para dar margen al refinamiento in-memory de
+"verified primero dentro de cada tier" (verifiedUntil > now, que
+Prisma no expresa en orderBy). Para nodos con <= 60 PUBLISHED
+—todos los casos realistas— el resultado es 100% exacto; mas alla
+sigue tier-correcto con verified-order aproximado en el tier de
+corte.
 
 **M4 — Province query usa `findFirst` con relation filter.**
 `loadProvinceNode` usa `findFirst({ where: { slug, region: { code } } })`

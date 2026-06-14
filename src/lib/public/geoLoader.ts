@@ -913,7 +913,11 @@ async function loadLocalityNode(
   const locality = await prisma.locality.findFirst({
     where: {
       slug: localitySlug,
-      province: { slug: provinceSlug },
+      // Validar la cadena geografica COMPLETA region->province->
+      // department. Sin `region: { code }`, un segmento de region
+      // erroneo en la URL (/otra-region/mendoza/...) resolvia igual
+      // la locality y generaba metadata/links incoherentes.
+      province: { slug: provinceSlug, region: { code: regionCode } },
       department: { slug: departmentSlug },
     },
     include: {
@@ -1078,9 +1082,28 @@ async function loadListingsForLevel(
   const [rows, total] = await Promise.all([
     prisma.listing.findMany({
       where: { ...where, status: "PUBLISHED" },
-      take: 30, // batch antes del sort en memoria, top 24 al final
+      /*
+        Orden DB por tier PRIMERO (no por updatedAt). El enum
+        ListingTier es `FREE PAID FEATURED`, y Postgres ordena enums
+        por orden de declaracion, asi que `tier: "desc"` da
+        FEATURED > PAID > FREE — EXACTO, sin importar la antiguedad.
+
+        Antes: `take: 30` por `updatedAt desc` truncaba ANTES de
+        ordenar por tier, excluyendo FEATUREDs viejos del top 24
+        (CodeRabbit Major). Ahora el tier ranking es exacto en DB.
+
+        `take: 60` da margen para el refinamiento in-memory de
+        "verified primero dentro de cada tier" (verifiedUntil > now,
+        que Prisma no puede expresar en orderBy). Para nodos con <= 60
+        listings PUBLISHED — todos los casos realistas — el set
+        fetcheado es completo y el resultado es 100% exacto. Mas alla
+        de 60 sigue siendo tier-correcto, con verified-order aproximado
+        en el tier de corte (edge irrelevante al volumen actual).
+      */
+      take: 60,
       orderBy: [
-        { updatedAt: "desc" }, // un orden inicial coherente
+        { tier: "desc" }, // FEATURED > PAID > FREE (enum sort de Postgres)
+        { updatedAt: "desc" },
       ],
       include: {
         province: { select: { name: true, slug: true } },
