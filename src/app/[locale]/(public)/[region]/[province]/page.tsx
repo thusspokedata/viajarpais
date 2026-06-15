@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { GeoPageLayout } from "@/components/public";
 import {
   getProvinceNode,
-  listPopulatedProvinces,
   type SupportedLocale,
 } from "@/lib/public/geoLoader";
 import { buildGeoPageI18n } from "@/lib/public/geoPageI18n";
@@ -19,11 +18,13 @@ import { routing } from "@/i18n/routing";
   mantener jerarquia visible. El loader valida que la province
   pertenezca a la region indicada (findFirst con join condicional).
 
-  ISR: revalidate 24h + tag province:{slug}.
+  Render dinamico (force-dynamic), igual que el resto de las geo: el
+  ISR a nivel pagina rompia on-demand con DYNAMIC_SERVER_USAGE
+  (getTranslations del chrome publico bajo render estatico). El cache
+  de DATOS lo mantiene unstable_cache + tag province:{slug} en el loader.
 */
 
-export const dynamicParams = true;
-export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
 type PageParams = {
   locale: string;
@@ -34,17 +35,6 @@ type PageParams = {
 type Props = {
   params: Promise<PageParams>;
 };
-
-export async function generateStaticParams() {
-  const provinces = await listPopulatedProvinces();
-  return provinces.flatMap((p) =>
-    routing.locales.map((locale) => ({
-      locale,
-      region: p.region,
-      province: p.province,
-    })),
-  );
-}
 
 export async function generateMetadata({
   params,
