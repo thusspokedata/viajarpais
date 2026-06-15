@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { GeoPageLayout } from "@/components/public";
 import {
   getLocalityNode,
-  listPopulatedLocalities,
   type SupportedLocale,
 } from "@/lib/public/geoLoader";
 import { buildGeoPageI18n } from "@/lib/public/geoPageI18n";
@@ -26,11 +25,13 @@ import { routing } from "@/i18n/routing";
   (Las fichas individuales — v0.4-b — aniden bajo /{locality}/{slug}
   cuando exista la pagina detail.)
 
-  ISR: revalidate 24h + tag locality:{slug}.
+  Render dinamico (force-dynamic), igual que el resto de las geo: el
+  ISR a nivel pagina rompia on-demand con DYNAMIC_SERVER_USAGE
+  (getTranslations del chrome publico bajo render estatico). El cache
+  de DATOS lo mantiene unstable_cache + tag locality:{slug} en el loader.
 */
 
-export const dynamicParams = true;
-export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
 type PageParams = {
   locale: string;
@@ -43,19 +44,6 @@ type PageParams = {
 type Props = {
   params: Promise<PageParams>;
 };
-
-export async function generateStaticParams() {
-  const localities = await listPopulatedLocalities();
-  return localities.flatMap((l) =>
-    routing.locales.map((locale) => ({
-      locale,
-      region: l.region,
-      province: l.province,
-      department: l.department,
-      locality: l.locality,
-    })),
-  );
-}
 
 export async function generateMetadata({
   params,

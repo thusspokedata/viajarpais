@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { GeoPageLayout } from "@/components/public";
 import {
   getRegionNode,
-  listPopulatedRegions,
   type SupportedLocale,
 } from "@/lib/public/geoLoader";
 import { buildGeoPageI18n } from "@/lib/public/geoPageI18n";
@@ -14,21 +13,21 @@ import { routing } from "@/i18n/routing";
 /*
   Pagina publica de Region — `/[locale]/{region-code}`.
 
-  ISR: revalidate 24h + revalidateTag('region:{code}') dispara
-  invalidacion on-demand cuando el admin edita contenido o sube
-  imagenes (cableado en commit 17 — buildAllPaths).
+  Render dinamico (force-dynamic), igual que la home publica. El
+  contenido es un directorio DB-backed; el caching de DATOS lo provee
+  unstable_cache en el geoLoader (con revalidateTag para invalidacion
+  on-demand desde el admin), asi que force-dynamic NO pierde el cache
+  de datos — solo deja de cachear el HTML.
 
-  generateStaticParams: solo regiones con descriptionEs cargada.
-  Para el resto, dynamicParams=true permite generacion on-demand
-  con ISR — la primera visita genera + cachea.
-
-  Estado actual del proyecto (estimado): 0-6 regiones populadas.
-  Los visitantes que entren a una region sin contenido editorial
-  ven el PublicEmptyState.
+  Por que NO ISR: el ISR a nivel pagina (revalidate + generateStaticParams
+  + dynamicParams) rompia en el render on-demand de runtime con
+  DYNAMIC_SERVER_USAGE — getTranslations del chrome publico (PublicFooter)
+  cae a headers() bajo render estatico. El build prerender funcionaba,
+  pero en prod el build usa DATABASE_URL placeholder => 0 paginas
+  pre-generadas => TODO cae en on-demand => 500. force-dynamic lo evita.
 */
 
-export const dynamicParams = true;
-export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
 type PageParams = {
   locale: string;
@@ -38,20 +37,6 @@ type PageParams = {
 type Props = {
   params: Promise<PageParams>;
 };
-
-/**
- * Pre-render solo regions con contenido editorial cargado, X 3
- * locales. El resto va por ISR on-demand.
- */
-export async function generateStaticParams() {
-  const regions = await listPopulatedRegions();
-  return regions.flatMap((r) =>
-    routing.locales.map((locale) => ({
-      locale,
-      region: r.region,
-    })),
-  );
-}
 
 export async function generateMetadata({
   params,
@@ -81,7 +66,6 @@ export default async function RegionPage({ params }: Props) {
 }
 
 function isSupportedLocale(locale: string): locale is SupportedLocale {
-  // Deriva del routing config — no hardcodear el allowlist (drift con
-  // generateStaticParams que tambien usa routing.locales).
+  // Deriva del routing config — no hardcodear el allowlist.
   return (routing.locales as readonly string[]).includes(locale);
 }

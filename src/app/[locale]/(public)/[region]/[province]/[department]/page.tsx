@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { GeoPageLayout } from "@/components/public";
 import {
   getDepartmentNode,
-  listPopulatedDepartments,
   type SupportedLocale,
 } from "@/lib/public/geoLoader";
 import { buildGeoPageI18n } from "@/lib/public/geoPageI18n";
@@ -20,11 +19,13 @@ import { routing } from "@/i18n/routing";
   URLs ambiguas (ej. dos departamentos con slug 'capital' en
   provincias distintas).
 
-  ISR: revalidate 24h + tag department:{slug}.
+  Render dinamico (force-dynamic), igual que el resto de las geo: el
+  ISR a nivel pagina rompia on-demand con DYNAMIC_SERVER_USAGE
+  (getTranslations del chrome publico bajo render estatico). El cache
+  de DATOS lo mantiene unstable_cache + tag department:{slug} en el loader.
 */
 
-export const dynamicParams = true;
-export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
 type PageParams = {
   locale: string;
@@ -36,18 +37,6 @@ type PageParams = {
 type Props = {
   params: Promise<PageParams>;
 };
-
-export async function generateStaticParams() {
-  const departments = await listPopulatedDepartments();
-  return departments.flatMap((d) =>
-    routing.locales.map((locale) => ({
-      locale,
-      region: d.region,
-      province: d.province,
-      department: d.department,
-    })),
-  );
-}
 
 export async function generateMetadata({
   params,
