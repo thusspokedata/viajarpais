@@ -40,21 +40,34 @@ jobs:
       - name: Build + deploy (recrea el contenedor)
         run: docker compose up -d --build
 
-      - name: Verificar health + HTTP 200
+      - name: Verificar health + HTTP 200 (home + geo)
         run: |
+          # 1) Esperar healthy + home (/) en 200.
+          ok=0
           for i in $(seq 1 36); do
             health=$(docker inspect -f '{{.State.Health.Status}}' viajarpais 2>/dev/null || echo none)
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3006/ || echo 000)
-            echo "t=$((i*5))s health=$health http=$code"
-            if [ "$health" = "healthy" ] && [ "$code" = "200" ]; then
-              echo "✓ deploy OK — viajarpais responde 200 y esta healthy"
-              exit 0
-            fi
+            home=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3006/ || echo 000)
+            echo "t=$((i*5))s health=$health home=$home"
+            if [ "$health" = "healthy" ] && [ "$home" = "200" ]; then ok=1; break; fi
             sleep 5
           done
-          echo "✗ verificacion fallo tras 180s"
-          docker logs --tail 50 viajarpais || true
-          exit 1
+          if [ "$ok" != "1" ]; then
+            echo "✗ home no respondio 200/healthy tras 180s"
+            docker logs --tail 50 viajarpais || true
+            exit 1
+          fi
+          # 2) Smoke de una pagina geo (region cuyo, del seed nacional). Es el
+          #    render que rompia con DYNAMIC_SERVER_USAGE; si un deploy futuro
+          #    vuelve a romper las geo con 5xx, el deploy FALLA en vez de quedar
+          #    "vivo roto" (el check de solo `/` no lo cazaba).
+          geo=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3006/cuyo || echo 000)
+          echo "geo /cuyo -> $geo"
+          if [ "$geo" != "200" ]; then
+            echo "✗ pagina geo /cuyo devolvio $geo (esperado 200)"
+            docker logs --tail 50 viajarpais || true
+            exit 1
+          fi
+          echo "✓ deploy OK — home + geo responden 200, healthy"
 
       - name: Limpiar imagenes dangling
         if: always()
