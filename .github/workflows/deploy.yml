@@ -46,7 +46,7 @@ jobs:
           ok=0
           for i in $(seq 1 36); do
             health=$(docker inspect -f '{{.State.Health.Status}}' viajarpais 2>/dev/null || echo none)
-            home=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3006/ || echo 000)
+            home=$(curl -s --connect-timeout 2 --max-time 4 -o /dev/null -w '%{http_code}' http://127.0.0.1:3006/ || echo 000)
             echo "t=$((i*5))s health=$health home=$home"
             if [ "$health" = "healthy" ] && [ "$home" = "200" ]; then ok=1; break; fi
             sleep 5
@@ -60,7 +60,7 @@ jobs:
           #    render que rompia con DYNAMIC_SERVER_USAGE; si un deploy futuro
           #    vuelve a romper las geo con 5xx, el deploy FALLA en vez de quedar
           #    "vivo roto" (el check de solo `/` no lo cazaba).
-          geo=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3006/cuyo || echo 000)
+          geo=$(curl -s --connect-timeout 2 --max-time 4 -o /dev/null -w '%{http_code}' http://127.0.0.1:3006/cuyo || echo 000)
           echo "geo /cuyo -> $geo"
           if [ "$geo" != "200" ]; then
             echo "✗ pagina geo /cuyo devolvio $geo (esperado 200)"
