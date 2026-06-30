@@ -20,7 +20,11 @@ respetar estas reglas sin excepción.
 - Conventional Commits estricto. Scopes esperados: `admin`, `public`, `db`, `auth`,
   `geo`, `i18n`, `ci`, `infra`, `deps`, `repo`, `ui`.
 - Commits granulares — no un commit gigante final.
-- Firmar commits con `-S` (el usuario tiene Bitwarden configurado para eso).
+- Firmar commits con `-S`. La firma usa una **clave SSH en disco**
+  (`~/.ssh/macbookpro1_ed25519`, vía `user.signingkey` + `gpg.format=ssh`),
+  **sin Bitwarden**: `gpg.ssh.program` apunta a un wrapper que corre
+  `ssh-keygen` con `SSH_AUTH_SOCK` vacío, así nunca se contacta un agente
+  ni salta ningún prompt. (Config global de la Mac — ya está, no tocar.)
 - **NUNCA** agregar `Co-Authored-By: Claude` al commit.
 - Squash merge contra `main` con linear history forzada.
 - PRs contra `main` siempre — `main` está protegida.

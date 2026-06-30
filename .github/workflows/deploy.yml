@@ -2,7 +2,7 @@
 #
 # Corre en un self-hosted runner INSTALADO EN la Pi (label `viajarpais`),
 # asi funciona detras de CGNAT (conexion saliente del runner a GitHub) y
-# no depende de SSH ni del agente Bitwarden de la Mac.
+# no depende de SSH ni de credenciales de la Mac.
 #
 # Flujo: push a main -> el runner hace checkout -> copia el app.env (los
 # secrets viven solo en la Pi, fuera de git) -> docker compose up -d --build
