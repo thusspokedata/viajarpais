@@ -94,9 +94,13 @@ export function PublicHeader({ className }: PublicHeaderProps) {
             <Button variant="ghost" size="sm" className="hidden md:inline-flex">
               {t("forBusinesses")}
             </Button>
-            <Button size="sm" className="hidden md:inline-flex">
-              {t("signIn")}
-            </Button>
+            {/*
+              Botón "Acceder" (signIn) OCULTO hasta que exista el flujo de
+              login de comerciantes. El admin entra directo por /admin/login
+              (no se expone el login de admin en el header público). La key
+              i18n `Header.signIn` se conserva para reusarla cuando se agregue
+              el flujo público de auth.
+            */}
 
             <button
               type="button"
@@ -175,11 +179,11 @@ export function PublicHeader({ className }: PublicHeaderProps) {
                 </Link>
               ))}
             </div>
+            {/* "Acceder" (signIn) oculto hasta el flujo de comerciantes — ver header desktop. */}
             <div className="flex gap-2 mt-2">
               <Button variant="secondary" className="flex-1">
                 {t("forBusinesses")}
               </Button>
-              <Button className="flex-1">{t("signIn")}</Button>
             </div>
           </div>
         </div>
