@@ -25,13 +25,16 @@ services:
       - app.env
     ports:
       - "3006:3006"
+    # Apunta a /api/health, que NO toca la DB. Antes pegaba a `/`
+    # (force-dynamic, 2 queries Prisma por request) cada 30s: eso mantenia
+    # el compute de Neon despierto 24/7 y agoto la cuota mensual.
     healthcheck:
       test:
         - "CMD"
         - "node"
         - "-e"
-        - "fetch('http://127.0.0.1:3006/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-      interval: 30s
+        - "fetch('http://127.0.0.1:3006/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 20m
       timeout: 10s
       retries: 3
       start_period: 60s
