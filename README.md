@@ -1,215 +1,302 @@
 # ViajarPaís
 
-Directorio nacional de turismo argentino. Este repositorio contiene el bootstrap de la **versión 0.1** del proyecto: solo esqueleto técnico (Next.js + Prisma + Better Auth + i18n). Las fichas, la geografía y la UI pública llegan en versiones posteriores.
+**Directorio nacional de turismo argentino.** Sucede a *turiscuyo* (que cubría solo
+Cuyo) y se expande a todo el país. Es un **directorio**, no un medio editorial: el
+valor está en fichas de lugares/servicios verificadas y organizadas por geografía,
+no en artículos.
+
+Sitio en producción: **https://viajarpais.com.ar**
+
+> **Para quien recién llega:** este README es el mapa de alto nivel — qué es,
+> qué está hecho, qué falta y cómo arrancar. Las **convenciones de trabajo y las
+> decisiones técnicas cerradas** viven en [`AGENTS.md`](AGENTS.md), que es la
+> fuente de verdad y conviene leer antes de tocar código.
+
+---
+
+## Índice
+
+- [Qué hace la app](#qué-hace-la-app)
+- [Estado del proyecto](#estado-del-proyecto) ← empezá acá
+- [Stack](#stack)
+- [Setup local](#setup-local)
+- [Variables de entorno](#variables-de-entorno)
+- [Comandos](#comandos)
+- [Estructura del repo](#estructura-del-repo)
+- [Conceptos clave del dominio](#conceptos-clave-del-dominio)
+- [Deploy e infraestructura](#deploy-e-infraestructura)
+- [Cómo contribuir](#cómo-contribuir)
+- [Roadmap](#roadmap)
+
+---
+
+## Qué hace la app
+
+Dos mundos en un mismo repo:
+
+- **Público** (`/`): landing + navegación geográfica en 4 niveles
+  (`/{región}/{provincia}/{departamento}/{localidad}`). Cada nivel tiene su
+  página con contenido editorial, foto de portada, galería y las fichas que
+  contiene. Multiidioma (`es` / `en` / `pt-BR`).
+- **Admin** (`/admin`): panel protegido por rol donde se cargan y verifican las
+  fichas, se edita el contenido editorial de cada nivel geográfico y se
+  gestionan las imágenes. El contenido se escribe en español y se traduce
+  automáticamente a inglés y portugués.
+
+---
+
+## Estado del proyecto
+
+El versionado del roadmap va por hitos `v0.x` (distinto del `version` en
+`package.json`, que sigue en `0.1.0`). Resumen honesto de qué está realmente
+implementado hoy:
+
+### ✅ Hecho y funcionando
+
+| Área | Detalle |
+| --- | --- |
+| **Base técnica** (v0.1) | Next.js 16 App Router, Prisma 7 + Neon, Better Auth (email/password), next-intl (3 idiomas), CI, deploy automático a la Pi. |
+| **Auth + roles** | Login admin, 3 roles (`ADMIN` / `EDITOR` / `MERCHANT`), gate por rol en el layout admin y en cada server action. Sin signup público. |
+| **CRUD de fichas** (v0.2) | Alta/edición/baja de listings en `/admin/listings` con tabla, filtros, paginación. Form con autosave, categorías, cascada de ubicación, horarios, tiers de pago y estados. Slug autogenerado con sufijo de localidad ante colisión. |
+| **Verificación de fichas** | Sistema `verifiedAt` / `verifiedUntil` / `verifiedById`. Tocar campos críticos (nombre, dirección, geo, categorías) resetea la verificación y dispara el banner de re-verificación. |
+| **Geografía 4 niveles** (v0.3) | Modelos Region → Province → Department → Locality, sembrados desde [Georef](https://www.argentina.gob.ar/datos/georef). Admin de geo en `/admin/geo` con edición de contenido editorial por nivel. |
+| **i18n de contenido con DeepL** (v0.3) | Al guardar contenido en español, se traduce automático a `en` / `pt-BR`. Estados de traducción (`NONE` / `MACHINE` / `REVIEWED` / `HUMAN`), control de cuota mensual, panel de traducciones, retry tracking. |
+| **Páginas públicas geo** (v0.4) | Las 4 páginas geográficas renderizadas: hero con foto, galería (lightbox), contenido editorial sanitizado, breadcrumbs, listado de fichas, JSON-LD (`BreadcrumbList` + `AdministrativeArea`) para SEO. |
+| **Imágenes (Cloudinary)** (v0.4) | Upload directo del cliente con firma del server (nonce single-use), galería con drag & drop para reordenar, caption/altText, imagen primaria. 5 modelos de imagen (uno por nivel geo + listings). |
+| **Design system** | `src/components/ui` (Radix + Tailwind v4 custom, **no shadcn**): Button, Card, Dialog, Select, Tabs, Tooltip, etc. Página de referencia viva en `/design`. |
+| **Sanitización de markdown** | Contenido editorial renderizado con `react-markdown` + `rehype-sanitize` (allowlist estricta). Cero `dangerouslySetInnerHTML` salvo el JSON-LD escapado. |
+| **Analítica** | Umami (self-hosted) integrado vía `UmamiAnalytics`. |
+
+### 🚧 Parcial / preparado pero no terminado
+
+- **Búsqueda**: la `SearchBar` está en la UI y la DB tiene `unaccent` + `pg_trgm`
+  habilitados, pero la búsqueda full-text end-to-end todavía no está conectada.
+- **Monetización**: los tiers (`FREE` / `PAID` / `FEATURED`) y los enums de pago
+  (`PaymentStatus`, `PaymentMethod`) ya están en el schema y afectan el orden de
+  las fichas, pero **no hay flujo de pago** (ninguna pasarela instalada).
+- **Traducciones**: el flujo DeepL funciona; faltan las alertas por email al
+  cruzar cuota (Resend está previsto en env pero sin implementar) y el cron de
+  retry de traducciones pendientes.
+
+### ❌ Todavía no existe
+
+- Página pública de **detalle de una ficha** (hoy las fichas se listan dentro de
+  la localidad, pero no tienen URL propia).
+- Signup / gestión pública de comerciantes (rol `MERCHANT`).
+- Affiliates.
+
+Ver [Roadmap](#roadmap) para lo planeado y el backlog detallado en `AGENTS.md`.
+
+---
 
 ## Stack
 
-- **Next.js 16** (App Router, TypeScript estricto, React 19.2)
-- **Tailwind v4**
-- **Prisma 7** con `@prisma/adapter-neon` (Postgres en Neon)
+- **Next.js 16** (App Router, `src/`, Turbopack) · **React 19.2** · **TypeScript estricto**
+- **Tailwind v4** con `@theme inline` en `src/app/globals.css`
+- **Prisma 7** + `@prisma/adapter-neon` (Postgres en **Neon**, región Frankfurt)
 - **Better Auth** (email + password, sin OAuth)
-- **next-intl 4** (3 idiomas: `es` por defecto sin prefijo, `en`, `pt-BR`)
-- **Husky + commitlint + lint-staged** (Conventional Commits)
-- **GitHub Actions** para CI
+- **next-intl 4** — `es` (default, sin prefijo), `en`, `pt-BR`
+- **Radix Primitives** + Tailwind custom (**no shadcn**)
+- **Cloudinary** (imágenes) · **deepl-node** (traducción) · **Umami** (analítica)
+- **react-hook-form** + **zod 4** · **@dnd-kit** (drag & drop) · **sonner** (toasts)
+- Tipografías: Fraunces (display) + Inter (body) vía `next/font/google`
+- **npm únicamente** (lockfile `package-lock.json`) · **Node ≥ 22**
 
-Requiere **Node ≥ 22** (declarado en `engines` y verificado en CI). Node 20 quedó EOL el 30 abril 2026, así que el proyecto se mantiene en la línea 22 LTS.
+---
 
 ## Setup local
 
+> ⚠️ **Neon solo acepta conexiones desde la Pi/producción**, no desde cualquier
+> IP. Para desarrollo local necesitás tu propia base Postgres (una branch de Neon
+> propia, o Postgres local/Docker). Pedile al equipo una connection string de dev
+> o creá una branch en Neon.
+
 ```bash
-# 1. Copiar variables de entorno
+# 1. Variables de entorno
 cp .env.example .env.local
+#    Completar .env.local (ver tabla abajo). Cloudinary/DeepL/Resend son
+#    opcionales para arrancar: sin ellas el core anda, esas features degradan.
 
-# 2. Completar todas las variables en .env.local (ver sección abajo)
+# 2. Dependencias
+npm install            # corre `prisma generate` en postinstall
 
-# 3. Instalar dependencias
-npm install
+# 3. Migraciones (crea el schema en tu base)
+npm run db:deploy      # aplica las migraciones existentes
+#    (para crear migraciones nuevas en dev: npm run db:migrate)
 
-# 4. Generar el cliente Prisma
-npm run db:generate
+# 4. Seed
+npm run db:seed              # usuario admin de bootstrap
+npm run db:seed:categories   # categorías de fichas
+npm run db:seed:geo          # geografía (regiones/provincias/deptos/localidades)
 
-# 5. Crear y aplicar la migración inicial (necesita la base creada en Neon)
-#    Importante: la primera migración debe incluir las extensiones unaccent y pg_trgm.
-#    Ver "Primera migración" más abajo.
-npm run db:migrate
-
-# 6. Sembrar el usuario admin de bootstrap
-npm run db:seed
-
-# 7. Levantar el dev server
-npm run dev
+# 5. Dev server
+npm run dev            # http://localhost:3006
 ```
 
-Después de eso:
+Rutas para probar:
 
-- `http://localhost:3006/` → landing en español (sin prefijo).
-- `http://localhost:3006/en` → landing en inglés.
-- `http://localhost:3006/pt-BR` → landing en portugués brasileño.
-- `http://localhost:3006/admin/login` → login admin.
-- `http://localhost:3006/admin/health` → health check (requiere sesión con rol `ADMIN`).
+- `http://localhost:3006/` → landing (es) · `/en` · `/pt-BR`
+- `http://localhost:3006/cuyo/mendoza/las-heras/uspallata` → página geo (4 niveles)
+- `http://localhost:3006/admin/login` → login admin
+- `http://localhost:3006/design` → design system
+
+---
 
 ## Variables de entorno
 
-Ver `.env.example` para la lista completa. Resumen:
+Lista completa comentada en `.env.example`. Resumen:
 
-| Variable | Para qué |
-| --- | --- |
-| `DATABASE_URL` | Conexión Neon **pooled** (con `-pooler` en el host). Usada por el runtime. |
-| `DIRECT_URL` | Conexión Neon **directa** (sin pooler). Usada por el CLI de Prisma. |
-| `BETTER_AUTH_SECRET` | Secreto de 32+ bytes. Generar con `openssl rand -base64 48`. |
-| `BETTER_AUTH_URL` | URL del backend de auth. En dev: `http://localhost:3006`. |
-| `NEXT_PUBLIC_SITE_URL` | URL pública del sitio. |
-| `NEXT_PUBLIC_BETTER_AUTH_URL` | URL pública de auth (la lee el cliente). |
-| `BOOTSTRAP_ADMIN_EMAIL` | Email del admin que crea el seed. |
-| `BOOTSTRAP_ADMIN_PASSWORD` | Password del admin que crea el seed. |
+| Variable | Para qué | ¿Requerida? |
+| --- | --- | --- |
+| `DATABASE_URL` | Neon **pooled** (host con `-pooler`). Runtime. | Sí |
+| `DIRECT_URL` | Neon **directa** (sin pooler). CLI de Prisma / migraciones. | Sí |
+| `BETTER_AUTH_SECRET` | Secreto 32+ bytes (`openssl rand -base64 48`). | Sí |
+| `BETTER_AUTH_URL` | URL del backend de auth. Dev: `http://localhost:3006`. | Sí |
+| `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_BETTER_AUTH_URL` | URLs públicas (las lee el cliente). | Sí |
+| `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` | Admin que crea el seed. | Sí (para seed) |
+| `CLOUDINARY_URL` / `CLOUDINARY_UPLOAD_PRESET` | Subida de imágenes. | Para imágenes |
+| `DEEPL_API_KEY` | Traducción automática es→en/pt-BR. | Para i18n de contenido |
+| `RESEND_API_KEY` | Alertas por email (cuota DeepL). | Previsto, sin uso aún |
+| `NEXT_PUBLIC_UMAMI_*` | Analítica Umami. | Opcional |
 
-`.env.local` está ignorado por git. `.env.example` se versiona.
+`.env.local` está en `.gitignore`. `.env.example` se versiona con valores vacíos.
+**Nunca commitear secretos** — push protection está activo en GitHub.
 
-## Comandos principales
+---
+
+## Comandos
 
 | Comando | Qué hace |
 | --- | --- |
-| `npm run dev` | Dev server con Turbopack en `http://localhost:3006`. |
-| `npm run build` | Build de producción. |
-| `npm run start` | Server de producción (después de `build`). |
-| `npm run lint` | ESLint sobre todo el repo. |
-| `npm run typecheck` | `tsc --noEmit`. |
-| `npm run db:generate` | Genera el cliente Prisma en `src/generated/prisma`. |
+| `npm run dev` | Dev server (Turbopack) en `:3006`. |
+| `npm run build` / `start` | Build y server de producción. |
+| `npm run lint` / `typecheck` | ESLint / `tsc --noEmit`. Ambos deben pasar antes de commitear (hook + CI). |
+| `npm run db:generate` | Genera el cliente Prisma en `src/generated/prisma` (no se versiona). |
 | `npm run db:migrate` | Crea/aplica migraciones en dev (usa `DIRECT_URL`). |
-| `npm run db:deploy` | Aplica migraciones en prod. |
-| `npm run db:seed` | Crea el admin de bootstrap usando la API oficial de Better Auth. |
-| `npm run auth:generate` | Sincroniza modelos auth en `prisma/schema.prisma` (correr cuando cambien `additionalFields` o plugins). |
+| `npm run db:deploy` | Aplica migraciones existentes (prod / setup). |
+| `npm run db:seed` · `:categories` · `:geo` | Seeds: admin · categorías · geografía. |
+| `npm run georef:fetch` | Baja datos de Georef a `prisma/data/*.json` (`--refresh` para regenerar). |
+| `npm run auth:generate` | Re-sincroniza modelos de Better Auth en el schema (al cambiar `additionalFields`/plugins). |
 
-## Estructura de carpetas
+---
+
+## Estructura del repo
 
 ```
 src/
   app/
     [locale]/
-      (public)/                    -- rutas públicas (landing, fichas en el futuro)
-        layout.tsx
-        page.tsx                   -- landing placeholder localizado
-      (admin-auth)/                -- rutas admin abiertas (login)
-        admin/login/page.tsx
-      (admin)/                     -- rutas admin protegidas (gate por rol ADMIN)
-        admin/
-          layout.tsx               -- valida sesión + rol ADMIN
-          health/page.tsx          -- /admin/health
-      layout.tsx                   -- root layout con NextIntlClientProvider
+      (public)/                      -- sitio público
+        page.tsx                     -- landing
+        [region]/…/[locality]/       -- 4 niveles geográficos
+        design/                      -- design system vivo
+      (admin-auth)/                  -- login, access-denied (abiertas)
+      (admin)/admin/                 -- panel protegido (gate rol ADMIN)
+        geo/                         -- edición geográfica + contenido editorial
+        listings/                    -- CRUD de fichas
+        health/                      -- diagnóstico DB (con sesión)
+      layout.tsx                     -- root: NextIntlClientProvider, fuentes
     api/
-      auth/[...all]/route.ts       -- handler de Better Auth
-    globals.css
+      auth/[...all]/route.ts         -- Better Auth
+      health/route.ts                -- liveness probe (NO toca la DB)
   components/
-    ui/                            -- (vacío, se llena post-design system)
-    public/
-    admin/
-  i18n/
-    routing.ts                     -- locales, defaultLocale, localePrefix
-    request.ts                     -- carga de mensajes por locale
-  lib/
-    db.ts                          -- cliente Prisma con adapter Neon (singleton)
-    auth.ts                        -- config Better Auth (server)
-    auth-client.ts                 -- cliente Better Auth
+    ui/                              -- design system (Radix + Tailwind custom)
+    public/                          -- componentes del sitio público
+    admin/                           -- componentes del panel
+  lib/                               -- db, auth, deepl, cloudinary, helpers
   server/
-    actions/                       -- (vacío)
-  generated/
-    prisma/                        -- cliente Prisma (NO versionado)
-  proxy.ts                         -- middleware de Next 16 (renombrado de middleware.ts)
-messages/
-  es.json
-  en.json
-  pt-BR.json
+    actions/                         -- mutaciones (listings, geo, images, translations)
+    data/                            -- loaders de lectura (geo, listings)
+  i18n/                              -- routing + carga de mensajes
+  generated/prisma/                  -- cliente Prisma (NO versionado)
+  proxy.ts                           -- middleware de Next 16 (antes middleware.ts)
+messages/ {es,en,pt-BR}.json         -- strings de UI
 prisma/
-  schema.prisma                    -- schema Prisma 7 (sin url en datasource)
-  seed.ts                          -- seed del admin bootstrap
-  data/                            -- (vacío, para JSON de seed futuros)
-  migrations/                      -- migraciones (creadas por `db:migrate`)
-prisma.config.ts                   -- configuración del CLI de Prisma 7
-.github/
-  workflows/ci.yml                 -- lint + typecheck + build en cada PR
-  PULL_REQUEST_TEMPLATE.md
-.husky/
-  pre-commit                       -- corre lint-staged
-  commit-msg                       -- valida commitlint
+  schema.prisma                      -- modelos + enums
+  migrations/                        -- historial de migraciones
+  data/                              -- JSON de seed (geo)
+  seed.ts                            -- seeds (admin / categorías / geo)
 ```
 
-> **Nota sobre `proxy.ts`**: Next.js 16 renombró `middleware.ts` a `proxy.ts` y la export pasó de `middleware` a `proxy`. El archivo vive en `src/proxy.ts` (junto a `src/app/`), no en la raíz, porque la app está dentro de `src/`.
+> **`proxy.ts`**: Next 16 renombró `middleware.ts` → `proxy.ts` (export `proxy`).
+> Este Next tiene bastantes breaking changes vs. lo conocido — hay guías en
+> `node_modules/next/dist/docs/` que conviene consultar antes de escribir código.
 
-## Primera migración (extensiones SQL)
+---
 
-La migración inicial **tiene que** habilitar las extensiones `unaccent` y `pg_trgm` antes de crear las tablas. El flujo es:
+## Conceptos clave del dominio
 
-```bash
-# 1. Crear la migración sin aplicarla
-npx prisma migrate dev --name init --create-only
+Leer esto ahorra sorpresas. El detalle y las decisiones cerradas están en `AGENTS.md`.
 
-# 2. Editar prisma/migrations/<timestamp>_init/migration.sql y agregar al inicio:
-#    CREATE EXTENSION IF NOT EXISTS unaccent;
-#    CREATE EXTENSION IF NOT EXISTS pg_trgm;
+- **URLs geográficas = 4 niveles.** `/{region}/{province}/{department}/{locality}`.
+  Region por `code` (`/cuyo`), el resto por `slug`. CABA es `caba`. Los slugs de
+  department y locality son únicos **por padre**, no globales.
+- **Topónimos no se traducen.** Mendoza es Mendoza en cualquier idioma. Solo se
+  traduce el contenido editorial (descripciones, meta).
+- **Fuente de verdad del contenido = español.** Las traducciones a `en`/`pt-BR`
+  se generan con DeepL al guardar; las marcadas `REVIEWED`/`HUMAN` no se pisan.
+- **Verificación de fichas.** Una ficha verificada muestra un badge; editar sus
+  campos críticos la "desverifica" hasta que un editor la revalide.
+- **Imágenes van a Cloudinary**, no al repo ni a la DB (solo se guardan
+  metadatos + `cloudinaryPublicId`). Upload directo del cliente con firma del
+  server.
+- **Todo lo visible al usuario va a `messages/{locale}.json`.** No hardcodear
+  strings salvo placeholders de diseño.
 
-# 3. Aplicar
-npx prisma migrate dev
-```
+---
 
-> En Prisma 7 el bloque `datasource` ya no lleva `url`. La conexión se configura en `prisma.config.ts` (que apunta a `DIRECT_URL`).
+## Deploy e infraestructura
 
-## i18n
+- **Producción**: corre en la Raspberry Pi `nextcloud` vía **Docker Compose**
+  (`docker-compose.yml`), puerto 3006, detrás de un reverse proxy en un VPS
+  (túnel WireGuard).
+- **CD**: un **self-hosted runner** hace `up -d --build` en **cada push a `main`**
+  (`.github/workflows/deploy.yml`). Copia `app.env` (secrets, solo viven en la Pi)
+  antes del build. O sea: **mergear a `main` = deployar**.
+- **DB**: Neon (Postgres, Frankfurt). El compute escala a cero tras ~5 min de
+  inactividad — por eso el healthcheck del contenedor apunta a `/api/health`
+  (que **no** toca la DB) y no a la home.
+- **CI** (`.github/workflows/ci.yml`, en cada PR): `db:generate` → `lint` →
+  `typecheck` → `build`. Las migraciones **no** corren en CI. CodeRabbit + CodeQL
+  revisan cada PR.
 
-- Locales soportados: `es` (por defecto, sin prefijo), `en`, `pt-BR`.
-- Estrategia: `localePrefix: "as-needed"`.
-- Sin auto-detección por `Accept-Language`. El switcher es manual.
-- `pt-BR` es **case-sensitive** en la URL: `/pt-BR` funciona, `/pt-br` da 404.
+---
 
-Los mensajes viven en `messages/{locale}.json`.
+## Cómo contribuir
 
-## Roles
+Reglas completas en [`AGENTS.md`](AGENTS.md). Lo esencial:
 
-Tres roles soportados por Better Auth:
+- **Sin git worktrees.** Trabajá directo en el repo con `git checkout`. Una branch
+  por tarea: `feature/<scope>-<desc>`, `fix/<scope>-<desc>`, `chore/<desc>`.
+- **Conventional Commits estricto** (los valida commitlint en un hook). Scopes:
+  `admin`, `public`, `db`, `auth`, `geo`, `i18n`, `ci`, `infra`, `deps`, `repo`, `ui`.
+  Ej: `feat(admin): agregar filtro por tier a la tabla de fichas`.
+- **PRs contra `main`** (protegida, squash merge, historia lineal). CI en verde +
+  revisión antes de mergear. Recordá que mergear a `main` **deploya a producción**.
+- `lint` + `typecheck` tienen que pasar antes de cada commit (hay pre-commit hook).
+- Ante una **ambigüedad de producto**, preguntá en el chat/PR antes de codear — no
+  asumas decisiones de negocio.
 
-- `ADMIN` — acceso total al panel.
-- `EDITOR` — para editores de contenido (sin uso en v0.1).
-- `MERCHANT` — comerciantes con su ficha (default para signups; sin signup público en v0.1).
+---
 
-El rol no se puede setear desde el cliente (`input: false` en la config). El seed crea al admin y luego promueve el rol a `ADMIN` con un `prisma.user.update` directo.
+## Roadmap
 
-## CI
+Lo pensado, a grandes rasgos (el backlog técnico fino está en `AGENTS.md`):
 
-`.github/workflows/ci.yml` corre en cada PR a `main`:
+**Producto**
+- Página pública de **detalle de ficha** (hoy solo se listan dentro de la localidad).
+- **Búsqueda** full-text real (la DB ya tiene `unaccent` + `pg_trgm`).
+- **Monetización**: completar el flujo de fichas pagas (`FREE`/`PAID`/`FEATURED`
+  ya existen en el schema) — falta la pasarela de pago — y **affiliates** en
+  paralelo (ambos conviven en cada ficha).
+- **Interactividad del público**: scroll-storytelling, filtros como pieza central
+  (es un directorio) y micro-interacciones.
 
-1. `npm ci`
-2. `npm run db:generate` (necesario para que `lint` y `typecheck` resuelvan los tipos generados)
-3. `npm run lint`
-4. `npm run typecheck`
-5. `npm run build`
-
-Las migraciones de Prisma **no** corren en CI: se aplican manualmente con `direct connection` en cada entorno.
-
-## Branch protection (aplicar a mano)
-
-Configurar en GitHub → Settings → Branches → Branch protection rules para `main`:
-
-- Require a pull request before merging
-- Require approvals: 1
-- Dismiss stale pull request approvals when new commits are pushed
-- Require status checks to pass before merging → seleccionar **CI / validate**
-- Require branches to be up to date before merging
-- Require conversation resolution before merging
-- Require linear history (recomendado)
-- Restrict who can push to matching branches: solo `thusspokedata` (o el equipo cuando exista)
-- Do not allow bypassing the above settings
-
-Estas reglas se aplican manualmente desde la UI de GitHub, no desde código.
-
-## Convenciones de commits
-
-Conventional Commits estricto. Scopes válidos:
-
-`admin`, `public`, `db`, `auth`, `geo`, `i18n`, `ci`, `infra`, `deps`, `repo`
-
-Ejemplos válidos:
-
-- `feat(auth): add password reset flow`
-- `fix(db): correct slug uniqueness on Locality`
-- `chore(deps): bump next to 16.3.0`
-
-Commits que no cumplan son rechazados por commitlint vía hook `commit-msg`.
+**Plataforma / operación**
+- **Crons** (VPS): retry de traducciones DeepL pendientes, limpieza de
+  `UploadSignatureNonce` y de imágenes huérfanas en Cloudinary.
+- **Resend**: alertas por email al cruzar 80 % / 100 % de la cuota de DeepL.
+- **Rate limiting** en las server actions de imágenes.
+- **i18n del admin UI** (hoy el panel es solo en español; el *contenido* sí es
+  multiidioma).
+- Preparación para **multi-tenant** (scope por ownership para el rol `MERCHANT`).
