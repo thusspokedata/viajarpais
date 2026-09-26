@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { argv } from "node:process";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { PrismaNeon } from "@prisma/adapter-neon";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 /**
@@ -41,7 +41,7 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is required to run the seed");
 }
 
-const adapter = new PrismaNeon({ connectionString });
+const adapter = new PrismaPg({ connectionString });
 const prisma = new PrismaClient({ adapter });
 
 // ─────────────────────────────────────────────────────────────────────
