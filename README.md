@@ -55,7 +55,7 @@ implementado hoy:
 
 | Área | Detalle |
 | --- | --- |
-| **Base técnica** (v0.1) | Next.js 16 App Router, Prisma 7 + Neon, Better Auth (email/password), next-intl (3 idiomas), CI, deploy automático a la Pi. |
+| **Base técnica** (v0.1) | Next.js 16 App Router, Prisma 7 + Postgres, Better Auth (email/password), next-intl (3 idiomas), CI, deploy automático a la Pi. |
 | **Auth + roles** | Login admin, 3 roles (`ADMIN` / `EDITOR` / `MERCHANT`), gate por rol en el layout admin y en cada server action. Sin signup público. |
 | **CRUD de fichas** (v0.2) | Alta/edición/baja de listings en `/admin/listings` con tabla, filtros, paginación. Form con autosave, categorías, cascada de ubicación, horarios, tiers de pago y estados. Slug autogenerado con sufijo de localidad ante colisión. |
 | **Verificación de fichas** | Sistema `verifiedAt` / `verifiedUntil` / `verifiedById`. Tocar campos críticos (nombre, dirección, geo, categorías) resetea la verificación y dispara el banner de re-verificación. |
@@ -93,7 +93,7 @@ Ver [Roadmap](#roadmap) para lo planeado y el backlog detallado en `AGENTS.md`.
 
 - **Next.js 16** (App Router, `src/`, Turbopack) · **React 19.2** · **TypeScript estricto**
 - **Tailwind v4** con `@theme inline` en `src/app/globals.css`
-- **Prisma 7** + `@prisma/adapter-neon` (Postgres en **Neon**, región Frankfurt)
+- **Prisma 7** + `@prisma/adapter-pg` (Postgres propia en la Pi, ver `infra/pi/README.md`)
 - **Better Auth** (email + password, sin OAuth)
 - **next-intl 4** — `es` (default, sin prefijo), `en`, `pt-BR`
 - **Radix Primitives** + Tailwind custom (**no shadcn**)
@@ -106,16 +106,26 @@ Ver [Roadmap](#roadmap) para lo planeado y el backlog detallado en `AGENTS.md`.
 
 ## Setup local
 
-> ⚠️ **Neon solo acepta conexiones desde la Pi/producción**, no desde cualquier
-> IP. Para desarrollo local necesitás tu propia base Postgres (una branch de Neon
-> propia, o Postgres local/Docker). Pedile al equipo una connection string de dev
-> o creá una branch en Neon.
+> ⚠️ **La base de producción no es alcanzable desde fuera de la Pi** (el
+> contenedor `viajarpais-db` no publica puertos). Para desarrollo local
+> necesitás tu propia Postgres; lo más simple es Docker:
+>
+> ```bash
+> docker run -d --name viajarpais-pg -p 127.0.0.1:5432:5432 \
+>   -e POSTGRES_USER=viajarpais -e POSTGRES_PASSWORD=dev -e POSTGRES_DB=viajarpais \
+>   -v viajarpais-pg:/var/lib/postgresql postgres:18-alpine
+> ```
+>
+> y en `.env.local`, `DATABASE_URL` y `DIRECT_URL` =
+> `postgresql://viajarpais:dev@localhost:5432/viajarpais`.
 
 ```bash
 # 1. Variables de entorno
 cp .env.example .env.local
-#    Completar .env.local (ver tabla abajo). Cloudinary/DeepL/Resend son
-#    opcionales para arrancar: sin ellas el core anda, esas features degradan.
+#    Completar .env.local (ver tabla abajo). OJO: `CLOUDINARY_URL` y
+#    `DEEPL_API_KEY` tienen que estar seteadas aunque no uses esas features:
+#    los módulos fallan al importarse si faltan (ver nota bajo la tabla).
+#    Solo Resend y Umami son realmente opcionales.
 
 # 2. Dependencias
 npm install            # corre `prisma generate` en postinstall
@@ -148,16 +158,25 @@ Lista completa comentada en `.env.example`. Resumen:
 
 | Variable | Para qué | ¿Requerida? |
 | --- | --- | --- |
-| `DATABASE_URL` | Neon **pooled** (host con `-pooler`). Runtime. | Sí |
-| `DIRECT_URL` | Neon **directa** (sin pooler). CLI de Prisma / migraciones. | Sí |
+| `DATABASE_URL` | Connection string de Postgres. Runtime. | Sí |
+| `DIRECT_URL` | Connection para el CLI de Prisma / migraciones. Con Postgres propia, la misma que `DATABASE_URL`. | Sí |
 | `BETTER_AUTH_SECRET` | Secreto 32+ bytes (`openssl rand -base64 48`). | Sí |
 | `BETTER_AUTH_URL` | URL del backend de auth. Dev: `http://localhost:3006`. | Sí |
 | `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_BETTER_AUTH_URL` | URLs públicas (las lee el cliente). | Sí |
 | `BOOTSTRAP_ADMIN_EMAIL` / `BOOTSTRAP_ADMIN_PASSWORD` | Admin que crea el seed. | Sí (para seed) |
-| `CLOUDINARY_URL` / `CLOUDINARY_UPLOAD_PRESET` | Subida de imágenes. | Para imágenes |
-| `DEEPL_API_KEY` | Traducción automática es→en/pt-BR. | Para i18n de contenido |
+| `CLOUDINARY_URL` | Imágenes (URLs públicas + upload/delete). | Sí — sin ella no cargan ni las páginas públicas |
+| `CLOUDINARY_UPLOAD_PRESET` | Preset firmado para uploads desde el admin. | Para subir imágenes |
+| `DEEPL_API_KEY` | Traducción automática es→en/pt-BR. | Sí — sin ella fallan las pantallas de edición del admin |
 | `RESEND_API_KEY` | Alertas por email (cuota DeepL). | Previsto, sin uso aún |
 | `NEXT_PUBLIC_UMAMI_*` | Analítica Umami. | Opcional |
+
+> **Fail-fast al importar.** `src/lib/cloudinary.ts` y `src/lib/deepl.ts` tiran
+> error en module-load si falta su variable. Cloudinary lo importa el loader
+> de las páginas geo; DeepL, las server actions de geo y fichas. Si no tenés
+> cuentas, alcanza con un valor placeholder con el formato correcto
+> (`cloudinary://000000000000000:placeholder@placeholder`, `placeholder`): la
+> app arranca y solo fallan las operaciones reales contra esos servicios (las
+> traducciones quedan pendientes de retry; los uploads dan error).
 
 `.env.local` está en `.gitignore`. `.env.example` se versiona con valores vacíos.
 **Nunca commitear secretos** — push protection está activo en GitHub.
@@ -250,12 +269,15 @@ Leer esto ahorra sorpresas. El detalle y las decisiones cerradas están en `AGEN
 - **Producción**: corre en la Raspberry Pi `nextcloud` vía **Docker Compose**
   (`docker-compose.yml`), puerto 3006, detrás de un reverse proxy en un VPS
   (túnel WireGuard).
-- **CD**: un **self-hosted runner** hace `up -d --build` en **cada push a `main`**
-  (`.github/workflows/deploy.yml`). Copia `app.env` (secrets, solo viven en la Pi)
-  antes del build. O sea: **mergear a `main` = deployar**.
-- **DB**: Neon (Postgres, Frankfurt). El compute escala a cero tras ~5 min de
-  inactividad — por eso el healthcheck del contenedor apunta a `/api/health`
-  (que **no** toca la DB) y no a la home.
+- **CD**: un **self-hosted runner** buildea, aplica `prisma migrate deploy` y
+  recrea el contenedor en **cada push a `main`** (`.github/workflows/deploy.yml`).
+  Copia `app.env` y `db.env` (secrets, solo viven en la Pi) antes del build.
+  O sea: **mergear a `main` = deployar (y migrar)**.
+- **DB**: Postgres 18 en la misma Pi (contenedor `viajarpais-db`, sin puertos
+  publicados), con backup nocturno off-site. Operación, restore y runbook en
+  `infra/pi/README.md`. El healthcheck de `web` apunta a `/api/health`, que
+  **no** toca la DB: es un liveness check, una caída de la DB no debe
+  reiniciar el contenedor en loop.
 - **CI** (`.github/workflows/ci.yml`, en cada PR): `db:generate` → `lint` →
   `typecheck` → `build`. Las migraciones **no** corren en CI. CodeRabbit + CodeQL
   revisan cada PR.
