@@ -1,0 +1,11 @@
+[Unit]
+Description=Backup nocturno de la DB de viajarpais
+
+[Timer]
+# 03:00 para no pisarse con pulsia-backup (02:30) en el mismo repo restic.
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+RandomizedDelaySec=10min
+
+[Install]
+WantedBy=timers.target

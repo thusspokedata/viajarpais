@@ -6,7 +6,7 @@ Directorio nacional de turismo argentino. Este repositorio contiene el bootstrap
 
 - **Next.js 16** (App Router, TypeScript estricto, React 19.2)
 - **Tailwind v4**
-- **Prisma 7** con `@prisma/adapter-neon` (Postgres en Neon)
+- **Prisma 7** con `@prisma/adapter-pg` (Postgres propia en la Pi, ver `infra/pi/README.md`)
 - **Better Auth** (email + password, sin OAuth)
 - **next-intl 4** (3 idiomas: `es` por defecto sin prefijo, `en`, `pt-BR`)
 - **Husky + commitlint + lint-staged** (Conventional Commits)
