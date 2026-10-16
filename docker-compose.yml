@@ -23,6 +23,9 @@ services:
     # el runner lo copia desde /home/kilo/viajarpais/app.env antes del build.
     env_file:
       - app.env
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "3006:3006"
     # Apunta a /api/health, que NO toca la DB. Antes pegaba a `/`
@@ -38,3 +41,30 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+
+  # Postgres propia en la Pi (reemplaza a Neon, que agotaba la cuota de
+  # compute del plan free). Sin `ports`: solo la alcanza `web` por la red
+  # interna de compose (DATABASE_URL=postgresql://...@db:5432/viajarpais).
+  # Credenciales en db.env (vive solo en la Pi, como app.env).
+  # Backups: pg_dump + restic off-site, ver infra/pi/.
+  db:
+    image: postgres:18-alpine
+    container_name: viajarpais-db
+    restart: unless-stopped
+    env_file:
+      - db.env
+    # Desde Postgres 18 la imagen usa PGDATA=/var/lib/postgresql/18/docker,
+    # asi que el volumen se monta en el padre.
+    # OJO: `docker compose down -v` borra este volumen = borra la DB.
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+      start_interval: 2s
+
+volumes:
+  pgdata:

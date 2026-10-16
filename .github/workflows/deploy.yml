@@ -4,9 +4,10 @@
 # asi funciona detras de CGNAT (conexion saliente del runner a GitHub) y
 # no depende de SSH ni de credenciales de la Mac.
 #
-# Flujo: push a main -> el runner hace checkout -> copia el app.env (los
-# secrets viven solo en la Pi, fuera de git) -> docker compose up -d --build
-# (reconstruye la imagen y recrea el contenedor) -> verifica HTTP 200.
+# Flujo: push a main -> el runner hace checkout -> copia app.env y db.env
+# (los secrets viven solo en la Pi, fuera de git) -> build -> prisma migrate
+# deploy contra la Postgres local -> up -d (recrea el contenedor) ->
+# verifica HTTP 200.
 name: deploy-pi
 
 on:
@@ -34,11 +35,24 @@ jobs:
           # runner lo reutiliza entre jobs); el deploy no pushea nada.
           persist-credentials: false
 
-      - name: Inyectar secrets (app.env vive solo en la Pi)
-        run: cp /home/kilo/viajarpais/app.env ./app.env
+      - name: Inyectar secrets (app.env y db.env viven solo en la Pi)
+        run: |
+          cp /home/kilo/viajarpais/app.env ./app.env
+          cp /home/kilo/viajarpais/db.env ./db.env
 
-      - name: Build + deploy (recrea el contenedor)
-        run: docker compose up -d --build
+      - name: Build de la imagen
+        run: docker compose build web
+
+      # Las migraciones corren aca y no desde la Mac: la Postgres de la Pi
+      # no publica puertos. `run` levanta `db` (depends_on healthy) y usa
+      # la imagen recien construida, asi el schema queda aplicado ANTES de
+      # que el contenedor nuevo empiece a servir trafico. Si falla, el
+      # contenedor viejo sigue sirviendo.
+      - name: Aplicar migraciones (prisma migrate deploy)
+        run: docker compose run --rm web node_modules/.bin/prisma migrate deploy
+
+      - name: Deploy (recrea el contenedor)
+        run: docker compose up -d
 
       - name: Verificar health + HTTP 200 (home + geo)
         run: |
