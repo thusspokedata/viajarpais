@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+# secrets del deploy en la Pi (el runner los copia al workdir)
+app.env
+db.env
 
 # vercel
 .vercel

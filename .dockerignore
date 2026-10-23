@@ -8,6 +8,8 @@ node_modules
 .env
 .env.*
 app.env
+db.env
+infra
 npm-debug.log*
 Dockerfile
 docker-compose.yml
