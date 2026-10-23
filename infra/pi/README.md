@@ -49,35 +49,30 @@ export RESTIC_PASSWORD_FILE=/root/.restic-password
 export RESTIC_REPOSITORY=sftp:kilo@192.168.178.38:/mnt/backup/restic-repo
 restic snapshots --tag viajarpais
 restic restore <snapshot-id> --target /tmp/vp-restore
-docker stop viajarpais
-docker exec -i viajarpais-db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner --no-acl' \
-  < /tmp/vp-restore/var/backups/viajarpais/viajarpais.dump
-docker start viajarpais
+# `&&`: si pg_restore falla, `web` queda parada en vez de arrancar sobre
+# una DB restaurada a medias.
+docker stop viajarpais \
+  && docker exec -i viajarpais-db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner --no-acl --exit-on-error' \
+       < /tmp/vp-restore/var/backups/viajarpais/viajarpais.dump \
+  && docker start viajarpais
 ```
 
-## Cutover Neon → Pi (una sola vez)
+## Cutover Neon → Pi (2026-10-23, arranque desde cero)
 
-Neon rechaza hasta conexiones de lectura mientras la cuota está agotada,
-así que el dump se hace el día que resetea.
+Neon rechazaba toda conexión (incluso `pg_dump`) por la cuota agotada y no
+había backups, así que la DB de la Pi arrancó **vacía**: migraciones +
+seed, sin datos de Neon.
 
-1. Mergear el PR con el servicio `db` y confirmar que `viajarpais-db` está
-   healthy (el deploy lo levanta vacío; `web` sigue apuntando a Neon).
-2. Parar la app para que no haya escrituras durante la copia:
-   `docker stop viajarpais`.
-3. Dump de Neon con el cliente de Postgres 18 (sirve para cualquier
-   versión de server ≤ 18), usando la `DIRECT_URL` actual:
+1. `app.env`: `DATABASE_URL` y `DIRECT_URL` → `db:5432` (copia previa en
+   `app.env.bak-neon-20261023`).
+2. Mergear el PR. El deploy levanta `viajarpais-db`, `migrate deploy` crea
+   el schema y recrea `web`. El smoke de `/cuyo` falla hasta tener la
+   geografía cargada: es esperado en este primer deploy.
+3. Seed (admin + geografía + categorías), desde el workdir del runner:
    ```bash
-   cd ~/viajarpais && set -a && . ./app.env && set +a
-   docker run --rm -e U="$DIRECT_URL" -v "$PWD:/out" postgres:18-alpine \
-     sh -c 'pg_dump "$U" -Fc --no-owner --no-acl -f /out/neon-final.dump'
+   cd ~/actions-runner/_work/viajarpais/viajarpais
+   docker compose run --rm --no-deps web node_modules/.bin/tsx prisma/seed.ts
    ```
-4. Restore en la Pi:
-   ```bash
-   docker exec -i viajarpais-db sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --no-acl --exit-on-error' < neon-final.dump
-   ```
-5. Verificar conteos contra Neon (`Listing`, `Locality`, `user`,
-   `_prisma_migrations`) y que `prisma migrate status` diga "up to date".
-6. Cambiar `DATABASE_URL` y `DIRECT_URL` en `app.env` a `db:5432` y
-   `docker compose up -d` (o re-run del workflow de deploy).
-7. Correr el primer backup a mano (ver arriba) y guardar
-   `neon-final.dump` fuera de la Pi hasta dar de baja el proyecto Neon.
+4. Re-run del workflow de deploy → verde.
+5. Instalar el timer de backup y correr la primera vez a mano (ver arriba).
+6. Dar de baja el proyecto en Neon.
