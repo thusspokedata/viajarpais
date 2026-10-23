@@ -27,9 +27,13 @@ notify(){
   token="$(grep -E '^TELEGRAM_BOT_TOKEN=' "$CREDS" | head -1 | cut -d= -f2-)"
   chat="$(grep -E '^TELEGRAM_CHAT_ID=' "$CREDS" | head -1 | cut -d= -f2-)"
   [ -n "$token" ] && [ -n "$chat" ] || { echo "notify: faltan creds"; return 0; }
-  curl -s --max-time 20 -X POST "https://api.telegram.org/bot${token}/sendMessage" \
-    --data-urlencode "chat_id=${chat}" --data-urlencode "text=$1" >/dev/null \
+  # Token y chat_id por stdin (-K -), no en argv: /proc/*/cmdline es
+  # legible por cualquier usuario de la Pi.
+  curl -s --max-time 20 -K - --data-urlencode "text=$1" >/dev/null <<EOF \
     || echo "notify: curl fallo"
+url = "https://api.telegram.org/bot${token}/sendMessage"
+data-urlencode = "chat_id=${chat}"
+EOF
 }
 
 on_exit(){
@@ -41,6 +45,9 @@ on_exit(){
   fi
 }
 trap on_exit EXIT
+# Si systemd corta por TimeoutStartSec manda SIGTERM: salir con 143 para que
+# on_exit registre el FAIL con un rc que lo distinga (sin esto queda rc=0).
+trap 'exit 143' TERM
 
 STEP="pg_dump"; LOG "pg_dump de $DBC"
 mkdir -p "$DUMPDIR"; chmod 700 "$DUMPDIR"
