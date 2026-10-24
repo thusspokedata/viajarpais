@@ -4,6 +4,10 @@ on:
   pull_request:
     branches: [main]
 
+# Solo lectura: el job corre código del PR (npm ci, build).
+permissions:
+  contents: read
+
 jobs:
   validate:
     name: Lint, typecheck, build
@@ -33,10 +37,13 @@ jobs:
       # hace requests al servidor de DeepL — solo construye el cliente.
       DEEPL_API_KEY: 00000000-0000-0000-0000-000000000000:fx
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+        with:
+          # No dejar el GITHUB_TOKEN disponible para npm ci / build.
+          persist-credentials: false
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
